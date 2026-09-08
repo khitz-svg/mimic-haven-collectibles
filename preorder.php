@@ -4,44 +4,78 @@
    MIMIC HAVEN - PRE-ORDERS PAGE
 ========================================================= */
 
-function asset(string $name): string {
-    foreach (['png','jpg','jpeg','webp','svg'] as $ext) {
-        $assetFile = __DIR__ . "/assets/{$name}.{$ext}";
-        if (file_exists($assetFile)) return "assets/{$name}.{$ext}";
+require_once 'auth.php';
+require_once 'db.php';
 
-        $rootFile = __DIR__ . "/{$name}.{$ext}";
-        if (file_exists($rootFile)) return "{$name}.{$ext}";
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function asset(string $name): string
+{
+    foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
+
+        $assetFile =
+            __DIR__ . "/assets/{$name}.{$ext}";
+
+        if (file_exists($assetFile)) {
+            return "assets/{$name}.{$ext}";
+        }
+
+
+        $rootFile =
+            __DIR__ . "/{$name}.{$ext}";
+
+        if (file_exists($rootFile)) {
+            return "{$name}.{$ext}";
+        }
     }
 
     return "";
 }
 
-function icon(string $name): string {
-    foreach (['png','jpg','jpeg','webp','svg'] as $ext) {
-        $file = __DIR__ . "/assets/icons/{$name}.{$ext}";
-        if (file_exists($file)) return "assets/icons/{$name}.{$ext}";
+
+function icon(string $name): string
+{
+    foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
+
+        $file =
+            __DIR__ . "/assets/icons/{$name}.{$ext}";
+
+        if (file_exists($file)) {
+            return "assets/icons/{$name}.{$ext}";
+        }
     }
 
     return "";
 }
 
-function e(string $value): string {
-    return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+
+function e(string $value): string
+{
+    return htmlspecialchars(
+        $value,
+        ENT_QUOTES,
+        'UTF-8'
+    );
 }
 
-function peso(int $price): string {
-    return '₱' . number_format($price);
+
+function peso(float $price): string
+{
+    return '₱' . number_format(
+        $price,
+        2
+    );
 }
 
 
 /* =========================================================
-   PRE-ORDER PRODUCTS
-   NOTE:
-   Prices/deposits below are starter/demo values.
-   Update them when your actual store pricing is finalized.
+   PRE-ORDER CATALOG
 ========================================================= */
 
-$preorders = [
+$preorderCatalog = [
 
     [
         'name' => 'Frieren – Maximatic Ver. 2',
@@ -165,6 +199,420 @@ $preorders = [
 
 ];
 
+
+/* =========================================================
+   BUILD PRE-ORDER PRODUCTS FROM DATABASE
+========================================================= */
+
+$preorders = [];
+
+/*
+ * These are the products currently marked as
+ * Pre-Order in the database.
+ *
+ * Deposit values come from the pre-order catalog.
+ */
+
+$preorderProductIds = [
+    3  => 550,
+    5  => 1250,
+    7  => 450,
+    10 => 850,
+    13 => 2550,
+    14 => 950,
+    16 => 950,
+    23 => 3750,
+    28 => 700,
+    30 => 3450,
+    33 => 2850
+];
+
+
+$productStmt = $conn->prepare(
+    "SELECT
+        id,
+        name,
+        series,
+        category,
+        price,
+        availability,
+        image
+     FROM products
+     WHERE id = ?
+       AND availability = 'Pre-Order'
+     LIMIT 1"
+);
+
+
+foreach ($preorderProductIds as $productId => $deposit) {
+
+    $productStmt->bind_param(
+        "i",
+        $productId
+    );
+
+    $productStmt->execute();
+
+    $result =
+        $productStmt->get_result();
+
+    $dbProduct =
+        $result->fetch_assoc();
+
+
+    if ($dbProduct) {
+
+        $preorders[] = [
+            'id' => (int)$dbProduct['id'],
+
+            'name' =>
+                $dbProduct['name'],
+
+            'series' =>
+                $dbProduct['series'],
+
+            'category' =>
+                $dbProduct['category'],
+
+            'price' =>
+                (float)$dbProduct['price'],
+
+            'deposit' =>
+                (float)$deposit,
+
+            'release' =>
+                'Release Date TBA',
+
+            'image' =>
+                $dbProduct['image']
+        ];
+    }
+}
+
+
+$productStmt->close();
+
+
+/* =========================================================
+   CSRF TOKEN
+========================================================= */
+
+if (
+    empty($_SESSION['preorder_csrf'])
+) {
+
+    $_SESSION['preorder_csrf'] =
+        bin2hex(
+            random_bytes(32)
+        );
+}
+
+$preorderCsrf =
+    $_SESSION['preorder_csrf'];
+
+
+/* =========================================================
+   PROCESS PRE-ORDER
+========================================================= */
+
+$message = '';
+$messageType = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    if (!isLoggedIn()) {
+
+        $message =
+            'Please log in to place a pre-order.';
+
+        $messageType =
+            'error';
+
+    } else {
+
+        $postedToken =
+            $_POST['csrf_token'] ?? '';
+
+        if (
+            !is_string($postedToken) ||
+            !hash_equals(
+                $preorderCsrf,
+                $postedToken
+            )
+        ) {
+
+            $message =
+                'Security validation failed. Please try again.';
+
+            $messageType =
+                'error';
+
+        } else {
+
+            $productId =
+                filter_input(
+                    INPUT_POST,
+                    'product_id',
+                    FILTER_VALIDATE_INT
+                );
+
+            $quantity =
+                filter_input(
+                    INPUT_POST,
+                    'quantity',
+                    FILTER_VALIDATE_INT
+                );
+
+
+            if (
+                !$productId ||
+                $productId <= 0
+            ) {
+
+                $message =
+                    'Invalid pre-order product.';
+
+                $messageType =
+                    'error';
+
+            } elseif (
+                !$quantity ||
+                $quantity < 1 ||
+                $quantity > 10
+            ) {
+
+                $message =
+                    'Quantity must be between 1 and 10.';
+
+                $messageType =
+                    'error';
+
+            } else {
+
+                /*
+                 * Find the product in the approved
+                 * pre-order catalog.
+                 */
+
+                $selectedPreorder = null;
+
+                foreach (
+                    $preorders as $preorderProduct
+                ) {
+
+                    if (
+                        (int)$preorderProduct['id']
+                        ===
+                        (int)$productId
+                    ) {
+
+                        $selectedPreorder =
+                            $preorderProduct;
+
+                        break;
+                    }
+                }
+
+
+                if (!$selectedPreorder) {
+
+                    $message =
+                        'This figure is not currently available for pre-order.';
+
+                    $messageType =
+                        'error';
+
+                } else {
+
+                    $userId =
+                        currentUserId();
+
+                    $unitPrice =
+                        (float)$selectedPreorder['price'];
+
+                    $depositPerUnit =
+                        (float)$selectedPreorder['deposit'];
+
+
+                    /*
+                     * Calculate the reservation totals.
+                     */
+
+                    $totalAmount =
+                        $unitPrice * $quantity;
+
+                    $depositAmount =
+                        $depositPerUnit * $quantity;
+
+                    $remainingBalance =
+                        $totalAmount - $depositAmount;
+
+
+                    if (
+                        $depositAmount <= 0 ||
+                        $remainingBalance < 0
+                    ) {
+
+                        $message =
+                            'Invalid pre-order payment values.';
+
+                        $messageType =
+                            'error';
+
+                    } else {
+
+                        /*
+                         * Prevent the same customer from
+                         * accidentally creating another
+                         * active reservation for the same figure.
+                         */
+
+                        $existingStmt =
+                            $conn->prepare(
+                                "SELECT id
+                                 FROM preorders
+                                 WHERE user_id = ?
+                                   AND product_id = ?
+                                   AND status NOT IN
+                                       ('Completed', 'Cancelled')
+                                 LIMIT 1"
+                            );
+
+                        $existingStmt->bind_param(
+                            "ii",
+                            $userId,
+                            $productId
+                        );
+
+                        $existingStmt->execute();
+
+                        $existingResult =
+                            $existingStmt->get_result();
+
+                        $existingPreorder =
+                            $existingResult->fetch_assoc();
+
+                        $existingStmt->close();
+
+
+                        if ($existingPreorder) {
+
+                            $message =
+                                'You already have an active pre-order for this figure.';
+
+                            $messageType =
+                                'error';
+
+                        } else {
+
+                            /*
+                             * Save the reservation.
+                             */
+
+                            $insertStmt =
+                                $conn->prepare(
+                                    "INSERT INTO preorders
+                                    (
+                                        user_id,
+                                        product_id,
+                                        quantity,
+                                        unit_price,
+                                        total_amount,
+                                        deposit_amount,
+                                        remaining_balance,
+                                        expected_release_date,
+                                        status,
+                                        release_status,
+                                        notes
+                                    )
+                                    VALUES
+                                    (
+                                        ?, ?, ?, ?, ?, ?, ?, NULL,
+                                        'Pending',
+                                        'Waiting for Manufacturer',
+                                        NULL
+                                    )"
+                                );
+
+
+                            $insertStmt->bind_param(
+                                "iiidddd",
+                                $userId,
+                                $productId,
+                                $quantity,
+                                $unitPrice,
+                                $totalAmount,
+                                $depositAmount,
+                                $remainingBalance
+                            );
+
+
+                            if (
+                                $insertStmt->execute()
+                            ) {
+
+                                $message =
+                                    'Your pre-order has been reserved successfully!';
+
+                                $messageType =
+                                    'success';
+
+                                /*
+                                 * Refresh the token after
+                                 * successful submission.
+                                 */
+
+                                $_SESSION['preorder_csrf'] =
+                                    bin2hex(
+                                        random_bytes(32)
+                                    );
+
+                                $preorderCsrf =
+                                    $_SESSION['preorder_csrf'];
+
+                            } else {
+
+                                $message =
+                                    'Unable to save your pre-order.';
+
+                                $messageType =
+                                    'error';
+                            }
+
+
+                            $insertStmt->close();
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+/* =========================================================
+   LOGO
+========================================================= */
+
+$logo = '';
+
+foreach (
+    ['png', 'jpg', 'jpeg', 'webp', 'svg']
+    as $ext
+) {
+
+    $file =
+        __DIR__ . "/assets/logo.$ext";
+
+    if (file_exists($file)) {
+
+        $logo =
+            "assets/logo.$ext";
+
+        break;
+    }
+}
+
 ?>
 
 <!doctype html>
@@ -179,7 +627,9 @@ $preorders = [
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Pre-Orders | Mimic Haven Collectibles</title>
+    <title>
+        Pre-Orders | Mimic Haven Collectibles
+    </title>
 
     <meta
         name="description"
@@ -187,7 +637,12 @@ $preorders = [
     >
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
 
     <link
         href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
@@ -199,13 +654,90 @@ $preorders = [
         href="style.css"
     >
 
+    <style>
+
+        .preorder-reserve-form {
+            margin-top: 18px;
+        }
+
+        .preorder-reserve-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .preorder-quantity {
+            width: 70px;
+            padding: 10px;
+            background: #111315;
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 7px;
+            font-family: Inter, sans-serif;
+        }
+
+        .preorder-reserve-button {
+            flex: 1;
+            min-width: 140px;
+            border: none;
+            border-radius: 7px;
+            padding: 11px 16px;
+            background: var(--blue);
+            color: #101214;
+            font-family: Montserrat, sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .preorder-reserve-button:hover {
+            opacity: 0.9;
+        }
+
+        .preorder-login-note {
+            margin-top: 12px;
+            color: #89929c;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .preorder-login-note a {
+            color: var(--blue);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .preorder-message {
+            max-width: 1000px;
+            margin: 0 auto 30px;
+            padding: 14px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        .preorder-message.success {
+            color: #8be3b0;
+            background: rgba(39,174,96,0.10);
+            border: 1px solid rgba(39,174,96,0.25);
+        }
+
+        .preorder-message.error {
+            color: #ff9b91;
+            background: rgba(231,76,60,0.10);
+            border: 1px solid rgba(231,76,60,0.25);
+        }
+
+    </style>
+
 </head>
+
 
 <body>
 
 
 <!-- =========================================================
-     SAME HEADER AS HOMEPAGE
+     HEADER
 ========================================================= -->
 
 <header
@@ -215,25 +747,31 @@ $preorders = [
 
     <div class="header-inner">
 
+
         <a
             class="brand"
             href="index.php"
             aria-label="Mimic Haven Collectibles"
         >
 
-            <?php if (asset('logo')): ?>
+            <?php if ($logo): ?>
 
                 <img
                     class="brand-logo"
-                    src="<?= asset('logo') ?>"
+                    src="<?= e($logo) ?>"
                     alt="Mimic Haven Collectibles"
                 >
 
             <?php else: ?>
 
                 <div class="brand-fallback">
+
                     MIMIC HAVEN
-                    <span>COLLECTIBLES</span>
+
+                    <span>
+                        COLLECTIBLES
+                    </span>
+
                 </div>
 
             <?php endif; ?>
@@ -262,11 +800,11 @@ $preorders = [
                 Pre-Orders
             </a>
 
-            <a href="index.php#about">
+            <a href="about.php">
                 About
             </a>
 
-            <a href="index.php#contact">
+            <a href="contact.php">
                 Contact
             </a>
 
@@ -290,25 +828,58 @@ $preorders = [
 
 
             <a
-    class="nav-icon cart-button"
-    href="cart.php"
-    aria-label="Cart"
->
+                class="nav-icon cart-button"
+                href="cart.php"
+                aria-label="Cart"
+            >
 
-    <?php if (icon('pre-order')): ?>
+                <?php if (icon('pre-order')): ?>
 
-        <img
-            src="<?= icon('pre-order') ?>"
-            alt="Cart"
-        >
+                    <img
+                        src="<?= icon('pre-order') ?>"
+                        alt="Cart"
+                    >
 
-    <?php endif; ?>
+                <?php endif; ?>
 
-    <span id="cart-count">
-        0
-    </span>
+                <span id="cart-count">
+                    0
+                </span>
 
-</a>
+            </a>
+
+
+            <?php if (isLoggedIn()): ?>
+
+                <a
+                    class="nav-user"
+                    href="account.php"
+                >
+                    Hi, <?= e(currentFirstName()) ?>
+                </a>
+
+            <?php endif; ?>
+
+
+            <?php if (isLoggedIn()): ?>
+
+                <a
+                    class="nav-account"
+                    href="logout.php"
+                >
+                    Logout
+                </a>
+
+            <?php else: ?>
+
+                <a
+                    class="nav-account"
+                    href="login.php"
+                >
+                    Login
+                </a>
+
+            <?php endif; ?>
 
 
             <a
@@ -347,6 +918,7 @@ $preorders = [
 
     <div class="preorder-hero-inner">
 
+
         <div class="preorder-hero-copy">
 
             <span class="preorder-eyebrow">
@@ -367,6 +939,7 @@ $preorders = [
                 your place in the next release.
             </p>
 
+
             <div class="preorder-hero-buttons">
 
                 <a
@@ -385,6 +958,7 @@ $preorders = [
                     <?php endif; ?>
 
                 </a>
+
 
                 <a
                     class="btn outline"
@@ -407,9 +981,28 @@ $preorders = [
 
         </div>
 
+
     </div>
 
 </section>
+
+
+
+<!-- =========================================================
+     MESSAGE
+========================================================= -->
+
+<?php if ($message !== ''): ?>
+
+    <div
+        class="preorder-message <?= e($messageType) ?>"
+    >
+
+        <?= e($message) ?>
+
+    </div>
+
+<?php endif; ?>
 
 
 
@@ -421,6 +1014,7 @@ $preorders = [
     class="preorder-products-section"
     id="preorder-products"
 >
+
 
     <div class="preorder-section-heading">
 
@@ -441,108 +1035,259 @@ $preorders = [
 
 
 
-    <div class="preorder-products-grid">
+    <?php if (empty($preorders)): ?>
 
-        <?php foreach ($preorders as $product): ?>
+        <div class="preorder-section-heading">
 
-            <article class="preorder-product-card">
+            <p>
+                No pre-order figures are currently available.
+            </p>
+
+        </div>
+
+    <?php else: ?>
 
 
-                <div class="preorder-product-image">
+        <div class="preorder-products-grid">
 
-                    <img
-                        src="assets/collections/<?= rawurlencode($product['image']) ?>"
-                        alt="<?= e($product['name']) ?>"
-                        loading="lazy"
+
+            <?php foreach ($preorders as $product): ?>
+
+                <?php
+                $remainingDeposit =
+                    (
+                        (float)$product['price']
+                        -
+                        (float)$product['deposit']
+                    );
+                ?>
+
+
+                <article
+                    class="preorder-product-card"
+                >
+
+
+                    <div
+                        class="preorder-product-image"
                     >
 
-                    <span class="preorder-badge">
-                        PRE-ORDER
-                    </span>
+                        <img
+                            src="assets/collections/<?= e($product['image']) ?>"
+                            alt="<?= e($product['name']) ?>"
+                            loading="lazy"
+                        >
 
 
-                    <button
-                        type="button"
-                        class="preorder-favorite"
-                        aria-label="Add to favorites"
+                        <span class="preorder-badge">
+                            PRE-ORDER
+                        </span>
+
+
+                        <button
+                            type="button"
+                            class="preorder-favorite"
+                            aria-label="Add to favorites"
+                        >
+                            ♡
+                        </button>
+
+                    </div>
+
+
+
+                    <div
+                        class="preorder-product-info"
                     >
-                        ♡
-                    </button>
-
-                </div>
 
 
-                <div class="preorder-product-info">
-
-                    <span class="preorder-product-series">
-                        <?= e($product['series']) ?>
-                    </span>
-
-                    <h3>
-                        <?= e($product['name']) ?>
-                    </h3>
-
-                    <span class="preorder-product-category">
-                        <?= e($product['category']) ?>
-                    </span>
-
-
-                    <div class="preorder-price-row">
-
-                        <strong>
-                            <?= peso($product['price']) ?>
-                        </strong>
-
-                    </div>
-
-
-                    <div class="preorder-meta">
-
-                        <div>
-                            <span>
-                                Deposit
-                            </span>
-
-                            <strong>
-                                <?= peso($product['deposit']) ?>
-                            </strong>
-                        </div>
-
-                        <div>
-                            <span>
-                                Release
-                            </span>
-
-                            <strong>
-                                <?= e($product['release']) ?>
-                            </strong>
-                        </div>
-
-                    </div>
-
-
-                    <div class="preorder-card-footer">
-
-                        <span class="preorder-condition">
-                            MISB
+                        <span
+                            class="preorder-product-series"
+                        >
+                            <?= e($product['series']) ?>
                         </span>
 
-                        <span class="preorder-status">
-                            Reservation Open
+
+                        <h3>
+                            <?= e($product['name']) ?>
+                        </h3>
+
+
+                        <span
+                            class="preorder-product-category"
+                        >
+                            <?= e($product['category']) ?>
                         </span>
+
+
+                        <div
+                            class="preorder-price-row"
+                        >
+
+                            <strong>
+                                <?= peso(
+                                    (float)$product['price']
+                                ) ?>
+                            </strong>
+
+                        </div>
+
+
+
+                        <div
+                            class="preorder-meta"
+                        >
+
+
+                            <div>
+
+                                <span>
+                                    Deposit
+                                </span>
+
+                                <strong>
+                                    <?= peso(
+                                        (float)$product['deposit']
+                                    ) ?>
+                                </strong>
+
+                            </div>
+
+
+                            <div>
+
+                                <span>
+                                    Release
+                                </span>
+
+                                <strong>
+                                    <?= e(
+                                        $product['release']
+                                    ) ?>
+                                </strong>
+
+                            </div>
+
+
+                        </div>
+
+
+
+                        <div
+                            class="preorder-card-footer"
+                        >
+
+                            <span
+                                class="preorder-condition"
+                            >
+                                MISB
+                            </span>
+
+                            <span
+                                class="preorder-status"
+                            >
+                                Reservation Open
+                            </span>
+
+                        </div>
+
+
+
+                        <!-- RESERVE -->
+
+                        <?php if (isLoggedIn()): ?>
+
+                            <form
+                                method="POST"
+                                class="preorder-reserve-form"
+                            >
+
+                                <input
+                                    type="hidden"
+                                    name="csrf_token"
+                                    value="<?= e(
+                                        $preorderCsrf
+                                    ) ?>"
+                                >
+
+
+                                <input
+                                    type="hidden"
+                                    name="product_id"
+                                    value="<?= (int)$product['id'] ?>"
+                                >
+
+
+                                <div
+                                    class="preorder-reserve-row"
+                                >
+
+                                    <input
+                                        type="number"
+                                        name="quantity"
+                                        class="preorder-quantity"
+                                        min="1"
+                                        max="10"
+                                        value="1"
+                                        aria-label="Quantity"
+                                    >
+
+
+                                    <button
+                                        type="submit"
+                                        class="preorder-reserve-button"
+                                    >
+                                        Reserve Now
+                                    </button>
+
+                                </div>
+
+
+                                <p
+                                    class="preorder-login-note"
+                                >
+                                    Required deposit:
+                                    <strong>
+                                        <?= peso(
+                                            (float)$product['deposit']
+                                        ) ?>
+                                    </strong>
+                                    per figure.
+                                </p>
+
+                            </form>
+
+
+                        <?php else: ?>
+
+                            <p
+                                class="preorder-login-note"
+                            >
+                                <a href="login.php">
+                                    Log in
+                                </a>
+                                to reserve this figure.
+                            </p>
+
+                        <?php endif; ?>
+
 
                     </div>
 
-                </div>
+                </article>
 
-            </article>
-
-        <?php endforeach; ?>
-
-    </div>
+            <?php endforeach; ?>
 
 
-    <div class="preorder-view-all">
+        </div>
+
+    <?php endif; ?>
+
+
+
+    <div
+        class="preorder-view-all"
+    >
 
         <a
             class="btn outline"
@@ -567,7 +1312,10 @@ $preorders = [
     id="how-it-works"
 >
 
-    <div class="preorder-section-heading">
+
+    <div
+        class="preorder-section-heading"
+    >
 
         <span>
             SIMPLE &amp; SECURE
@@ -583,6 +1331,7 @@ $preorders = [
         </p>
 
     </div>
+
 
 
     <div class="preorder-steps">
@@ -734,6 +1483,7 @@ $preorders = [
 
         </div>
 
+
     </div>
 
 </section>
@@ -744,9 +1494,14 @@ $preorders = [
      IMPORTANT NOTICE
 ========================================================= -->
 
-<section class="preorder-notice-section">
+<section
+    class="preorder-notice-section"
+>
 
-    <div class="preorder-section-heading">
+
+    <div
+        class="preorder-section-heading"
+    >
 
         <span>
             PLEASE READ
@@ -760,7 +1515,10 @@ $preorders = [
     </div>
 
 
-    <div class="preorder-notice-grid">
+
+    <div
+        class="preorder-notice-grid"
+    >
 
 
         <div class="preorder-notice-card">
@@ -834,10 +1592,14 @@ $preorders = [
 
         </div>
 
+
     </div>
 
 
-    <p class="preorder-terms-line">
+
+    <p
+        class="preorder-terms-line"
+    >
 
         By placing a pre-order, you agree to our
 
@@ -854,24 +1616,27 @@ $preorders = [
 
 
 <!-- =========================================================
-     SAME FOOTER AS HOMEPAGE
+     FOOTER
 ========================================================= -->
 
 <footer id="contact">
 
+
     <div class="footer-grid">
+
 
         <div>
 
-            <?php if (asset('logo')): ?>
+            <?php if ($logo): ?>
 
                 <img
                     class="footer-logo"
-                    src="<?= asset('logo') ?>"
+                    src="<?= e($logo) ?>"
                     alt="Mimic Haven Collectibles"
                 >
 
             <?php endif; ?>
+
 
             <p>
                 A sanctuary for anime collectors, offering authentic
@@ -880,6 +1645,7 @@ $preorders = [
             </p>
 
         </div>
+
 
 
         <div class="footer-links">
@@ -903,15 +1669,16 @@ $preorders = [
                 Pre-Orders
             </a>
 
-            <a href="index.php#about">
+            <a href="about.php">
                 About
             </a>
 
-            <a href="index.php#contact">
+            <a href="contact.php">
                 Contact
             </a>
 
         </div>
+
 
 
         <div class="footer-links">
@@ -968,7 +1735,9 @@ $preorders = [
 
         </div>
 
+
     </div>
+
 
 
     <div class="footer-bottom">
@@ -986,6 +1755,7 @@ $preorders = [
 </footer>
 
 
+
 <div
     id="toast"
     class="toast"
@@ -994,7 +1764,9 @@ $preorders = [
 ></div>
 
 
+
 <script src="script.js"></script>
+
 
 </body>
 
