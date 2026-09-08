@@ -4,6 +4,8 @@
    MIMIC HAVEN - PRODUCT DETAILS PAGE
 ========================================================= */
 
+require_once 'db.php';
+
 function asset(string $name): string {
     foreach (['png','jpg','jpeg','webp','svg'] as $ext) {
 
@@ -654,10 +656,8 @@ $products = [
 
 ];
 
-
-
 /* =========================================================
-   GET PRODUCT ID
+   LOAD PRODUCT FROM MYSQL
 ========================================================= */
 
 $productId = filter_input(
@@ -666,18 +666,64 @@ $productId = filter_input(
     FILTER_VALIDATE_INT
 );
 
-
-/* =========================================================
-   FALLBACK
-========================================================= */
-
-if (!$productId || !isset($products[$productId])) {
-
+if (!$productId) {
     $productId = 1;
 }
 
+$stmt = $conn->prepare(
+    "SELECT
+        id,
+        name,
+        series,
+        category,
+        price,
+        condition_status,
+        availability,
+        image,
+        description
+     FROM products
+     WHERE id = ?"
+);
 
-$product = $products[$productId];
+$stmt->bind_param(
+    "i",
+    $productId
+);
+
+$stmt->execute();
+
+$result = $stmt->get_result();
+
+$dbProduct = $result->fetch_assoc();
+
+$stmt->close();
+
+
+/* =========================================================
+   USE MYSQL PRODUCT
+========================================================= */
+
+if ($dbProduct) {
+
+    $product = [
+        'name' => $dbProduct['name'],
+        'series' => $dbProduct['series'],
+        'category' => $dbProduct['category'],
+        'price' => (int) $dbProduct['price'],
+        'condition' => $dbProduct['condition_status'],
+        'availability' => $dbProduct['availability'],
+        'image' => $dbProduct['image'],
+        'description' => $dbProduct['description'] ?? ''
+    ];
+
+} else {
+
+    $productId = 1;
+    $product = $products[1];
+
+}
+
+
 
 ?>
 
