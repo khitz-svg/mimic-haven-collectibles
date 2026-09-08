@@ -87,38 +87,143 @@ $csrfToken = $_SESSION['admin_preorders_csrf'];
 $message = '';
 $error = '';
 
+
 /*
 |--------------------------------------------------------------------------
-| SYNC FULLY PAID PRE-ORDERS
+| AUTOMATICALLY UPDATE RELIABILITY SCORES
+|--------------------------------------------------------------------------
+|
+| Score starts at 100.
+| Every cancelled pre-order removes 20 points.
+| Minimum score is 0.
+|
 |--------------------------------------------------------------------------
 */
 
-$syncStmt = $conn->prepare(
-    "UPDATE preorders
-     SET status = 'Completed'
-     WHERE deposit_status = 'Paid'
-       AND balance_status = 'Paid'
-       AND status NOT IN ('Cancelled')"
-);
+function updateReliabilityScores(mysqli $conn): void
+{
+    $sql = "
+        SELECT
+            u.id,
 
-$syncStmt->execute();
-$syncStmt->close();
+            COALESCE(
+                SUM(
+                    CASE
+                        WHEN po.status = 'Completed'
+                        THEN 1
+                        ELSE 0
+                    END
+                ),
+                0
+            ) AS completed_count,
+
+            COALESCE(
+                SUM(
+                    CASE
+                        WHEN po.status = 'Cancelled'
+                        THEN 1
+                        ELSE 0
+                    END
+                ),
+                0
+            ) AS cancelled_count
+
+        FROM users u
+
+        LEFT JOIN preorders po
+            ON u.id = po.user_id
+
+        WHERE u.role = 'customer'
+
+        GROUP BY u.id
+    ";
+
+    $result = $conn->query($sql);
+
+    if (!$result) {
+        return;
+    }
+
+    $updateStmt = $conn->prepare(
+        "UPDATE users
+         SET
+            completed_preorders = ?,
+            cancelled_preorders = ?,
+            reliability_score = ?
+         WHERE id = ?"
+    );
+
+    while ($row = $result->fetch_assoc()) {
+
+        $completed =
+            (int)$row['completed_count'];
+
+        $cancelled =
+            (int)$row['cancelled_count'];
+
+        $score =
+            100 - ($cancelled * 20);
+
+        if ($score < 0) {
+            $score = 0;
+        }
+
+        $customerId =
+            (int)$row['id'];
+
+        $updateStmt->bind_param(
+            "iidi",
+            $completed,
+            $cancelled,
+            $score,
+            $customerId
+        );
+
+        $updateStmt->execute();
+    }
+
+    $updateStmt->close();
+}
+
 
 /*
 |--------------------------------------------------------------------------
-| HANDLE PAYMENT UPDATE
+| ALLOWED PRE-ORDER STATUSES
+|--------------------------------------------------------------------------
+*/
+
+$allowedStatuses = [
+    'Pending',
+    'Confirmed',
+    'Processing',
+    'Completed',
+    'Cancelled'
+];
+
+
+/*
+|--------------------------------------------------------------------------
+| HANDLE POST REQUESTS
 |--------------------------------------------------------------------------
 */
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    $postedToken = $_POST['csrf_token'] ?? '';
+    $postedToken =
+        $_POST['csrf_token'] ?? '';
 
-    if (!hash_equals($csrfToken, $postedToken)) {
+    if (!hash_equals(
+        $csrfToken,
+        $postedToken
+    )) {
 
-        $error = 'Invalid security token. Please try again.';
+        $error =
+            'Invalid security token. Please try again.';
 
     } else {
+
+        $action =
+            $_POST['action'] ?? '';
 
         $preorderId =
             filter_input(
@@ -127,229 +232,199 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 FILTER_VALIDATE_INT
             );
 
-        $paymentType =
-            $_POST['payment_type'] ?? '';
 
-        $paidAmount =
-            isset($_POST['paid_amount'])
-                ? (float)$_POST['paid_amount']
-                : 0;
+        /*
+        |--------------------------------------------------------------------------
+        | UPDATE PRE-ORDER STATUS
+        |--------------------------------------------------------------------------
+        */
 
+        if ($action === 'update_status') {
 
-        if (!$preorderId) {
-
-            $error = 'Invalid pre-order.';
-
-        } elseif (
-            !in_array(
-                $paymentType,
-                ['deposit', 'balance'],
-                true
-            )
-        ) {
-
-            $error = 'Invalid payment type.';
-
-        } elseif ($paidAmount < 0) {
-
-            $error = 'Payment amount cannot be negative.';
-
-        } else {
-
-            /*
-            |--------------------------------------------------------------------------
-            | GET CURRENT PRE-ORDER
-            |--------------------------------------------------------------------------
-            */
-
-            $preorderStmt = $conn->prepare(
-                "SELECT
-                    deposit_amount,
-                    deposit_paid_amount,
-                    deposit_status,
-
-                    remaining_balance,
-                    balance_paid_amount,
-                    balance_status,
-
-                    status
-
-                 FROM preorders
-
-                 WHERE id = ?
-
-                 LIMIT 1"
-            );
-
-            $preorderStmt->bind_param(
-                "i",
-                $preorderId
-            );
-
-            $preorderStmt->execute();
-
-            $preorderResult =
-                $preorderStmt->get_result();
-
-            $preorder =
-                $preorderResult->fetch_assoc();
-
-            $preorderStmt->close();
+            $newStatus =
+                trim(
+                    $_POST['status'] ?? ''
+                );
 
 
-            if (!$preorder) {
+            if (!$preorderId) {
 
-                $error = 'Pre-order not found.';
+                $error =
+                    'Invalid pre-order.';
+
+            } elseif (
+                !in_array(
+                    $newStatus,
+                    $allowedStatuses,
+                    true
+                )
+            ) {
+
+                $error =
+                    'Invalid pre-order status.';
 
             } else {
 
-
                 /*
-                |--------------------------------------------------------------------------
-                | DEPOSIT PAYMENT
-                |--------------------------------------------------------------------------
+                | Get current status first
                 */
 
-                if ($paymentType === 'deposit') {
+                $checkStmt = $conn->prepare(
+                    "SELECT status
+                     FROM preorders
+                     WHERE id = ?
+                     LIMIT 1"
+                );
 
-                    $requiredDeposit =
-                        (float)$preorder['deposit_amount'];
+                $checkStmt->bind_param(
+                    "i",
+                    $preorderId
+                );
 
+                $checkStmt->execute();
 
-                    if ($paidAmount > $requiredDeposit) {
+                $checkResult =
+                    $checkStmt->get_result();
 
-                        $error =
-                            'Deposit payment cannot be greater than the required deposit.';
+                $existingPreorder =
+                    $checkResult->fetch_assoc();
 
-                    } else {
-
-                        $depositStatus =
-                            ($paidAmount >= $requiredDeposit)
-                                ? 'Paid'
-                                : 'Unpaid';
-
-                        $depositPaidAt =
-                            ($depositStatus === 'Paid')
-                                ? date('Y-m-d H:i:s')
-                                : null;
-
-
-                        $updateStmt =
-                            $conn->prepare(
-                                "UPDATE preorders
-
-                                 SET
-                                    deposit_paid_amount = ?,
-                                    deposit_status = ?,
-                                    deposit_paid_at = ?
-
-                                 WHERE id = ?"
-                            );
+                $checkStmt->close();
 
 
-                        $updateStmt->bind_param(
-                            "dssi",
-                            $paidAmount,
-                            $depositStatus,
-                            $depositPaidAt,
-                            $preorderId
-                        );
+                if (!$existingPreorder) {
 
-
-                        if ($updateStmt->execute()) {
-
-                            $message =
-                                'Deposit payment updated successfully.';
-
-                        } else {
-
-                            $error =
-                                'Failed to update deposit payment.';
-                        }
-
-
-                        $updateStmt->close();
-                    }
-
-
-                /*
-                |--------------------------------------------------------------------------
-                | BALANCE PAYMENT
-                |--------------------------------------------------------------------------
-                */
+                    $error =
+                        'Pre-order not found.';
 
                 } else {
 
-                    $remainingBalance =
-                        (float)$preorder['remaining_balance'];
+                    $oldStatus =
+                        $existingPreorder['status'];
 
 
-                    if ($paidAmount > $remainingBalance) {
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Update status
+                    |--------------------------------------------------------------------------
+                    */
 
-                        $error =
-                            'Balance payment cannot be greater than the remaining balance.';
+                    $updateStmt = $conn->prepare(
+                        "UPDATE preorders
+                         SET status = ?
+                         WHERE id = ?"
+                    );
 
-                    } else {
-
-                        $balanceStatus =
-                            ($paidAmount >= $remainingBalance)
-                                ? 'Paid'
-                                : 'Unpaid';
-
-                        $balancePaidAt =
-                            ($balanceStatus === 'Paid')
-                                ? date('Y-m-d H:i:s')
-                                : null;
-
-
-                        $updateStmt =
-                            $conn->prepare(
-                                "UPDATE preorders
-
-                                 SET
-                                    balance_paid_amount = ?,
-                                    balance_status = ?,
-                                    balance_paid_at = ?
-
-                                 WHERE id = ?"
-                            );
+                    $updateStmt->bind_param(
+                        "si",
+                        $newStatus,
+                        $preorderId
+                    );
 
 
-                        $updateStmt->bind_param(
-                            "dssi",
-                            $paidAmount,
-                            $balanceStatus,
-                            $balancePaidAt,
-                            $preorderId
+                    if ($updateStmt->execute()) {
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Update reliability immediately
+                        |--------------------------------------------------------------------------
+                        */
+
+                        updateReliabilityScores(
+                            $conn
                         );
 
 
-                        if ($updateStmt->execute()) {
+                        if (
+                            $newStatus === 'Cancelled'
+                            &&
+                            $oldStatus !== 'Cancelled'
+                        ) {
 
                             $message =
-                                'Balance payment updated successfully.';
+                                'Pre-order cancelled. Customer reliability score updated.';
+
+                        } elseif (
+                            $oldStatus === 'Cancelled'
+                            &&
+                            $newStatus !== 'Cancelled'
+                        ) {
+
+                            $message =
+                                'Pre-order status restored. Customer reliability score updated.';
 
                         } else {
 
-                            $error =
-                                'Failed to update balance payment.';
+                            $message =
+                                'Pre-order status updated successfully.';
                         }
 
+                    } else {
 
-                        $updateStmt->close();
+                        $error =
+                            'Failed to update pre-order status.';
                     }
-                }
 
+
+                    $updateStmt->close();
+                }
+            }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | HANDLE PAYMENTS
+        |--------------------------------------------------------------------------
+        */
+
+        } elseif ($action === 'payment') {
+
+            $paymentType =
+                $_POST['payment_type'] ?? '';
+
+            $paidAmount =
+                isset($_POST['paid_amount'])
+                    ? (float)$_POST['paid_amount']
+                    : 0;
+
+
+            if (!$preorderId) {
+
+                $error =
+                    'Invalid pre-order.';
+
+            } elseif (
+                !in_array(
+                    $paymentType,
+                    ['deposit', 'balance'],
+                    true
+                )
+            ) {
+
+                $error =
+                    'Invalid payment type.';
+
+            } elseif ($paidAmount < 0) {
+
+                $error =
+                    'Payment amount cannot be negative.';
+
+            } else {
 
                 /*
                 |--------------------------------------------------------------------------
-                | AUTOMATICALLY MARK FULLY PAID
+                | GET CURRENT PRE-ORDER
                 |--------------------------------------------------------------------------
                 */
 
-                $statusStmt = $conn->prepare(
+                $preorderStmt = $conn->prepare(
                     "SELECT
+                        deposit_amount,
+                        deposit_paid_amount,
                         deposit_status,
+
+                        remaining_balance,
+                        balance_paid_amount,
                         balance_status
 
                      FROM preorders
@@ -359,53 +434,313 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                      LIMIT 1"
                 );
 
-                $statusStmt->bind_param(
+                $preorderStmt->bind_param(
                     "i",
                     $preorderId
                 );
 
-                $statusStmt->execute();
+                $preorderStmt->execute();
 
-                $statusResult =
-                    $statusStmt->get_result();
+                $preorderResult =
+                    $preorderStmt->get_result();
 
-                $paymentStatus =
-                    $statusResult->fetch_assoc();
+                $preorder =
+                    $preorderResult->fetch_assoc();
 
-                $statusStmt->close();
+                $preorderStmt->close();
 
 
-                if (
-                    $paymentStatus &&
-                    $paymentStatus['deposit_status'] === 'Paid' &&
-                    $paymentStatus['balance_status'] === 'Paid'
-                ) {
+                if (!$preorder) {
 
-                    $completeStmt =
-                        $conn->prepare(
-                            "UPDATE preorders
+                    $error =
+                        'Pre-order not found.';
 
-                             SET status = 'Completed'
+                } else {
 
-                             WHERE id = ?"
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | DEPOSIT
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if ($paymentType === 'deposit') {
+
+                        $requiredDeposit =
+                            (float)$preorder[
+                                'deposit_amount'
+                            ];
+
+
+                        if (
+                            $paidAmount
+                            > $requiredDeposit
+                        ) {
+
+                            $error =
+                                'Deposit payment cannot be greater than the required deposit.';
+
+                        } else {
+
+                            $depositStatus =
+                                (
+                                    $paidAmount
+                                    >= $requiredDeposit
+                                )
+                                    ? 'Paid'
+                                    : 'Unpaid';
+
+
+                            $depositPaidAt =
+                                (
+                                    $depositStatus
+                                    === 'Paid'
+                                )
+                                    ? date(
+                                        'Y-m-d H:i:s'
+                                    )
+                                    : null;
+
+
+                            $updateStmt =
+                                $conn->prepare(
+                                    "UPDATE preorders
+                                     SET
+                                        deposit_paid_amount = ?,
+                                        deposit_status = ?,
+                                        deposit_paid_at = ?
+                                     WHERE id = ?"
+                                );
+
+
+                            $updateStmt->bind_param(
+                                "dssi",
+                                $paidAmount,
+                                $depositStatus,
+                                $depositPaidAt,
+                                $preorderId
+                            );
+
+
+                            if (
+                                $updateStmt->execute()
+                            ) {
+
+                                $message =
+                                    'Deposit payment updated successfully.';
+
+                            } else {
+
+                                $error =
+                                    'Failed to update deposit payment.';
+                            }
+
+
+                            $updateStmt->close();
+                        }
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | BALANCE
+                    |--------------------------------------------------------------------------
+                    */
+
+                    } else {
+
+                        $remainingBalance =
+                            (float)$preorder[
+                                'remaining_balance'
+                            ];
+
+
+                        if (
+                            $paidAmount
+                            > $remainingBalance
+                        ) {
+
+                            $error =
+                                'Balance payment cannot be greater than the remaining balance.';
+
+                        } else {
+
+                            $balanceStatus =
+                                (
+                                    $paidAmount
+                                    >= $remainingBalance
+                                )
+                                    ? 'Paid'
+                                    : 'Unpaid';
+
+
+                            $balancePaidAt =
+                                (
+                                    $balanceStatus
+                                    === 'Paid'
+                                )
+                                    ? date(
+                                        'Y-m-d H:i:s'
+                                    )
+                                    : null;
+
+
+                            $updateStmt =
+                                $conn->prepare(
+                                    "UPDATE preorders
+                                     SET
+                                        balance_paid_amount = ?,
+                                        balance_status = ?,
+                                        balance_paid_at = ?
+                                     WHERE id = ?"
+                                );
+
+
+                            $updateStmt->bind_param(
+                                "dssi",
+                                $paidAmount,
+                                $balanceStatus,
+                                $balancePaidAt,
+                                $preorderId
+                            );
+
+
+                            if (
+                                $updateStmt->execute()
+                            ) {
+
+                                $message =
+                                    'Balance payment updated successfully.';
+
+                            } else {
+
+                                $error =
+                                    'Failed to update balance payment.';
+                            }
+
+
+                            $updateStmt->close();
+                        }
+                    }
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | AUTO COMPLETE WHEN FULLY PAID
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if (!$error) {
+
+                        $statusStmt =
+                            $conn->prepare(
+                                "SELECT
+                                    deposit_status,
+                                    balance_status
+
+                                 FROM preorders
+
+                                 WHERE id = ?
+
+                                 LIMIT 1"
+                            );
+
+                        $statusStmt->bind_param(
+                            "i",
+                            $preorderId
                         );
 
-                    $completeStmt->bind_param(
-                        "i",
-                        $preorderId
-                    );
+                        $statusStmt->execute();
 
-                    $completeStmt->execute();
+                        $statusResult =
+                            $statusStmt->get_result();
 
-                    $completeStmt->close();
+                        $paymentStatus =
+                            $statusResult->fetch_assoc();
 
-                    $message =
-                        'Payment completed. Pre-order automatically marked as Completed.';
+                        $statusStmt->close();
+
+
+                        if (
+                            $paymentStatus
+                            &&
+                            $paymentStatus[
+                                'deposit_status'
+                            ] === 'Paid'
+                            &&
+                            $paymentStatus[
+                                'balance_status'
+                            ] === 'Paid'
+                        ) {
+
+                            $completeStmt =
+                                $conn->prepare(
+                                    "UPDATE preorders
+                                     SET status = 'Completed'
+                                     WHERE id = ?"
+                                );
+
+                            $completeStmt->bind_param(
+                                "i",
+                                $preorderId
+                            );
+
+                            $completeStmt->execute();
+
+                            $completeStmt->close();
+
+
+                            /*
+                            |--------------------------------------------------------------------------
+                            | Recalculate reliability
+                            |--------------------------------------------------------------------------
+                            */
+
+                            updateReliabilityScores(
+                                $conn
+                            );
+
+
+                            $message =
+                                'Payment completed. Pre-order automatically marked as Completed.';
+                        }
+                    }
                 }
             }
+
+        } else {
+
+            $error =
+                'Invalid request.';
         }
     }
 }
+
+
+/*
+|--------------------------------------------------------------------------
+| SYNC FULLY PAID PRE-ORDERS ON PAGE LOAD
+|--------------------------------------------------------------------------
+*/
+
+$syncStmt = $conn->prepare(
+    "UPDATE preorders
+     SET status = 'Completed'
+     WHERE deposit_status = 'Paid'
+       AND balance_status = 'Paid'
+       AND status != 'Cancelled'"
+);
+
+$syncStmt->execute();
+$syncStmt->close();
+
+
+/*
+|--------------------------------------------------------------------------
+| UPDATE RELIABILITY
+|--------------------------------------------------------------------------
+*/
+
+updateReliabilityScores($conn);
 
 
 /*
@@ -494,7 +829,7 @@ $result = $conn->query($sql);
         }
 
         .admin-container {
-            max-width: 1400px;
+            max-width: 1500px;
             margin: 0 auto;
             padding: 30px;
         }
@@ -510,6 +845,10 @@ $result = $conn->query($sql);
 
         .admin-header h1 {
             margin: 0;
+        }
+
+        .admin-header p {
+            color: #aab2ba;
         }
 
         .admin-nav {
@@ -557,21 +896,21 @@ $result = $conn->query($sql);
             width: 100%;
             border-collapse: collapse;
             color: #182637;
-            min-width: 1200px;
+            min-width: 1450px;
         }
 
         th {
             background: #9ADCF7;
             padding: 14px;
             text-align: left;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         td {
             padding: 14px;
             border-bottom: 1px solid #ddd;
             vertical-align: top;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .product-cell {
@@ -594,14 +933,14 @@ $result = $conn->query($sql);
 
         .muted {
             color: #666;
-            font-size: 13px;
+            font-size: 12px;
         }
 
         .status {
             display: inline-block;
             padding: 5px 9px;
             border-radius: 20px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
         }
 
@@ -615,14 +954,19 @@ $result = $conn->query($sql);
             color: #8a4b00;
         }
 
+        .pending {
+            background: #e8edf2;
+            color: #364552;
+        }
+
         .completed {
             background: #d9f7df;
             color: #1f5d2c;
         }
 
-        .pending {
-            background: #e8edf2;
-            color: #364552;
+        .cancelled {
+            background: #ffdede;
+            color: #8a1f1f;
         }
 
         .payment-box {
@@ -636,13 +980,14 @@ $result = $conn->query($sql);
         }
 
         .payment-box input {
-            width: 110px;
+            width: 100px;
             padding: 8px;
             border: 1px solid #ccc;
             border-radius: 6px;
         }
 
-        .payment-box button {
+        .payment-box button,
+        .status-box button {
             background: #182637;
             color: #ffffff;
             border: none;
@@ -651,15 +996,28 @@ $result = $conn->query($sql);
             cursor: pointer;
         }
 
-        .payment-box button:hover {
+        .payment-box button:hover,
+        .status-box button:hover {
             opacity: .85;
         }
 
         .payment-date {
             display: block;
             margin-top: 5px;
-            font-size: 12px;
+            font-size: 11px;
             color: #666;
+        }
+
+        .status-box {
+            margin-top: 8px;
+        }
+
+        .status-box select {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            width: 150px;
+            margin-bottom: 6px;
         }
 
         .back-link {
@@ -676,6 +1034,7 @@ $result = $conn->query($sql);
 
 <body>
 
+
 <div class="admin-container">
 
 
@@ -690,7 +1049,7 @@ $result = $conn->query($sql);
             </h1>
 
             <p>
-                View customer reservations and record payment status.
+                View reservations, payments, status, and release progress.
             </p>
 
         </div>
@@ -704,6 +1063,10 @@ $result = $conn->query($sql);
 
             <a href="admin_orders.php">
                 Orders
+            </a>
+
+            <a href="admin_customers.php">
+                Customers
             </a>
 
             <a href="account.php">
@@ -768,15 +1131,15 @@ $result = $conn->query($sql);
                     </th>
 
                     <th>
-                        Deposit Payment
+                        Deposit
                     </th>
 
                     <th>
-                        Balance Payment
+                        Balance
                     </th>
 
                     <th>
-                        Status
+                        Pre-Order Status
                     </th>
 
                     <th>
@@ -938,7 +1301,9 @@ $result = $conn->query($sql);
 
                                 Required Deposit:
                                 <?= peso(
-                                    (float)$row['deposit_amount']
+                                    (float)$row[
+                                        'deposit_amount'
+                                    ]
                                 ) ?>
 
                             </div>
@@ -948,7 +1313,9 @@ $result = $conn->query($sql);
 
                                 Remaining Balance:
                                 <?= peso(
-                                    (float)$row['remaining_balance']
+                                    (float)$row[
+                                        'remaining_balance'
+                                    ]
                                 ) ?>
 
                             </div>
@@ -1038,12 +1405,9 @@ $result = $conn->query($sql);
                                 </div>
 
 
-                                <div
-                                    class="payment-box"
-                                >
+                                <div class="payment-box">
 
                                     <form method="POST">
-
 
                                         <input
                                             type="hidden"
@@ -1053,6 +1417,11 @@ $result = $conn->query($sql);
                                             ) ?>"
                                         >
 
+                                        <input
+                                            type="hidden"
+                                            name="action"
+                                            value="payment"
+                                        >
 
                                         <input
                                             type="hidden"
@@ -1062,13 +1431,11 @@ $result = $conn->query($sql);
                                             ) ?>"
                                         >
 
-
                                         <input
                                             type="hidden"
                                             name="payment_type"
                                             value="deposit"
                                         >
-
 
                                         <input
                                             type="number"
@@ -1088,13 +1455,11 @@ $result = $conn->query($sql);
                                             required
                                         >
 
-
                                         <button
                                             type="submit"
                                         >
                                             Record
                                         </button>
-
 
                                     </form>
 
@@ -1189,12 +1554,9 @@ $result = $conn->query($sql);
                                 </div>
 
 
-                                <div
-                                    class="payment-box"
-                                >
+                                <div class="payment-box">
 
                                     <form method="POST">
-
 
                                         <input
                                             type="hidden"
@@ -1204,6 +1566,11 @@ $result = $conn->query($sql);
                                             ) ?>"
                                         >
 
+                                        <input
+                                            type="hidden"
+                                            name="action"
+                                            value="payment"
+                                        >
 
                                         <input
                                             type="hidden"
@@ -1213,13 +1580,11 @@ $result = $conn->query($sql);
                                             ) ?>"
                                         >
 
-
                                         <input
                                             type="hidden"
                                             name="payment_type"
                                             value="balance"
                                         >
-
 
                                         <input
                                             type="number"
@@ -1239,13 +1604,11 @@ $result = $conn->query($sql);
                                             required
                                         >
 
-
                                         <button
                                             type="submit"
                                         >
                                             Record
                                         </button>
-
 
                                     </form>
 
@@ -1259,16 +1622,28 @@ $result = $conn->query($sql);
 
 
 
-                        <!-- STATUS -->
+                        <!-- PRE-ORDER STATUS -->
 
                         <td>
 
-
                             <?php if (
+                                $row['status']
+                                === 'Cancelled'
+                            ): ?>
+
+                                <span
+                                    class="
+                                        status
+                                        cancelled
+                                    "
+                                >
+                                    Cancelled
+                                </span>
+
+                            <?php elseif (
                                 $row['status']
                                 === 'Completed'
                             ): ?>
-
 
                                 <span
                                     class="
@@ -1279,9 +1654,7 @@ $result = $conn->query($sql);
                                     Completed
                                 </span>
 
-
                             <?php else: ?>
-
 
                                 <span
                                     class="
@@ -1294,9 +1667,77 @@ $result = $conn->query($sql);
                                     ) ?>
                                 </span>
 
-
                             <?php endif; ?>
 
+
+                            <div class="status-box">
+
+                                <form method="POST">
+
+                                    <input
+                                        type="hidden"
+                                        name="csrf_token"
+                                        value="<?= e(
+                                            $csrfToken
+                                        ) ?>"
+                                    >
+
+                                    <input
+                                        type="hidden"
+                                        name="action"
+                                        value="update_status"
+                                    >
+
+                                    <input
+                                        type="hidden"
+                                        name="preorder_id"
+                                        value="<?= e(
+                                            $row['id']
+                                        ) ?>"
+                                    >
+
+
+                                    <select
+                                        name="status"
+                                        required
+                                    >
+
+                                        <?php foreach (
+                                            $allowedStatuses
+                                            as $status
+                                        ): ?>
+
+                                            <option
+                                                value="<?= e(
+                                                    $status
+                                                ) ?>"
+                                                <?= $row['status']
+                                                    === $status
+                                                    ? 'selected'
+                                                    : '' ?>
+                                            >
+                                                <?= e(
+                                                    $status
+                                                ) ?>
+                                            </option>
+
+                                        <?php endforeach; ?>
+
+                                    </select>
+
+
+                                    <br>
+
+
+                                    <button
+                                        type="submit"
+                                    >
+                                        Update Status
+                                    </button>
+
+                                </form>
+
+                            </div>
 
                         </td>
 
