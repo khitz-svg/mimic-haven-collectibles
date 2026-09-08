@@ -44,6 +44,7 @@ if (!$currentUser || $currentUser['role'] !== 'admin') {
         <head>
             <meta charset="UTF-8">
             <title>Access Denied</title>
+
             <style>
                 body {
                     background: #182637;
@@ -57,6 +58,7 @@ if (!$currentUser || $currentUser['role'] !== 'admin') {
                     color: #97DCF7;
                 }
             </style>
+
         </head>
 
         <body>
@@ -93,7 +95,11 @@ $orderCount = 0;
 $preorderCount = 0;
 
 
-/* PRODUCTS */
+/*
+|--------------------------------------------------------------------------
+| PRODUCTS
+|--------------------------------------------------------------------------
+*/
 
 $result = $conn->query(
     "SELECT COUNT(*) AS total
@@ -101,12 +107,18 @@ $result = $conn->query(
 );
 
 if ($result) {
+
     $row = $result->fetch_assoc();
+
     $productCount = (int)$row['total'];
 }
 
 
-/* CUSTOMERS */
+/*
+|--------------------------------------------------------------------------
+| CUSTOMERS
+|--------------------------------------------------------------------------
+*/
 
 $result = $conn->query(
     "SELECT COUNT(*) AS total
@@ -115,12 +127,18 @@ $result = $conn->query(
 );
 
 if ($result) {
+
     $row = $result->fetch_assoc();
+
     $customerCount = (int)$row['total'];
 }
 
 
-/* ORDERS */
+/*
+|--------------------------------------------------------------------------
+| ORDERS
+|--------------------------------------------------------------------------
+*/
 
 $result = $conn->query(
     "SELECT COUNT(*) AS total
@@ -128,7 +146,9 @@ $result = $conn->query(
 );
 
 if ($result) {
+
     $row = $result->fetch_assoc();
+
     $orderCount = (int)$row['total'];
 }
 
@@ -138,13 +158,24 @@ if ($result) {
 | PRE-ORDERS
 |--------------------------------------------------------------------------
 |
-| The pre-order table does not exist yet.
-| We will connect this later when we build
-| the real pre-order system.
+| Count all active pre-orders.
+| Cancelled pre-orders are excluded.
 |
+|--------------------------------------------------------------------------
 */
 
-$preorderCount = 0;
+$result = $conn->query(
+    "SELECT COUNT(*) AS total
+     FROM preorders
+     WHERE status != 'Cancelled'"
+);
+
+if ($result) {
+
+    $row = $result->fetch_assoc();
+
+    $preorderCount = (int)$row['total'];
+}
 
 
 /*
@@ -175,6 +206,7 @@ $recentStmt->execute();
 $recentResult = $recentStmt->get_result();
 
 while ($order = $recentResult->fetch_assoc()) {
+
     $recentOrders[] = $order;
 }
 
@@ -189,12 +221,17 @@ $recentStmt->close();
 
 $logo = '';
 
-foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
+foreach (
+    ['png', 'jpg', 'jpeg', 'webp', 'svg']
+    as $ext
+) {
 
     $file = __DIR__ . "/assets/logo.$ext";
 
     if (file_exists($file)) {
+
         $logo = "assets/logo.$ext";
+
         break;
     }
 }
@@ -305,8 +342,9 @@ foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
             border-radius: 12px;
             padding: 24px;
             text-decoration: none;
-            transition: transform 0.2s ease,
-                        border-color 0.2s ease;
+            transition:
+                transform 0.2s ease,
+                border-color 0.2s ease;
         }
 
         .admin-menu-card:hover {
@@ -394,19 +432,19 @@ foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
 
             .admin-stat-grid,
             .admin-menu {
+
                 grid-template-columns:
                     repeat(2, minmax(0, 1fr));
             }
-
         }
 
         @media (max-width: 600px) {
 
             .admin-stat-grid,
             .admin-menu {
+
                 grid-template-columns: 1fr;
             }
-
         }
 
     </style>
@@ -421,6 +459,8 @@ foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
 
     <div class="header-inner">
 
+
+        <!-- BRAND -->
 
         <a
             href="admin.php"
@@ -452,6 +492,9 @@ foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
         </a>
 
 
+
+        <!-- NAVIGATION -->
+
         <nav class="nav">
 
             <a href="admin.php">
@@ -460,6 +503,14 @@ foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
 
             <a href="admin_orders.php">
                 Orders
+            </a>
+
+            <a href="admin_preorders.php">
+                Pre-Orders
+            </a>
+
+            <a href="admin_customers.php">
+                Customers
             </a>
 
             <a href="account.php">
@@ -474,6 +525,7 @@ foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
             </a>
 
         </nav>
+
 
 
         <button
@@ -496,7 +548,9 @@ foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
     <div class="admin-container">
 
 
-        <!-- WELCOME -->
+        <!-- =====================================================
+             WELCOME
+        ====================================================== -->
 
         <section class="admin-welcome">
 
@@ -517,10 +571,14 @@ foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
 
 
 
-        <!-- STATISTICS -->
+        <!-- =====================================================
+             STATISTICS
+        ====================================================== -->
 
         <section class="admin-stat-grid">
 
+
+            <!-- PRODUCTS -->
 
             <div class="admin-stat">
 
@@ -535,6 +593,9 @@ foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
             </div>
 
 
+
+            <!-- CUSTOMERS -->
+
             <div class="admin-stat">
 
                 <span class="admin-stat-label">
@@ -548,6 +609,9 @@ foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
             </div>
 
 
+
+            <!-- ORDERS -->
+
             <div class="admin-stat">
 
                 <span class="admin-stat-label">
@@ -560,6 +624,9 @@ foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
 
             </div>
 
+
+
+            <!-- PRE-ORDERS -->
 
             <div class="admin-stat">
 
@@ -578,10 +645,14 @@ foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
 
 
 
-        <!-- MANAGEMENT MENU -->
+        <!-- =====================================================
+             MANAGEMENT MENU
+        ====================================================== -->
 
         <section class="admin-menu">
 
+
+            <!-- ORDERS -->
 
             <a
                 href="admin_orders.php"
@@ -604,8 +675,11 @@ foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
             </a>
 
 
+
+            <!-- PRODUCTS -->
+
             <a
-                href="#"
+                href="collection.php"
                 class="admin-menu-card"
             >
 
@@ -618,15 +692,18 @@ foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
                 </h3>
 
                 <p>
-                    Add, edit, classify, and manage
-                    collectible products.
+                    View the product collection and
+                    manage collectible listings.
                 </p>
 
             </a>
 
 
+
+            <!-- CUSTOMERS -->
+
             <a
-                href="#"
+                href="admin_customers.php"
                 class="admin-menu-card"
             >
 
@@ -639,15 +716,18 @@ foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
                 </h3>
 
                 <p>
-                    View customer profiles, history,
-                    and reliability information.
+                    View customer profiles, pre-order
+                    history, and reliability information.
                 </p>
 
             </a>
 
 
+
+            <!-- PRE-ORDERS -->
+
             <a
-                href="preorder.php"
+                href="admin_preorders.php"
                 class="admin-menu-card"
             >
 
@@ -661,7 +741,7 @@ foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
 
                 <p>
                     Manage reservations, deposits,
-                    balances, and release progress.
+                    balances, payments, and release progress.
                 </p>
 
             </a>
@@ -671,9 +751,12 @@ foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
 
 
 
-        <!-- RECENT ORDERS -->
+        <!-- =====================================================
+             RECENT ORDERS
+        ====================================================== -->
 
         <section class="admin-recent">
+
 
             <div class="admin-recent-header">
 
@@ -692,7 +775,9 @@ foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
             <?php if (empty($recentOrders)): ?>
 
                 <div class="admin-empty">
+
                     No orders have been placed yet.
+
                 </div>
 
             <?php else: ?>
@@ -700,19 +785,32 @@ foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
 
                 <?php foreach ($recentOrders as $order): ?>
 
+
                     <div class="admin-recent-order">
+
 
                         <div class="admin-recent-order-top">
 
+
                             <strong>
+
                                 Order #<?= (int)$order['id'] ?>
+
                             </strong>
 
+
                             <span class="admin-recent-status">
-                                <?= e($order['status']) ?>
+
+                                <?= e(
+                                    $order['status']
+                                ) ?>
+
                             </span>
 
+
                         </div>
+
+
 
                         <p>
 
@@ -742,7 +840,9 @@ foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
 
                         </p>
 
+
                     </div>
+
 
                 <?php endforeach; ?>
 
