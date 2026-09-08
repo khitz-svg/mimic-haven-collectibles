@@ -27,9 +27,25 @@ $messageType = '';
 
 if (isset($_SESSION['user_id'])) {
 
-    header('Location: index.php');
-    exit;
+    /*
+     * Send administrators to the admin dashboard.
+     * Send normal customers to the storefront.
+     */
 
+    if (
+        isset($_SESSION['role']) &&
+        $_SESSION['role'] === 'admin'
+    ) {
+
+        header('Location: admin.php');
+
+    } else {
+
+        header('Location: index.php');
+
+    }
+
+    exit;
 }
 
 
@@ -86,7 +102,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 first_name,
                 last_name,
                 email,
-                password
+                password,
+                role
              FROM users
              WHERE email = ?
              LIMIT 1"
@@ -143,10 +160,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['email'] =
                 $user['email'];
 
+            $_SESSION['role'] =
+                $user['role'];
 
-            header(
-                'Location: index.php'
-            );
+
+            /* -----------------------------------------
+               ROLE-BASED REDIRECT
+            ----------------------------------------- */
+
+            if (
+                $user['role'] === 'admin'
+            ) {
+
+                header(
+                    'Location: admin.php'
+                );
+
+            } else {
+
+                header(
+                    'Location: index.php'
+                );
+
+            }
 
             exit;
 
