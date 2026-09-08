@@ -481,11 +481,42 @@ foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
                                         </div>
 
 
-                                        <span class="account-order-status">
+                                        <div class="account-order-header">
 
-                                            <?= e($order['status']) ?>
+    <div>
 
-                                        </span>
+        <span class="account-label">
+            ORDER #<?= $orderId ?>
+        </span>
+
+        <h3>
+            <?= e(
+                date(
+                    'F j, Y',
+                    strtotime($order['created_at'])
+                )
+            ) ?>
+        </h3>
+
+    </div>
+
+
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+
+        <span class="account-order-status">
+            <?= e($order['status']) ?>
+        </span>
+
+        <a
+            href="order.php?id=<?= (int)$order['id'] ?>"
+            class="account-action secondary"
+        >
+            View Details
+        </a>
+
+    </div>
+
+</div>
 
                                     </div>
 
