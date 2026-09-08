@@ -77,6 +77,50 @@ while ($order = $orderResult->fetch_assoc()) {
 
 $orderStmt->close();
 
+/*
+|--------------------------------------------------------------------------
+| GET USER PRE-ORDERS
+|--------------------------------------------------------------------------
+*/
+
+$preorderStmt = $conn->prepare(
+    "SELECT
+        po.id,
+        po.quantity,
+        po.unit_price,
+        po.total_amount,
+        po.deposit_amount,
+        po.remaining_balance,
+        po.deposit_due_date,
+        po.balance_due_date,
+        po.expected_release_date,
+        po.status,
+        po.release_status,
+        po.notes,
+        po.created_at,
+        p.name,
+        p.series,
+        p.image
+     FROM preorders po
+     INNER JOIN products p
+        ON po.product_id = p.id
+     WHERE po.user_id = ?
+     ORDER BY po.created_at DESC"
+);
+
+$preorderStmt->bind_param("i", $userId);
+$preorderStmt->execute();
+
+$preorderResult = $preorderStmt->get_result();
+
+$preorders = [];
+
+while ($preorder = $preorderResult->fetch_assoc()) {
+    $preorders[] = $preorder;
+}
+
+$preorderStmt->close();
+
 
 /*
 |--------------------------------------------------------------------------
@@ -391,309 +435,212 @@ foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
                 </section>
 
 
+                <!-- ORDERS & PRE-ORDERS -->
 
-                <!-- ORDERS -->
+<section class="account-card">
 
-                <section class="account-card">
+    <div class="account-card-header">
 
-                    <div class="account-card-header">
+        <div>
 
-                        <div>
+            <span class="account-label">
+                YOUR ACTIVITY
+            </span>
 
-                            <span class="account-label">
-                                YOUR ACTIVITY
-                            </span>
+            <h2>
+                Orders &amp; Pre-Orders
+            </h2>
 
-                            <h2>
-                                Orders &amp; Pre-Orders
-                            </h2>
+        </div>
 
-                        </div>
-
-                    </div>
-
+    </div>
 
 
-                    <?php if (empty($orders)): ?>
+    <?php if (empty($orders) && empty($preorders)): ?>
+
+        <div class="account-empty">
+
+            <div class="account-empty-icon">
+                ✦
+            </div>
+
+            <h3>
+                No orders yet
+            </h3>
+
+            <p>
+                Once you place an order or pre-order,
+                your history will appear here.
+            </p>
+
+            <a
+                href="collection.php"
+                class="account-action"
+            >
+                Browse Figures
+            </a>
+
+        </div>
 
 
-                        <div class="account-empty">
+    <?php else: ?>
 
-                            <div class="account-empty-icon">
-                                ✦
+
+        <!-- =====================================================
+             NORMAL ORDERS
+        ====================================================== -->
+
+        <?php if (!empty($orders)): ?>
+
+            <div class="account-orders">
+
+                <?php foreach ($orders as $order): ?>
+
+                    <?php
+                    $orderId = (int)$order['id'];
+                    $items = $orderItems[$orderId] ?? [];
+                    ?>
+
+
+                    <article class="account-order">
+
+
+                        <!-- ORDER HEADER -->
+
+                        <div class="account-order-header">
+
+                            <div>
+
+                                <span class="account-label">
+                                    ORDER #<?= $orderId ?>
+                                </span>
+
+                                <h3>
+                                    <?= e(
+                                        date(
+                                            'F j, Y',
+                                            strtotime(
+                                                $order['created_at']
+                                            )
+                                        )
+                                    ) ?>
+                                </h3>
+
                             </div>
 
-                            <h3>
-                                No orders yet
-                            </h3>
 
-                            <p>
-                                Once you place an order or pre-order,
-                                your order history will be displayed here.
-                            </p>
-
-                            <a
-                                href="collection.php"
-                                class="account-action"
+                            <div
+                                style="
+                                    display:flex;
+                                    align-items:center;
+                                    gap:12px;
+                                    flex-wrap:wrap;
+                                "
                             >
-                                Browse Figures
-                            </a>
+
+                                <span class="account-order-status">
+                                    <?= e($order['status']) ?>
+                                </span>
+
+
+                                <a
+                                    href="order.php?id=<?= $orderId ?>"
+                                    class="account-action secondary"
+                                >
+                                    View Details
+                                </a>
+
+                            </div>
 
                         </div>
 
 
-                    <?php else: ?>
+
+                        <!-- ORDER ITEMS -->
+
+                        <div class="account-order-items">
 
 
-                        <div class="account-orders">
+                            <?php foreach ($items as $item): ?>
+
+                                <div class="account-order-item">
 
 
-                            <?php foreach ($orders as $order): ?>
+                                    <div class="account-order-image">
 
-                                <?php
-                                $orderId = (int)$order['id'];
-                                $items = $orderItems[$orderId] ?? [];
-                                ?>
+                                        <?php if (!empty($item['image'])): ?>
 
+                                            <?php
 
-                                <article class="account-order">
+                                            $image = trim(
+                                                (string)$item['image']
+                                            );
 
+                                            $image = preg_replace(
+                                                '#^.*?assets/collections/#i',
+                                                '',
+                                                $image
+                                            );
 
-                                    <!-- ORDER HEADER -->
+                                            $imagePath =
+                                                'assets/collections/' .
+                                                $image;
 
-                                    <div class="account-order-header">
+                                            ?>
 
-                                        <div>
+                                            <img
+                                                src="<?= e($imagePath) ?>"
+                                                alt="<?= e(
+                                                    $item['name']
+                                                    ?? 'Product'
+                                                ) ?>"
+                                            >
 
-                                            <span class="account-label">
-                                                ORDER #<?= $orderId ?>
-                                            </span>
+                                        <?php else: ?>
 
-                                            <h3>
-                                                <?= e(
-                                                    date(
-                                                        'F j, Y',
-                                                        strtotime($order['created_at'])
-                                                    )
-                                                ) ?>
-                                            </h3>
-
-                                        </div>
-
-
-                                        <div class="account-order-header">
-
-    <div>
-
-        <span class="account-label">
-            ORDER #<?= $orderId ?>
-        </span>
-
-        <h3>
-            <?= e(
-                date(
-                    'F j, Y',
-                    strtotime($order['created_at'])
-                )
-            ) ?>
-        </h3>
-
-    </div>
-
-
-    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-
-        <span class="account-order-status">
-            <?= e($order['status']) ?>
-        </span>
-
-        <a
-            href="order.php?id=<?= (int)$order['id'] ?>"
-            class="account-action secondary"
-        >
-            View Details
-        </a>
-
-    </div>
-
-</div>
-
-                                    </div>
-
-
-
-                                    <!-- ORDER ITEMS -->
-
-                                    <div class="account-order-items">
-
-
-                                        <?php foreach ($items as $item): ?>
-
-
-                                            <div class="account-order-item">
-
-
-                                                <div class="account-order-image">
-
-                                                    <?php if (!empty($item['image'])): ?>
-
-                                                        <?php
-
-                                                        $image = trim(
-                                                            (string)$item['image']
-                                                        );
-
-                                                        $image = preg_replace(
-                                                            '#^.*?assets/collections/#i',
-                                                            '',
-                                                            $image
-                                                        );
-
-                                                        $imagePath =
-                                                            'assets/collections/' .
-                                                            $image;
-
-                                                        ?>
-
-                                                        <img
-                                                            src="<?= e($imagePath) ?>"
-                                                            alt="<?= e($item['name'] ?? 'Product') ?>"
-                                                        >
-
-                                                    <?php else: ?>
-
-                                                        <div class="account-order-image-placeholder">
-                                                            ✦
-                                                        </div>
-
-                                                    <?php endif; ?>
-
-                                                </div>
-
-
-
-                                                <div class="account-order-details">
-
-                                                    <strong>
-                                                        <?= e(
-                                                            $item['name']
-                                                            ?? 'Product'
-                                                        ) ?>
-                                                    </strong>
-
-                                                    <span>
-                                                        Qty:
-                                                        <?= e(
-                                                            (string)$item['quantity']
-                                                        ) ?>
-                                                    </span>
-
-                                                </div>
-
-
-
-                                                <div class="account-order-price">
-
-                                                    ₱<?= number_format(
-                                                        (float)$item['price'],
-                                                        2
-                                                    ) ?>
-
-                                                </div>
-
-
+                                            <div
+                                                class="
+                                                    account-order-image-placeholder
+                                                "
+                                            >
+                                                ✦
                                             </div>
 
-
-                                        <?php endforeach; ?>
-
+                                        <?php endif; ?>
 
                                     </div>
 
 
+                                    <div class="account-order-details">
 
-                                    <!-- ORDER FOOTER -->
-
-                                    <div class="account-order-footer">
-
-
-                                        <div>
-
-                                            <span>
-                                                Payment
-                                            </span>
-
-                                            <strong>
-                                                <?= e(
-                                                    $order['payment_method']
-                                                ) ?>
-                                            </strong>
-
-                                        </div>
-
-
-                                        <div>
-
-                                            <span>
-                                                Total
-                                            </span>
-
-                                            <strong>
-                                                ₱<?= number_format(
-                                                    (float)$order['total_amount'],
-                                                    2
-                                                ) ?>
-                                            </strong>
-
-                                        </div>
-
-
-                                    </div>
-
-
-
-                                    <!-- DELIVERY ADDRESS -->
-
-                                    <div class="account-order-address">
+                                        <strong>
+                                            <?= e(
+                                                $item['name']
+                                                ?? 'Product'
+                                            ) ?>
+                                        </strong>
 
                                         <span>
-                                            Delivery Address
-                                        </span>
-
-                                        <p>
-                                            <?= nl2br(
-                                                e(
-                                                    $order['delivery_address']
-                                                )
+                                            Qty:
+                                            <?= e(
+                                                (string)$item['quantity']
                                             ) ?>
-                                        </p>
+                                        </span>
 
                                     </div>
 
 
-                                    <?php if (!empty($order['order_notes'])): ?>
+                                    <div class="account-order-price">
 
-                                        <div class="account-order-address">
+                                        ₱<?= number_format(
+                                            (float)$item['price'],
+                                            2
+                                        ) ?>
 
-                                            <span>
-                                                Order Notes
-                                            </span>
-
-                                            <p>
-                                                <?= nl2br(
-                                                    e(
-                                                        $order['order_notes']
-                                                    )
-                                                ) ?>
-                                            </p>
-
-                                        </div>
-
-                                    <?php endif; ?>
+                                    </div>
 
 
-                                </article>
-
+                                </div>
 
                             <?php endforeach; ?>
 
@@ -701,10 +648,435 @@ foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
                         </div>
 
 
-                    <?php endif; ?>
+
+                        <!-- ORDER FOOTER -->
+
+                        <div class="account-order-footer">
 
 
-                </section>
+                            <div>
+
+                                <span>
+                                    Payment
+                                </span>
+
+                                <strong>
+                                    <?= e(
+                                        $order['payment_method']
+                                    ) ?>
+                                </strong>
+
+                            </div>
+
+
+                            <div>
+
+                                <span>
+                                    Total
+                                </span>
+
+                                <strong>
+                                    ₱<?= number_format(
+                                        (float)$order['total_amount'],
+                                        2
+                                    ) ?>
+                                </strong>
+
+                            </div>
+
+
+                        </div>
+
+
+
+                        <!-- DELIVERY ADDRESS -->
+
+                        <div class="account-order-address">
+
+                            <span>
+                                Delivery Address
+                            </span>
+
+                            <p>
+                                <?= nl2br(
+                                    e(
+                                        $order['delivery_address']
+                                    )
+                                ) ?>
+                            </p>
+
+                        </div>
+
+
+                        <?php if (!empty($order['order_notes'])): ?>
+
+                            <div class="account-order-address">
+
+                                <span>
+                                    Order Notes
+                                </span>
+
+                                <p>
+                                    <?= nl2br(
+                                        e(
+                                            $order['order_notes']
+                                        )
+                                    ) ?>
+                                </p>
+
+                            </div>
+
+                        <?php endif; ?>
+
+
+                    </article>
+
+
+                <?php endforeach; ?>
+
+            </div>
+
+        <?php endif; ?>
+
+
+
+        <!-- =====================================================
+             PRE-ORDERS
+        ====================================================== -->
+
+        <?php if (!empty($preorders)): ?>
+
+            <div
+                style="
+                    margin-top:30px;
+                    padding-top:30px;
+                    border-top:1px solid rgba(255,255,255,0.08);
+                "
+            >
+
+                <div style="margin-bottom:18px;">
+
+                    <span class="account-label">
+                        PRE-ORDER RESERVATIONS
+                    </span>
+
+                    <h3
+                        style="
+                            margin:6px 0 0;
+                            color:#fff;
+                        "
+                    >
+                        Reserved Figures
+                    </h3>
+
+                </div>
+
+
+                <div class="account-orders">
+
+
+                    <?php foreach ($preorders as $preorder): ?>
+
+                        <article class="account-order">
+
+
+                            <!-- PRE-ORDER HEADER -->
+
+                            <div class="account-order-header">
+
+                                <div>
+
+                                    <span class="account-label">
+                                        PRE-ORDER #<?= (int)$preorder['id'] ?>
+                                    </span>
+
+                                    <h3>
+                                        <?= e(
+                                            date(
+                                                'F j, Y',
+                                                strtotime(
+                                                    $preorder['created_at']
+                                                )
+                                            )
+                                        ) ?>
+                                    </h3>
+
+                                </div>
+
+
+                                <div
+                                    style="
+                                        display:flex;
+                                        align-items:center;
+                                        gap:12px;
+                                        flex-wrap:wrap;
+                                    "
+                                >
+
+                                    <span class="account-order-status">
+                                        <?= e(
+                                            $preorder['status']
+                                        ) ?>
+                                    </span>
+
+
+                                    <span
+                                        style="
+                                            color:var(--blue);
+                                            font-size:11px;
+                                            font-weight:700;
+                                        "
+                                    >
+                                        <?= e(
+                                            $preorder['release_status']
+                                        ) ?>
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+
+
+                            <!-- PRE-ORDER PRODUCT -->
+
+                            <div class="account-order-item">
+
+
+                                <div class="account-order-image">
+
+                                    <?php if (!empty($preorder['image'])): ?>
+
+                                        <?php
+
+                                        $image =
+                                            trim(
+                                                (string)$preorder['image']
+                                            );
+
+                                        $image = preg_replace(
+                                            '#^.*?assets/collections/#i',
+                                            '',
+                                            $image
+                                        );
+
+                                        $imagePath =
+                                            'assets/collections/' .
+                                            $image;
+
+                                        ?>
+
+                                        <img
+                                            src="<?= e($imagePath) ?>"
+                                            alt="<?= e(
+                                                $preorder['name']
+                                            ) ?>"
+                                        >
+
+                                    <?php else: ?>
+
+                                        <div
+                                            class="
+                                                account-order-image-placeholder
+                                            "
+                                        >
+                                            ✦
+                                        </div>
+
+                                    <?php endif; ?>
+
+                                </div>
+
+
+
+                                <div class="account-order-details">
+
+                                    <strong>
+                                        <?= e(
+                                            $preorder['name']
+                                        ) ?>
+                                    </strong>
+
+
+                                    <?php if (
+                                        !empty($preorder['series'])
+                                    ): ?>
+
+                                        <span>
+                                            <?= e(
+                                                $preorder['series']
+                                            ) ?>
+                                        </span>
+
+                                    <?php endif; ?>
+
+
+                                    <span>
+                                        Quantity:
+                                        <?= e(
+                                            (string)$preorder['quantity']
+                                        ) ?>
+                                    </span>
+
+                                </div>
+
+
+
+                                <div class="account-order-price">
+
+                                    ₱<?= number_format(
+                                        (float)$preorder['unit_price'],
+                                        2
+                                    ) ?>
+
+                                    <small
+                                        style="
+                                            display:block;
+                                            margin-top:4px;
+                                            color:#89929c;
+                                            font-size:10px;
+                                        "
+                                    >
+                                        per figure
+                                    </small>
+
+                                </div>
+
+
+                            </div>
+
+
+
+                            <!-- PAYMENT SUMMARY -->
+
+                            <div class="account-order-footer">
+
+
+                                <div>
+
+                                    <span>
+                                        Total
+                                    </span>
+
+                                    <strong>
+                                        ₱<?= number_format(
+                                            (float)$preorder['total_amount'],
+                                            2
+                                        ) ?>
+                                    </strong>
+
+                                </div>
+
+
+                                <div>
+
+                                    <span>
+                                        Deposit
+                                    </span>
+
+                                    <strong>
+                                        ₱<?= number_format(
+                                            (float)$preorder['deposit_amount'],
+                                            2
+                                        ) ?>
+                                    </strong>
+
+                                </div>
+
+
+                                <div>
+
+                                    <span>
+                                        Remaining Balance
+                                    </span>
+
+                                    <strong>
+                                        ₱<?= number_format(
+                                            (float)$preorder['remaining_balance'],
+                                            2
+                                        ) ?>
+                                    </strong>
+
+                                </div>
+
+
+                            </div>
+
+
+
+                            <!-- RELEASE STATUS -->
+
+                            <div class="account-order-address">
+
+                                <span>
+                                    Release Status
+                                </span>
+
+                                <p>
+                                    <?= e(
+                                        $preorder['release_status']
+                                    ) ?>
+                                </p>
+
+                            </div>
+
+
+
+                            <!-- EXPECTED RELEASE -->
+
+                            <div class="account-order-address">
+
+                                <span>
+                                    Expected Release
+                                </span>
+
+
+                                <?php if (
+                                    !empty(
+                                        $preorder['expected_release_date']
+                                    )
+                                ): ?>
+
+                                    <p>
+                                        <?= e(
+                                            date(
+                                                'F j, Y',
+                                                strtotime(
+                                                    $preorder[
+                                                        'expected_release_date'
+                                                    ]
+                                                )
+                                            )
+                                        ) ?>
+                                    </p>
+
+                                <?php else: ?>
+
+                                    <p>
+                                        Release date not yet announced.
+                                    </p>
+
+                                <?php endif; ?>
+
+                            </div>
+
+
+                        </article>
+
+                    <?php endforeach; ?>
+
+
+                </div>
+
+            </div>
+
+        <?php endif; ?>
+
+
+    <?php endif; ?>
+
+</section>
+               
 
 
             </div>
