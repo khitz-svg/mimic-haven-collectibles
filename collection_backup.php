@@ -1,7 +1,5 @@
 <?php
 
-require_once 'db.php';
-
 /* =========================================================
    MIMIC HAVEN - COLLECTION PAGE
    Uses the same header/footer structure as index.php
@@ -394,47 +392,6 @@ $products = [
         'image' => 'Overlord figma No.693 Albedo Action Figure.webp'
     ],
 ];
-
-/* =========================================================
-   LOAD PRODUCTS FROM MYSQL
-========================================================= */
-
-$dbProducts = [];
-
-$result = $conn->query(
-    "SELECT
-        id,
-        name,
-        series,
-        category,
-        price,
-        condition_status,
-        availability,
-        image
-     FROM products
-     ORDER BY id ASC"
-);
-
-if ($result) {
-
-    while ($row = $result->fetch_assoc()) {
-
-        $dbProducts[] = $row;
-
-    }
-
-}
-
-
-/* =========================================================
-   USE MYSQL PRODUCTS
-========================================================= */
-
-if (!empty($dbProducts)) {
-
-    $products = $dbProducts;
-
-}
 
 ?>
 
@@ -920,7 +877,7 @@ if (!empty($dbProducts)) {
 
                         data-price="<?= $product['price'] ?>"
 
-                        data-condition="<?= e($product['condition_status']) ?>"
+                        data-condition="<?= e($product['condition']) ?>"
 
                         data-availability="<?= e($product['availability']) ?>"
                     >
@@ -936,7 +893,7 @@ if (!empty($dbProducts)) {
 
 
                             <span class="collection-condition">
-                                <?= e($product['condition_status']) ?>
+                                <?= e($product['condition']) ?>
                             </span>
 
 
