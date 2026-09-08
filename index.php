@@ -86,9 +86,12 @@ $faqs = [
 
             <?php if (isLoggedIn()): ?>
 
-    <span class="nav-user">
-        Hi, <?= htmlspecialchars(currentFirstName()) ?>
-    </span>
+    <a
+    class="nav-user"
+    href="account.php"
+>
+    Hi, <?= htmlspecialchars(currentFirstName()) ?>
+</a>
 
     <a
         class="nav-account"
