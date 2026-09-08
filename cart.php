@@ -543,7 +543,7 @@ const cartTotal =
 const checkoutButton =
     document.getElementById('checkoutButton');
 
-const cartCount =
+const pageCartCount =
     document.getElementById('cart-count');
 
 
@@ -616,12 +616,10 @@ function updateCartCount(cart) {
         );
 
 
-    if (cartCount) {
-
-        cartCount.textContent =
-            totalItems;
-
-    }
+    if (pageCartCount) {
+    pageCartCount.textContent =
+        totalItems;
+}
 
 }
 
@@ -639,7 +637,7 @@ function getProductImage(image) {
     let file = String(image).trim();
 
     file = file.replace(
-        /^\.?\/?assets\/collections\//i,
+        /^.*?assets\/collections\//i,
         ''
     );
 
