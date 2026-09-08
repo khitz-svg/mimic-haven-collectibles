@@ -4449,3 +4449,28 @@ footer {
     }
 
 }
+
+/* =========================================================
+   ACCOUNT NAVIGATION
+========================================================= */
+
+.nav-user {
+    color:#c9d0d7;
+    font-family:Montserrat,sans-serif;
+    font-size:10px;
+    font-weight:700;
+    white-space:nowrap;
+}
+
+.nav-account {
+    color:#fff;
+    font-family:Montserrat,sans-serif;
+    font-size:10px;
+    font-weight:700;
+    text-decoration:none;
+    white-space:nowrap;
+}
+
+.nav-account:hover {
+    color:var(--blue);
+}

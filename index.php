@@ -1,4 +1,7 @@
 <?php
+
+require_once 'auth.php';
+
 function asset(string $name): string {
     foreach (['png','jpg','jpeg','webp','svg'] as $ext) {
         $assetFile = __DIR__ . "/assets/{$name}.{$ext}";
@@ -80,6 +83,30 @@ $faqs = [
             <a href="preorder.php">Pre-Orders</a>
             <a href="about.php">About</a>
             <a href="contact.php">Contact</a>
+
+            <?php if (isLoggedIn()): ?>
+
+    <span class="nav-user">
+        Hi, <?= htmlspecialchars(currentFirstName()) ?>
+    </span>
+
+    <a
+        class="nav-account"
+        href="logout.php"
+    >
+        Logout
+    </a>
+
+<?php else: ?>
+
+    <a
+        class="nav-account"
+        href="login.php"
+    >
+        Login
+    </a>
+
+<?php endif; ?>
 
             <a class="nav-icon" href="#collection" aria-label="Search">
                 <?php if (icon('search')): ?><img src="<?= icon('search') ?>" alt="Search"><?php endif; ?>
