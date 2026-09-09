@@ -679,10 +679,9 @@ foreach (
             <!-- PRODUCTS -->
 
             <a
-                href="collection.php"
-                class="admin-menu-card"
-            >
-
+    href="admin_products.php"
+    class="admin-menu-card"
+>
                 <div class="admin-menu-icon">
                     🛍️
                 </div>
@@ -692,9 +691,9 @@ foreach (
                 </h3>
 
                 <p>
-                    View the product collection and
-                    manage collectible listings.
-                </p>
+    Add, edit, classify, and manage collectible
+    products and inventory.
+</p>
 
             </a>
 
