@@ -78,11 +78,13 @@ if (!$currentUser || $currentUser['role'] !== 'admin') {
 */
 
 if (empty($_SESSION['admin_preorders_csrf'])) {
+
     $_SESSION['admin_preorders_csrf'] =
         bin2hex(random_bytes(32));
 }
 
-$csrfToken = $_SESSION['admin_preorders_csrf'];
+$csrfToken =
+    $_SESSION['admin_preorders_csrf'];
 
 $message = '';
 $error = '';
@@ -90,13 +92,38 @@ $error = '';
 
 /*
 |--------------------------------------------------------------------------
-| AUTOMATICALLY UPDATE RELIABILITY SCORES
+| PRE-ORDER STATUSES
 |--------------------------------------------------------------------------
-|
-| Score starts at 100.
-| Every cancelled pre-order removes 20 points.
-| Minimum score is 0.
-|
+*/
+
+$allowedStatuses = [
+    'Pending',
+    'Confirmed',
+    'Processing',
+    'Completed',
+    'Cancelled'
+];
+
+
+/*
+|--------------------------------------------------------------------------
+| RELEASE STATUSES
+|--------------------------------------------------------------------------
+*/
+
+$allowedReleaseStatuses = [
+    'Waiting for Manufacturer',
+    'Manufacturing',
+    'Shipped to Store',
+    'Arrived',
+    'Ready for Customer',
+    'Released'
+];
+
+
+/*
+|--------------------------------------------------------------------------
+| UPDATE CUSTOMER RELIABILITY
 |--------------------------------------------------------------------------
 */
 
@@ -188,21 +215,6 @@ function updateReliabilityScores(mysqli $conn): void
 
 /*
 |--------------------------------------------------------------------------
-| ALLOWED PRE-ORDER STATUSES
-|--------------------------------------------------------------------------
-*/
-
-$allowedStatuses = [
-    'Pending',
-    'Confirmed',
-    'Processing',
-    'Completed',
-    'Cancelled'
-];
-
-
-/*
-|--------------------------------------------------------------------------
 | HANDLE POST REQUESTS
 |--------------------------------------------------------------------------
 */
@@ -265,16 +277,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             } else {
 
-                /*
-                | Get current status first
-                */
-
-                $checkStmt = $conn->prepare(
-                    "SELECT status
-                     FROM preorders
-                     WHERE id = ?
-                     LIMIT 1"
-                );
+                $checkStmt =
+                    $conn->prepare(
+                        "SELECT status
+                         FROM preorders
+                         WHERE id = ?
+                         LIMIT 1"
+                    );
 
                 $checkStmt->bind_param(
                     "i",
@@ -305,68 +314,242 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     /*
                     |--------------------------------------------------------------------------
-                    | Update status
+                    | Do not manually downgrade a fully paid pre-order
                     |--------------------------------------------------------------------------
                     */
 
-                    $updateStmt = $conn->prepare(
-                        "UPDATE preorders
-                         SET status = ?
-                         WHERE id = ?"
+                    $paymentCheckStmt =
+                        $conn->prepare(
+                            "SELECT
+                                deposit_status,
+                                balance_status
+
+                             FROM preorders
+
+                             WHERE id = ?
+
+                             LIMIT 1"
+                        );
+
+                    $paymentCheckStmt->bind_param(
+                        "i",
+                        $preorderId
                     );
 
-                    $updateStmt->bind_param(
-                        "si",
-                        $newStatus,
+                    $paymentCheckStmt->execute();
+
+                    $paymentCheckResult =
+                        $paymentCheckStmt->get_result();
+
+                    $paymentCheck =
+                        $paymentCheckResult->fetch_assoc();
+
+                    $paymentCheckStmt->close();
+
+
+                    $fullyPaid = (
+                        $paymentCheck
+                        &&
+                        $paymentCheck['deposit_status']
+                            === 'Paid'
+                        &&
+                        $paymentCheck['balance_status']
+                            === 'Paid'
+                    );
+
+
+                    if (
+                        $fullyPaid
+                        &&
+                        $newStatus !== 'Completed'
+                        &&
+                        $newStatus !== 'Cancelled'
+                    ) {
+
+                        $error =
+                            'This pre-order is fully paid and must remain Completed unless it is Cancelled.';
+
+                    } else {
+
+                        $updateStmt =
+                            $conn->prepare(
+                                "UPDATE preorders
+                                 SET status = ?
+                                 WHERE id = ?"
+                            );
+
+                        $updateStmt->bind_param(
+                            "si",
+                            $newStatus,
+                            $preorderId
+                        );
+
+
+                        if ($updateStmt->execute()) {
+
+                            updateReliabilityScores(
+                                $conn
+                            );
+
+
+                            if (
+                                $newStatus
+                                    === 'Cancelled'
+                                &&
+                                $oldStatus
+                                    !== 'Cancelled'
+                            ) {
+
+                                $message =
+                                    'Pre-order cancelled. Customer reliability score updated.';
+
+                            } elseif (
+                                $oldStatus
+                                    === 'Cancelled'
+                                &&
+                                $newStatus
+                                    !== 'Cancelled'
+                            ) {
+
+                                $message =
+                                    'Pre-order status restored. Customer reliability score updated.';
+
+                            } else {
+
+                                $message =
+                                    'Pre-order status updated successfully.';
+                            }
+
+                        } else {
+
+                            $error =
+                                'Failed to update pre-order status.';
+                        }
+
+
+                        $updateStmt->close();
+                    }
+                }
+            }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | UPDATE RELEASE STATUS
+        |--------------------------------------------------------------------------
+        */
+
+        } elseif (
+            $action === 'update_release'
+        ) {
+
+            $newReleaseStatus =
+                trim(
+                    $_POST[
+                        'release_status'
+                    ] ?? ''
+                );
+
+            $expectedReleaseDate =
+                trim(
+                    $_POST[
+                        'expected_release_date'
+                    ] ?? ''
+                );
+
+
+            if (!$preorderId) {
+
+                $error =
+                    'Invalid pre-order.';
+
+            } elseif (
+                !in_array(
+                    $newReleaseStatus,
+                    $allowedReleaseStatuses,
+                    true
+                )
+            ) {
+
+                $error =
+                    'Invalid release status.';
+
+            } else {
+
+                /*
+                |--------------------------------------------------------------------------
+                | Validate date
+                |--------------------------------------------------------------------------
+                */
+
+                $formattedDate = null;
+
+                if (
+                    $expectedReleaseDate
+                    !== ''
+                ) {
+
+                    $dateObject =
+                        DateTime::createFromFormat(
+                            'Y-m-d',
+                            $expectedReleaseDate
+                        );
+
+                    $validDate =
+                        $dateObject
+                        &&
+                        $dateObject->format(
+                            'Y-m-d'
+                        ) === $expectedReleaseDate;
+
+
+                    if (!$validDate) {
+
+                        $error =
+                            'Invalid expected release date.';
+
+                    } else {
+
+                        $formattedDate =
+                            $expectedReleaseDate;
+                    }
+                }
+
+
+                if (!$error) {
+
+                    $releaseStmt =
+                        $conn->prepare(
+                            "UPDATE preorders
+                             SET
+                                release_status = ?,
+                                expected_release_date = ?
+                             WHERE id = ?"
+                        );
+
+                    $releaseStmt->bind_param(
+                        "ssi",
+                        $newReleaseStatus,
+                        $formattedDate,
                         $preorderId
                     );
 
 
-                    if ($updateStmt->execute()) {
+                    if (
+                        $releaseStmt->execute()
+                    ) {
 
-                        /*
-                        |--------------------------------------------------------------------------
-                        | Update reliability immediately
-                        |--------------------------------------------------------------------------
-                        */
-
-                        updateReliabilityScores(
-                            $conn
-                        );
-
-
-                        if (
-                            $newStatus === 'Cancelled'
-                            &&
-                            $oldStatus !== 'Cancelled'
-                        ) {
-
-                            $message =
-                                'Pre-order cancelled. Customer reliability score updated.';
-
-                        } elseif (
-                            $oldStatus === 'Cancelled'
-                            &&
-                            $newStatus !== 'Cancelled'
-                        ) {
-
-                            $message =
-                                'Pre-order status restored. Customer reliability score updated.';
-
-                        } else {
-
-                            $message =
-                                'Pre-order status updated successfully.';
-                        }
+                        $message =
+                            'Release information updated successfully.';
 
                     } else {
 
                         $error =
-                            'Failed to update pre-order status.';
+                            'Failed to update release information.';
                     }
 
 
-                    $updateStmt->close();
+                    $releaseStmt->close();
                 }
             }
 
@@ -377,14 +560,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         |--------------------------------------------------------------------------
         */
 
-        } elseif ($action === 'payment') {
+        } elseif (
+            $action === 'payment'
+        ) {
 
             $paymentType =
-                $_POST['payment_type'] ?? '';
+                $_POST[
+                    'payment_type'
+                ] ?? '';
 
             $paidAmount =
-                isset($_POST['paid_amount'])
-                    ? (float)$_POST['paid_amount']
+                isset(
+                    $_POST['paid_amount']
+                )
+                    ? (float)$_POST[
+                        'paid_amount'
+                    ]
                     : 0;
 
 
@@ -411,28 +602,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             } else {
 
-                /*
-                |--------------------------------------------------------------------------
-                | GET CURRENT PRE-ORDER
-                |--------------------------------------------------------------------------
-                */
+                $preorderStmt =
+                    $conn->prepare(
+                        "SELECT
+                            deposit_amount,
+                            deposit_paid_amount,
+                            deposit_status,
 
-                $preorderStmt = $conn->prepare(
-                    "SELECT
-                        deposit_amount,
-                        deposit_paid_amount,
-                        deposit_status,
+                            remaining_balance,
+                            balance_paid_amount,
+                            balance_status
 
-                        remaining_balance,
-                        balance_paid_amount,
-                        balance_status
+                         FROM preorders
 
-                     FROM preorders
+                         WHERE id = ?
 
-                     WHERE id = ?
-
-                     LIMIT 1"
-                );
+                         LIMIT 1"
+                    );
 
                 $preorderStmt->bind_param(
                     "i",
@@ -464,7 +650,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     |--------------------------------------------------------------------------
                     */
 
-                    if ($paymentType === 'deposit') {
+                    if (
+                        $paymentType
+                            === 'deposit'
+                    ) {
 
                         $requiredDeposit =
                             (float)$preorder[
@@ -490,7 +679,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     ? 'Paid'
                                     : 'Unpaid';
 
-
                             $depositPaidAt =
                                 (
                                     $depositStatus
@@ -511,7 +699,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         deposit_paid_at = ?
                                      WHERE id = ?"
                                 );
-
 
                             $updateStmt->bind_param(
                                 "dssi",
@@ -594,7 +781,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                      WHERE id = ?"
                                 );
 
-
                             $updateStmt->bind_param(
                                 "dssi",
                                 $paidAmount,
@@ -625,7 +811,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     /*
                     |--------------------------------------------------------------------------
-                    | AUTO COMPLETE WHEN FULLY PAID
+                    | AUTOMATICALLY COMPLETE WHEN FULLY PAID
                     |--------------------------------------------------------------------------
                     */
 
@@ -689,12 +875,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $completeStmt->close();
 
 
-                            /*
-                            |--------------------------------------------------------------------------
-                            | Recalculate reliability
-                            |--------------------------------------------------------------------------
-                            */
-
                             updateReliabilityScores(
                                 $conn
                             );
@@ -707,6 +887,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
+
         } else {
 
             $error =
@@ -718,17 +899,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 /*
 |--------------------------------------------------------------------------
-| SYNC FULLY PAID PRE-ORDERS ON PAGE LOAD
+| SYNC FULLY PAID PRE-ORDERS
 |--------------------------------------------------------------------------
 */
 
-$syncStmt = $conn->prepare(
-    "UPDATE preorders
-     SET status = 'Completed'
-     WHERE deposit_status = 'Paid'
-       AND balance_status = 'Paid'
-       AND status != 'Cancelled'"
-);
+$syncStmt =
+    $conn->prepare(
+        "UPDATE preorders
+         SET status = 'Completed'
+         WHERE deposit_status = 'Paid'
+           AND balance_status = 'Paid'
+           AND status != 'Cancelled'"
+    );
 
 $syncStmt->execute();
 $syncStmt->close();
@@ -740,7 +922,9 @@ $syncStmt->close();
 |--------------------------------------------------------------------------
 */
 
-updateReliabilityScores($conn);
+updateReliabilityScores(
+    $conn
+);
 
 
 /*
@@ -794,7 +978,8 @@ $sql = "
     ORDER BY po.created_at DESC
 ";
 
-$result = $conn->query($sql);
+$result =
+    $conn->query($sql);
 
 ?>
 
@@ -829,7 +1014,7 @@ $result = $conn->query($sql);
         }
 
         .admin-container {
-            max-width: 1500px;
+            max-width: 1550px;
             margin: 0 auto;
             padding: 30px;
         }
@@ -896,7 +1081,7 @@ $result = $conn->query($sql);
             width: 100%;
             border-collapse: collapse;
             color: #182637;
-            min-width: 1450px;
+            min-width: 1650px;
         }
 
         th {
@@ -904,6 +1089,7 @@ $result = $conn->query($sql);
             padding: 14px;
             text-align: left;
             font-size: 13px;
+            white-space: nowrap;
         }
 
         td {
@@ -925,6 +1111,7 @@ $result = $conn->query($sql);
             object-fit: cover;
             border-radius: 8px;
             background: #eef4f7;
+            flex-shrink: 0;
         }
 
         .product-name {
@@ -934,6 +1121,7 @@ $result = $conn->query($sql);
         .muted {
             color: #666;
             font-size: 12px;
+            margin-top: 4px;
         }
 
         .status {
@@ -969,24 +1157,36 @@ $result = $conn->query($sql);
             color: #8a1f1f;
         }
 
-        .payment-box {
+        .payment-box,
+        .release-box,
+        .status-box {
             margin-top: 8px;
         }
 
-        .payment-box form {
+        .payment-box form,
+        .release-box form,
+        .status-box form {
             display: flex;
             gap: 6px;
             flex-wrap: wrap;
         }
 
         .payment-box input {
-            width: 100px;
+            width: 95px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        .release-box input[type="date"] {
+            width: 145px;
             padding: 8px;
             border: 1px solid #ccc;
             border-radius: 6px;
         }
 
         .payment-box button,
+        .release-box button,
         .status-box button {
             background: #182637;
             color: #ffffff;
@@ -994,11 +1194,26 @@ $result = $conn->query($sql);
             padding: 8px 12px;
             border-radius: 6px;
             cursor: pointer;
+            font-weight: 600;
         }
 
         .payment-box button:hover,
+        .release-box button:hover,
         .status-box button:hover {
             opacity: .85;
+        }
+
+        .status-box select,
+        .release-box select {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            width: 180px;
+            background: #fff;
+        }
+
+        .release-box select {
+            width: 210px;
         }
 
         .payment-date {
@@ -1008,16 +1223,8 @@ $result = $conn->query($sql);
             color: #666;
         }
 
-        .status-box {
-            margin-top: 8px;
-        }
-
-        .status-box select {
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            width: 150px;
-            margin-bottom: 6px;
+        .release-current {
+            margin-bottom: 8px;
         }
 
         .back-link {
@@ -1049,7 +1256,7 @@ $result = $conn->query($sql);
             </h1>
 
             <p>
-                View reservations, payments, status, and release progress.
+                View reservations, payments, release status, and expected release dates.
             </p>
 
         </div>
@@ -1143,7 +1350,7 @@ $result = $conn->query($sql);
                     </th>
 
                     <th>
-                        Release
+                        Release Management
                     </th>
 
                 </tr>
@@ -1154,10 +1361,17 @@ $result = $conn->query($sql);
             <tbody>
 
 
-            <?php if ($result && $result->num_rows > 0): ?>
+            <?php if (
+                $result
+                &&
+                $result->num_rows > 0
+            ): ?>
 
 
-                <?php while ($row = $result->fetch_assoc()): ?>
+                <?php while (
+                    $row =
+                        $result->fetch_assoc()
+                ): ?>
 
 
                     <tr>
@@ -1168,7 +1382,9 @@ $result = $conn->query($sql);
                         <td>
 
                             <strong>
-                                #<?= e($row['id']) ?>
+                                #<?= e(
+                                    $row['id']
+                                ) ?>
                             </strong>
 
                             <div class="muted">
@@ -1177,7 +1393,9 @@ $result = $conn->query($sql);
                                     date(
                                         'M d, Y',
                                         strtotime(
-                                            $row['created_at']
+                                            $row[
+                                                'created_at'
+                                            ]
                                         )
                                     )
                                 ) ?>
@@ -1187,7 +1405,11 @@ $result = $conn->query($sql);
                             <div class="muted">
 
                                 Qty:
-                                <?= e($row['quantity']) ?>
+                                <?= e(
+                                    $row[
+                                        'quantity'
+                                    ]
+                                ) ?>
 
                             </div>
 
@@ -1202,9 +1424,14 @@ $result = $conn->query($sql);
                             <strong>
 
                                 <?= e(
-                                    $row['first_name']
+                                    $row[
+                                        'first_name'
+                                    ]
                                     . ' '
-                                    . $row['last_name']
+                                    .
+                                    $row[
+                                        'last_name'
+                                    ]
                                 ) ?>
 
                             </strong>
@@ -1212,7 +1439,9 @@ $result = $conn->query($sql);
                             <div class="muted">
 
                                 <?= e(
-                                    $row['email']
+                                    $row[
+                                        'email'
+                                    ]
                                 ) ?>
 
                             </div>
@@ -1229,18 +1458,25 @@ $result = $conn->query($sql);
 
 
                                 <?php
-                                $img = productImage(
-                                    $row['image']
-                                );
+                                $img =
+                                    productImage(
+                                        $row[
+                                            'image'
+                                        ]
+                                    );
                                 ?>
 
 
                                 <?php if ($img): ?>
 
                                     <img
-                                        src="<?= e($img) ?>"
+                                        src="<?= e(
+                                            $img
+                                        ) ?>"
                                         alt="<?= e(
-                                            $row['product_name']
+                                            $row[
+                                                'product_name'
+                                            ]
                                         ) ?>"
                                     >
 
@@ -1252,7 +1488,9 @@ $result = $conn->query($sql);
                                     <div class="product-name">
 
                                         <?= e(
-                                            $row['product_name']
+                                            $row[
+                                                'product_name'
+                                            ]
                                         ) ?>
 
                                     </div>
@@ -1261,7 +1499,9 @@ $result = $conn->query($sql);
                                     <div class="muted">
 
                                         <?= e(
-                                            $row['series']
+                                            $row[
+                                                'series'
+                                            ]
                                         ) ?>
 
                                     </div>
@@ -1271,7 +1511,9 @@ $result = $conn->query($sql);
 
                                         Unit Price:
                                         <?= peso(
-                                            (float)$row['unit_price']
+                                            (float)$row[
+                                                'unit_price'
+                                            ]
                                         ) ?>
 
                                     </div>
@@ -1291,7 +1533,9 @@ $result = $conn->query($sql);
                             <strong>
 
                                 <?= peso(
-                                    (float)$row['total_amount']
+                                    (float)$row[
+                                        'total_amount'
+                                    ]
                                 ) ?>
 
                             </strong>
@@ -1299,7 +1543,7 @@ $result = $conn->query($sql);
 
                             <div class="muted">
 
-                                Required Deposit:
+                                Deposit:
                                 <?= peso(
                                     (float)$row[
                                         'deposit_amount'
@@ -1311,7 +1555,7 @@ $result = $conn->query($sql);
 
                             <div class="muted">
 
-                                Remaining Balance:
+                                Remaining:
                                 <?= peso(
                                     (float)$row[
                                         'remaining_balance'
@@ -1330,17 +1574,13 @@ $result = $conn->query($sql);
 
 
                             <?php if (
-                                $row['deposit_status']
-                                === 'Paid'
+                                $row[
+                                    'deposit_status'
+                                ] === 'Paid'
                             ): ?>
 
 
-                                <span
-                                    class="
-                                        status
-                                        paid
-                                    "
-                                >
+                                <span class="status paid">
                                     Paid
                                 </span>
 
@@ -1357,7 +1597,9 @@ $result = $conn->query($sql);
 
 
                                 <?php if (
-                                    $row['deposit_paid_at']
+                                    $row[
+                                        'deposit_paid_at'
+                                    ]
                                 ): ?>
 
                                     <span
@@ -1383,12 +1625,7 @@ $result = $conn->query($sql);
                             <?php else: ?>
 
 
-                                <span
-                                    class="
-                                        status
-                                        unpaid
-                                    "
-                                >
+                                <span class="status unpaid">
                                     Unpaid
                                 </span>
 
@@ -1409,6 +1646,7 @@ $result = $conn->query($sql);
 
                                     <form method="POST">
 
+
                                         <input
                                             type="hidden"
                                             name="csrf_token"
@@ -1417,11 +1655,13 @@ $result = $conn->query($sql);
                                             ) ?>"
                                         >
 
+
                                         <input
                                             type="hidden"
                                             name="action"
                                             value="payment"
                                         >
+
 
                                         <input
                                             type="hidden"
@@ -1431,11 +1671,13 @@ $result = $conn->query($sql);
                                             ) ?>"
                                         >
 
+
                                         <input
                                             type="hidden"
                                             name="payment_type"
                                             value="deposit"
                                         >
+
 
                                         <input
                                             type="number"
@@ -1455,11 +1697,11 @@ $result = $conn->query($sql);
                                             required
                                         >
 
-                                        <button
-                                            type="submit"
-                                        >
+
+                                        <button type="submit">
                                             Record
                                         </button>
+
 
                                     </form>
 
@@ -1479,17 +1721,13 @@ $result = $conn->query($sql);
 
 
                             <?php if (
-                                $row['balance_status']
-                                === 'Paid'
+                                $row[
+                                    'balance_status'
+                                ] === 'Paid'
                             ): ?>
 
 
-                                <span
-                                    class="
-                                        status
-                                        paid
-                                    "
-                                >
+                                <span class="status paid">
                                     Paid
                                 </span>
 
@@ -1506,7 +1744,9 @@ $result = $conn->query($sql);
 
 
                                 <?php if (
-                                    $row['balance_paid_at']
+                                    $row[
+                                        'balance_paid_at'
+                                    ]
                                 ): ?>
 
                                     <span
@@ -1532,12 +1772,7 @@ $result = $conn->query($sql);
                             <?php else: ?>
 
 
-                                <span
-                                    class="
-                                        status
-                                        unpaid
-                                    "
-                                >
+                                <span class="status unpaid">
                                     Unpaid
                                 </span>
 
@@ -1558,6 +1793,7 @@ $result = $conn->query($sql);
 
                                     <form method="POST">
 
+
                                         <input
                                             type="hidden"
                                             name="csrf_token"
@@ -1566,11 +1802,13 @@ $result = $conn->query($sql);
                                             ) ?>"
                                         >
 
+
                                         <input
                                             type="hidden"
                                             name="action"
                                             value="payment"
                                         >
+
 
                                         <input
                                             type="hidden"
@@ -1580,11 +1818,13 @@ $result = $conn->query($sql);
                                             ) ?>"
                                         >
 
+
                                         <input
                                             type="hidden"
                                             name="payment_type"
                                             value="balance"
                                         >
+
 
                                         <input
                                             type="number"
@@ -1604,11 +1844,11 @@ $result = $conn->query($sql);
                                             required
                                         >
 
-                                        <button
-                                            type="submit"
-                                        >
+
+                                        <button type="submit">
                                             Record
                                         </button>
+
 
                                     </form>
 
@@ -1626,9 +1866,11 @@ $result = $conn->query($sql);
 
                         <td>
 
+
                             <?php if (
-                                $row['status']
-                                === 'Cancelled'
+                                $row[
+                                    'status'
+                                ] === 'Cancelled'
                             ): ?>
 
                                 <span
@@ -1641,8 +1883,9 @@ $result = $conn->query($sql);
                                 </span>
 
                             <?php elseif (
-                                $row['status']
-                                === 'Completed'
+                                $row[
+                                    'status'
+                                ] === 'Completed'
                             ): ?>
 
                                 <span
@@ -1663,7 +1906,9 @@ $result = $conn->query($sql);
                                     "
                                 >
                                     <?= e(
-                                        $row['status']
+                                        $row[
+                                            'status'
+                                        ]
                                     ) ?>
                                 </span>
 
@@ -1711,14 +1956,17 @@ $result = $conn->query($sql);
                                                 value="<?= e(
                                                     $status
                                                 ) ?>"
-                                                <?= $row['status']
-                                                    === $status
+                                                <?= $row[
+                                                    'status'
+                                                ] === $status
                                                     ? 'selected'
                                                     : '' ?>
                                             >
+
                                                 <?= e(
                                                     $status
                                                 ) ?>
+
                                             </option>
 
                                         <?php endforeach; ?>
@@ -1726,13 +1974,10 @@ $result = $conn->query($sql);
                                     </select>
 
 
-                                    <br>
-
-
                                     <button
                                         type="submit"
                                     >
-                                        Update Status
+                                        Update
                                     </button>
 
                                 </form>
@@ -1743,52 +1988,143 @@ $result = $conn->query($sql);
 
 
 
-                        <!-- RELEASE -->
+                        <!-- RELEASE MANAGEMENT -->
 
                         <td>
 
-                            <strong>
 
-                                <?= e(
-                                    $row[
-                                        'release_status'
-                                    ]
-                                ) ?>
+                            <div
+                                class="release-current"
+                            >
 
-                            </strong>
+                                <span class="status pending">
 
-
-                            <?php if (
-                                $row[
-                                    'expected_release_date'
-                                ]
-                            ): ?>
-
-                                <div class="muted">
-
-                                    Expected:
                                     <?= e(
-                                        date(
-                                            'M d, Y',
-                                            strtotime(
-                                                $row[
-                                                    'expected_release_date'
-                                                ]
-                                            )
-                                        )
+                                        $row[
+                                            'release_status'
+                                        ]
                                     ) ?>
 
-                                </div>
+                                </span>
 
-                            <?php else: ?>
 
-                                <div class="muted">
+                                <?php if (
+                                    $row[
+                                        'expected_release_date'
+                                    ]
+                                ): ?>
 
-                                    Release date TBA
+                                    <div class="muted">
 
-                                </div>
+                                        Expected:
+                                        <?= e(
+                                            date(
+                                                'M d, Y',
+                                                strtotime(
+                                                    $row[
+                                                        'expected_release_date'
+                                                    ]
+                                                )
+                                            )
+                                        ) ?>
 
-                            <?php endif; ?>
+                                    </div>
+
+                                <?php else: ?>
+
+                                    <div class="muted">
+
+                                        Release date TBA
+
+                                    </div>
+
+                                <?php endif; ?>
+
+                            </div>
+
+
+
+                            <div class="release-box">
+
+                                <form method="POST">
+
+                                    <input
+                                        type="hidden"
+                                        name="csrf_token"
+                                        value="<?= e(
+                                            $csrfToken
+                                        ) ?>"
+                                    >
+
+                                    <input
+                                        type="hidden"
+                                        name="action"
+                                        value="update_release"
+                                    >
+
+                                    <input
+                                        type="hidden"
+                                        name="preorder_id"
+                                        value="<?= e(
+                                            $row['id']
+                                        ) ?>"
+                                    >
+
+
+                                    <select
+                                        name="release_status"
+                                        required
+                                    >
+
+                                        <?php foreach (
+                                            $allowedReleaseStatuses
+                                            as $releaseStatus
+                                        ): ?>
+
+                                            <option
+                                                value="<?= e(
+                                                    $releaseStatus
+                                                ) ?>"
+                                                <?= $row[
+                                                    'release_status'
+                                                ]
+                                                    === $releaseStatus
+                                                    ? 'selected'
+                                                    : '' ?>
+                                            >
+
+                                                <?= e(
+                                                    $releaseStatus
+                                                ) ?>
+
+                                            </option>
+
+                                        <?php endforeach; ?>
+
+                                    </select>
+
+
+                                    <input
+                                        type="date"
+                                        name="expected_release_date"
+                                        value="<?= e(
+                                            $row[
+                                                'expected_release_date'
+                                            ] ?? ''
+                                        ) ?>"
+                                    >
+
+
+                                    <button
+                                        type="submit"
+                                    >
+                                        Update Release
+                                    </button>
+
+                                </form>
+
+                            </div>
+
 
                         </td>
 
