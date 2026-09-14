@@ -2,6 +2,16 @@
 
 require_once 'db.php';
 
+
+/* =========================================================
+   SELECTED SERIES FROM HOMEPAGE COLLECTION CARD
+========================================================= */
+
+$selectedSeries = isset($_GET['series'])
+    ? trim((string)$_GET['series'])
+    : '';
+
+
 /* =========================================================
    MIMIC HAVEN - COLLECTION PAGE
    Uses the same header/footer structure as index.php
@@ -9,26 +19,47 @@ require_once 'db.php';
 
 function asset(string $name): string {
     foreach (['png','jpg','jpeg','webp','svg'] as $ext) {
+
         $assetFile = __DIR__ . "/assets/{$name}.{$ext}";
-        if (file_exists($assetFile)) return "assets/{$name}.{$ext}";
+
+        if (file_exists($assetFile)) {
+            return "assets/{$name}.{$ext}";
+        }
+
 
         $rootFile = __DIR__ . "/{$name}.{$ext}";
-        if (file_exists($rootFile)) return "{$name}.{$ext}";
+
+        if (file_exists($rootFile)) {
+            return "{$name}.{$ext}";
+        }
     }
+
     return "";
 }
+
 
 function icon(string $name): string {
     foreach (['png','jpg','jpeg','webp','svg'] as $ext) {
+
         $file = __DIR__ . "/assets/icons/{$name}.{$ext}";
-        if (file_exists($file)) return "assets/icons/{$name}.{$ext}";
+
+        if (file_exists($file)) {
+            return "assets/icons/{$name}.{$ext}";
+        }
     }
+
     return "";
 }
 
+
 function e(string $value): string {
-    return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+    return htmlspecialchars(
+        $value,
+        ENT_QUOTES,
+        'UTF-8'
+    );
 }
+
 
 function peso(int $price): string {
     return '₱' . number_format($price);
@@ -36,18 +67,20 @@ function peso(int $price): string {
 
 
 /* =========================================================
-   COLLECTION PRODUCTS
+   FALLBACK COLLECTION PRODUCTS
+   Used only if MySQL returns no products
 ========================================================= */
 
 $products = [
 
     // FRIEREN
+
     [
         'name' => 'Frieren – AMP Figure',
         'series' => "Frieren: Beyond Journey's End",
         'category' => 'Prize Figures',
         'price' => 1450,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'In Stock',
         'image' => 'frieren amp.webp'
     ],
@@ -57,7 +90,7 @@ $products = [
         'series' => "Frieren: Beyond Journey's End",
         'category' => 'Prize Figures',
         'price' => 1350,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'In Stock',
         'image' => 'frieren espresto.webp'
     ],
@@ -67,7 +100,7 @@ $products = [
         'series' => "Frieren: Beyond Journey's End",
         'category' => 'Prize Figures',
         'price' => 1850,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'Pre-Order',
         'image' => 'frieren maximatic v2.webp'
     ],
@@ -77,7 +110,7 @@ $products = [
         'series' => "Frieren: Beyond Journey's End",
         'category' => 'Prize Figures',
         'price' => 950,
-        'condition' => 'MIB',
+        'condition_status' => 'MIB',
         'availability' => 'In Stock',
         'image' => 'frieren sofvimates.webp'
     ],
@@ -87,7 +120,7 @@ $products = [
         'series' => "Frieren: Beyond Journey's End",
         'category' => 'Statues',
         'price' => 4200,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'Pre-Order',
         'image' => 'Ichibansho Frieren Art Scale Bust.webp'
     ],
@@ -97,7 +130,7 @@ $products = [
         'series' => "Frieren: Beyond Journey's End",
         'category' => 'Others',
         'price' => 1250,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'In Stock',
         'image' => 'Pop! Deluxe #2358 Frieren.webp'
     ],
@@ -107,7 +140,7 @@ $products = [
         'series' => "Frieren: Beyond Journey's End",
         'category' => 'Prize Figures',
         'price' => 1450,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'Pre-Order',
         'image' => 'Yumemirize Fern (Nap Ver.) Figure.webp'
     ],
@@ -117,19 +150,20 @@ $products = [
         'series' => "Frieren: Beyond Journey's End",
         'category' => 'Prize Figures',
         'price' => 1550,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'In Stock',
         'image' => 'himmel espresto.webp'
     ],
 
 
     // THE APOTHECARY DIARIES
+
     [
         'name' => 'Maomao – Break Time Collection Vol. 1',
         'series' => 'The Apothecary Diaries',
         'category' => 'Prize Figures',
         'price' => 1450,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'In Stock',
         'image' => 'Break Time Collection Vol.1 Maomao.webp'
     ],
@@ -139,7 +173,7 @@ $products = [
         'series' => 'The Apothecary Diaries',
         'category' => 'Scale Figures',
         'price' => 2800,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'Pre-Order',
         'image' => 'Maomao (Moon Fairy) Figure.webp'
     ],
@@ -149,7 +183,7 @@ $products = [
         'series' => 'The Apothecary Diaries',
         'category' => 'Prize Figures',
         'price' => 1600,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'In Stock',
         'image' => 'Oshi Works Mini Maomao (Garden Party Ver.).webp'
     ],
@@ -159,19 +193,20 @@ $products = [
         'series' => 'The Apothecary Diaries',
         'category' => 'Prize Figures',
         'price' => 1300,
-        'condition' => 'MIB',
+        'condition_status' => 'MIB',
         'availability' => 'In Stock',
         'image' => 'Oshi Works Mini Maomao Figure.webp'
     ],
 
 
     // JUJUTSU KAISEN
+
     [
         'name' => 'Satoru Gojo – 1/8 Scale Figure',
         'series' => 'Jujutsu Kaisen',
         'category' => 'Scale Figures',
         'price' => 8500,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'Pre-Order',
         'image' => 'Gojo Satoru 1over8 Scale Figure.webp'
     ],
@@ -181,7 +216,7 @@ $products = [
         'series' => 'Jujutsu Kaisen',
         'category' => 'Action Figures',
         'price' => 3200,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'Pre-Order',
         'image' => 'S.H.Figuarts Choso Action Figure.webp'
     ],
@@ -191,7 +226,7 @@ $products = [
         'series' => 'Jujutsu Kaisen',
         'category' => 'Action Figures',
         'price' => 3200,
-        'condition' => 'MIB',
+        'condition_status' => 'MIB',
         'availability' => 'In Stock',
         'image' => 'S.H.Figuarts Kento Nanami Action Figure.webp'
     ],
@@ -201,7 +236,7 @@ $products = [
         'series' => 'Jujutsu Kaisen',
         'category' => 'Action Figures',
         'price' => 3100,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'Pre-Order',
         'image' => 'S.H.Figuarts Mahito Action Figure.webp'
     ],
@@ -211,19 +246,20 @@ $products = [
         'series' => 'Jujutsu Kaisen',
         'category' => 'Action Figures',
         'price' => 3400,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'In Stock',
         'image' => 'S.H.Figuarts Toji Fushiguro Action Figure.webp'
     ],
 
 
     // DEMON SLAYER
+
     [
         'name' => 'Akaza II – Grandista',
         'series' => 'Demon Slayer',
         'category' => 'Prize Figures',
         'price' => 1900,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'In Stock',
         'image' => 'Grandista Akaza II Figure.webp'
     ],
@@ -233,7 +269,7 @@ $products = [
         'series' => 'Demon Slayer',
         'category' => 'Prize Figures',
         'price' => 1900,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'In Stock',
         'image' => 'Grandista Doma II Figure.webp'
     ],
@@ -243,7 +279,7 @@ $products = [
         'series' => 'Demon Slayer',
         'category' => 'Prize Figures',
         'price' => 2200,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'In Stock',
         'image' => 'Grandista Giyu Tomioka.jpg'
     ],
@@ -253,7 +289,7 @@ $products = [
         'series' => 'Demon Slayer',
         'category' => 'Prize Figures',
         'price' => 1800,
-        'condition' => 'MIB',
+        'condition_status' => 'MIB',
         'availability' => 'In Stock',
         'image' => 'Grandista Zenitsu Agatsuma (Another Color Ver. A).jpg'
     ],
@@ -263,7 +299,7 @@ $products = [
         'series' => 'Demon Slayer',
         'category' => 'Prize Figures',
         'price' => 1800,
-        'condition' => 'MIB',
+        'condition_status' => 'MIB',
         'availability' => 'Pre-Order',
         'image' => 'Grandista Zenitsu Agatsuma (Another Color Ver. B).jpg'
     ],
@@ -273,19 +309,20 @@ $products = [
         'series' => 'Demon Slayer',
         'category' => 'Statues',
         'price' => 12500,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'Pre-Order',
         'image' => 'Zenitsu Deluxe 1over4 Scale Limited Edition Statue.jpg'
     ],
 
 
     // ONE PIECE
+
     [
         'name' => 'Monkey D. Luffy – Grandista Gear 5 II',
         'series' => 'One Piece',
         'category' => 'Prize Figures',
         'price' => 2200,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'In Stock',
         'image' => 'Grandista Monkey D. Luffy (Gear 5) II Figure.webp'
     ],
@@ -295,7 +332,7 @@ $products = [
         'series' => 'One Piece',
         'category' => 'Prize Figures',
         'price' => 2400,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'Pre-Order',
         'image' => 'Grandista Monkey D. Luffy (Gear5 Special Edition) Figure.webp'
     ],
@@ -305,7 +342,7 @@ $products = [
         'series' => 'One Piece',
         'category' => 'Prize Figures',
         'price' => 2100,
-        'condition' => 'MIB',
+        'condition_status' => 'MIB',
         'availability' => 'In Stock',
         'image' => 'Grandista Monkey D. Luffy (Special Edition).webp'
     ],
@@ -315,7 +352,7 @@ $products = [
         'series' => 'One Piece',
         'category' => 'Prize Figures',
         'price' => 2500,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'In Stock',
         'image' => 'Grandista Monkey D. Luffy Gear 5 II (Special Edition) Figure.jpg'
     ],
@@ -325,7 +362,7 @@ $products = [
         'series' => 'One Piece',
         'category' => 'Prize Figures',
         'price' => 2300,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'Pre-Order',
         'image' => 'One Piece Grandista Monkey D. Luffy (Gear 5 Ver. III) Figure.webp'
     ],
@@ -335,19 +372,20 @@ $products = [
         'series' => 'One Piece',
         'category' => 'Prize Figures',
         'price' => 1800,
-        'condition' => 'MIB',
+        'condition_status' => 'MIB',
         'availability' => 'In Stock',
         'image' => 'Grandista nero Nami.webp'
     ],
 
 
     // CHAINSAW MAN
+
     [
         'name' => 'Makima – FNEX 1/7 Scale Figure',
         'series' => 'Chainsaw Man',
         'category' => 'Scale Figures',
         'price' => 11500,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'Pre-Order',
         'image' => 'Chainsaw Man FNex Makima 1over7 Scale Figure.webp'
     ],
@@ -357,19 +395,20 @@ $products = [
         'series' => 'Chainsaw Man',
         'category' => 'Others',
         'price' => 950,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'In Stock',
         'image' => 'Pop! Animation #1679 Makima.jpg'
     ],
 
 
     // OVERLORD
+
     [
         'name' => 'Albedo – Loungewear Pearl White Ver. Noodle Stopper',
         'series' => 'Overlord',
         'category' => 'Prize Figures',
         'price' => 1500,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'In Stock',
         'image' => 'Overlord Albedo (Loungewear Pearl White Ver.) Noodle Stopper Figure.webp'
     ],
@@ -379,7 +418,7 @@ $products = [
         'series' => 'Overlord',
         'category' => 'Scale Figures',
         'price' => 9500,
-        'condition' => 'MISB',
+        'condition_status' => 'MISB',
         'availability' => 'Pre-Order',
         'image' => 'Overlord Albedo 1over7 Scale Figure.webp'
     ],
@@ -389,17 +428,19 @@ $products = [
         'series' => 'Overlord',
         'category' => 'Action Figures',
         'price' => 5200,
-        'condition' => 'MIB',
+        'condition_status' => 'MIB',
         'availability' => 'In Stock',
         'image' => 'Overlord figma No.693 Albedo Action Figure.webp'
     ],
 ];
+
 
 /* =========================================================
    LOAD PRODUCTS FROM MYSQL
 ========================================================= */
 
 $dbProducts = [];
+
 
 $result = $conn->query(
     "SELECT
@@ -410,10 +451,18 @@ $result = $conn->query(
         price,
         condition_status,
         availability,
-        image
+        image,
+        stock
      FROM products
+     WHERE
+        availability = 'Pre-Order'
+        OR (
+            availability = 'In Stock'
+            AND stock > 0
+        )
      ORDER BY id ASC"
 );
+
 
 if ($result) {
 
@@ -438,6 +487,7 @@ if (!empty($dbProducts)) {
 
 ?>
 
+
 <!doctype html>
 <html lang="en">
 
@@ -445,26 +495,43 @@ if (!empty($dbProducts)) {
 
     <meta charset="UTF-8">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <title>Collection | Mimic Haven Collectibles</title>
+    <title>
+        Collection | Mimic Haven Collectibles
+    </title>
 
     <meta
         name="description"
         content="Explore the Mimic Haven anime figure collection."
     >
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
 
     <link
         href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
         rel="stylesheet"
     >
 
-    <link rel="stylesheet" href="style.css">
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
 
 </head>
+
 
 <body>
 
@@ -473,9 +540,13 @@ if (!empty($dbProducts)) {
      SAME HEADER AS HOMEPAGE
 ========================================================= -->
 
-<header class="site-header" id="home">
+<header
+    class="site-header"
+    id="home"
+>
 
     <div class="header-inner">
+
 
         <a
             class="brand"
@@ -494,8 +565,13 @@ if (!empty($dbProducts)) {
             <?php else: ?>
 
                 <div class="brand-fallback">
+
                     MIMIC HAVEN
-                    <span>COLLECTIBLES</span>
+
+                    <span>
+                        COLLECTIBLES
+                    </span>
+
                 </div>
 
             <?php endif; ?>
@@ -513,6 +589,7 @@ if (!empty($dbProducts)) {
                 Home
             </a>
 
+
             <a
                 class="active"
                 href="collection.php"
@@ -520,13 +597,16 @@ if (!empty($dbProducts)) {
                 Collection
             </a>
 
+
             <a href="index.php#preorders">
                 Pre-Orders
             </a>
 
+
             <a href="index.php#about">
                 About
             </a>
+
 
             <a href="index.php#contact">
                 Contact
@@ -552,25 +632,26 @@ if (!empty($dbProducts)) {
 
 
             <a
-    class="nav-icon cart-button"
-    href="cart.php"
-    aria-label="Cart"
->
+                class="nav-icon cart-button"
+                href="cart.php"
+                aria-label="Cart"
+            >
 
-    <?php if (icon('pre-order')): ?>
+                <?php if (icon('pre-order')): ?>
 
-        <img
-            src="<?= icon('pre-order') ?>"
-            alt="Cart"
-        >
+                    <img
+                        src="<?= icon('pre-order') ?>"
+                        alt="Cart"
+                    >
 
-    <?php endif; ?>
+                <?php endif; ?>
 
-    <span id="cart-count">
-        0
-    </span>
 
-</a>
+                <span id="cart-count">
+                    0
+                </span>
+
+            </a>
 
 
             <a
@@ -615,10 +696,17 @@ if (!empty($dbProducts)) {
                 MIMIC HAVEN COLLECTIBLES
             </span>
 
+
             <h1>
+
                 Our
-                <span>Collection</span>
+
+                <span>
+                    Collection
+                </span>
+
             </h1>
+
 
             <p>
                 Discover authentic anime figures, collector pieces,
@@ -642,16 +730,24 @@ if (!empty($dbProducts)) {
     <div class="collection-catalog-inner">
 
 
-        <!-- FILTER SIDEBAR -->
+        <!-- =====================================================
+             FILTER SIDEBAR
+        ====================================================== -->
 
         <aside class="collection-sidebar">
 
+
             <div class="filter-heading">
+
                 <h2>
                     Filter Collection
                 </h2>
+
             </div>
 
+
+
+            <!-- CATEGORY -->
 
             <div class="filter-group">
 
@@ -659,7 +755,9 @@ if (!empty($dbProducts)) {
                     Category
                 </h3>
 
+
                 <?php
+
                 $categories = [
                     'Action Figures',
                     'Scale Figures',
@@ -668,7 +766,9 @@ if (!empty($dbProducts)) {
                     'Statues',
                     'Others'
                 ];
+
                 ?>
+
 
                 <?php foreach ($categories as $category): ?>
 
@@ -691,23 +791,32 @@ if (!empty($dbProducts)) {
             </div>
 
 
+
+            <!-- FRANCHISE -->
+
             <div class="filter-group">
 
                 <h3>
                     Franchise
                 </h3>
 
+
                 <?php
+
                 $franchises = [
                     "Frieren: Beyond Journey's End",
                     "The Apothecary Diaries",
+                    "86 - EIGHTY SIX",
+                    "Violet Evergarden",
                     "Jujutsu Kaisen",
                     "Demon Slayer",
                     "One Piece",
                     "Chainsaw Man",
                     "Overlord"
                 ];
+
                 ?>
+
 
                 <?php foreach ($franchises as $franchise): ?>
 
@@ -717,6 +826,7 @@ if (!empty($dbProducts)) {
                             type="checkbox"
                             class="franchise-filter"
                             value="<?= e($franchise) ?>"
+                            <?= $selectedSeries === $franchise ? 'checked' : '' ?>
                         >
 
                         <span>
@@ -730,11 +840,15 @@ if (!empty($dbProducts)) {
             </div>
 
 
+
+            <!-- CONDITION -->
+
             <div class="filter-group">
 
                 <h3>
                     Condition
                 </h3>
+
 
                 <?php foreach (['MISB','MIB','BIB','LOOSE'] as $condition): ?>
 
@@ -757,11 +871,15 @@ if (!empty($dbProducts)) {
             </div>
 
 
+
+            <!-- AVAILABILITY -->
+
             <div class="filter-group">
 
                 <h3>
                     Availability
                 </h3>
+
 
                 <label class="filter-option">
 
@@ -776,6 +894,7 @@ if (!empty($dbProducts)) {
                     </span>
 
                 </label>
+
 
                 <label class="filter-option">
 
@@ -794,6 +913,7 @@ if (!empty($dbProducts)) {
             </div>
 
 
+
             <button
                 type="button"
                 class="clear-filters"
@@ -802,32 +922,51 @@ if (!empty($dbProducts)) {
                 Clear All Filters
             </button>
 
+
         </aside>
 
 
 
-        <!-- PRODUCTS -->
+        <!-- =====================================================
+             PRODUCTS
+        ====================================================== -->
 
         <div class="collection-products">
 
+
+            <!-- TOOLBAR -->
+
             <div class="collection-toolbar">
 
+
                 <div class="collection-results-count">
+
                     Showing
-                    <strong id="collectionResultStart">1</strong>
+
+                    <strong id="collectionResultStart">
+                        1
+                    </strong>
+
                     –
+
                     <strong id="collectionResultEnd">
                         <?= min(12, count($products)) ?>
                     </strong>
+
                     of
+
                     <strong id="collectionResultTotal">
                         <?= count($products) ?>
                     </strong>
+
                     results
+
                 </div>
 
 
+
                 <div class="collection-toolbar-actions">
+
 
                     <select
                         id="collectionSort"
@@ -853,6 +992,7 @@ if (!empty($dbProducts)) {
                     </select>
 
 
+
                     <button
                         type="button"
                         class="collection-view-button active"
@@ -863,6 +1003,7 @@ if (!empty($dbProducts)) {
                     </button>
 
 
+
                     <button
                         type="button"
                         class="collection-view-button"
@@ -871,6 +1012,7 @@ if (!empty($dbProducts)) {
                     >
                         ☰
                     </button>
+
 
                 </div>
 
@@ -896,12 +1038,15 @@ if (!empty($dbProducts)) {
 
 
 
-            <!-- GRID -->
+            <!-- =================================================
+                 PRODUCT GRID
+            ================================================== -->
 
             <div
                 class="collection-product-grid"
                 id="collectionProductGrid"
             >
+
 
                 <?php foreach ($products as $index => $product): ?>
 
@@ -910,7 +1055,7 @@ if (!empty($dbProducts)) {
 
                         data-index="<?= $index ?>"
 
-                        data-product-id="<?= $index + 1 ?>"
+                        data-product-id="<?= isset($product['id']) ? (int)$product['id'] : ($index + 1) ?>"
 
                         data-name="<?= e(strtolower($product['name'])) ?>"
 
@@ -918,15 +1063,20 @@ if (!empty($dbProducts)) {
 
                         data-category="<?= e($product['category']) ?>"
 
-                        data-price="<?= $product['price'] ?>"
+                        data-price="<?= (float)$product['price'] ?>"
 
                         data-condition="<?= e($product['condition_status']) ?>"
 
                         data-availability="<?= e($product['availability']) ?>"
+
+                        data-stock="<?= isset($product['stock']) ? max(0, (int)$product['stock']) : 0 ?>"
                     >
 
 
+                        <!-- IMAGE -->
+
                         <div class="collection-product-image">
+
 
                             <img
                                 src="assets/collections/<?= rawurlencode($product['image']) ?>"
@@ -936,7 +1086,9 @@ if (!empty($dbProducts)) {
 
 
                             <span class="collection-condition">
+
                                 <?= e($product['condition_status']) ?>
+
                             </span>
 
 
@@ -948,40 +1100,63 @@ if (!empty($dbProducts)) {
                                 ♡
                             </button>
 
+
                         </div>
 
 
+
+                        <!-- INFO -->
+
                         <div class="collection-product-info">
 
+
                             <div class="collection-product-series">
+
                                 <?= e($product['series']) ?>
+
                             </div>
 
+
                             <h3 class="collection-product-name">
+
                                 <?= e($product['name']) ?>
+
                             </h3>
+
+
 
                             <div class="collection-product-bottom">
 
+
                                 <strong class="collection-product-price">
-                                    <?= peso($product['price']) ?>
+
+                                    <?= peso((int)$product['price']) ?>
+
                                 </strong>
+
 
                                 <span
                                     class="collection-product-status <?= $product['availability'] === 'Pre-Order' ? 'preorder' : '' ?>"
                                 >
+
                                     <?= e($product['availability']) ?>
+
                                 </span>
+
 
                             </div>
 
+
                         </div>
+
 
                     </article>
 
                 <?php endforeach; ?>
 
+
             </div>
+
 
 
             <!-- EMPTY STATE -->
@@ -1002,6 +1177,7 @@ if (!empty($dbProducts)) {
             </div>
 
 
+
             <!-- PAGINATION -->
 
             <div
@@ -1009,23 +1185,26 @@ if (!empty($dbProducts)) {
                 id="collectionPagination"
             ></div>
 
+
         </div>
 
     </div>
 
 </section>
 
+
 </main>
 
 
 
 <!-- =========================================================
-     SAME FOOTER AS HOMEPAGE
+     FOOTER
 ========================================================= -->
 
 <footer id="contact">
 
     <div class="footer-grid">
+
 
         <div>
 
@@ -1039,13 +1218,17 @@ if (!empty($dbProducts)) {
 
             <?php endif; ?>
 
+
             <p>
+
                 A sanctuary for anime collectors, offering authentic
                 figures, trusted pre-orders, and a premium collecting
                 experience inspired by the journey behind every masterpiece.
+
             </p>
 
         </div>
+
 
 
         <div class="footer-links">
@@ -1054,21 +1237,26 @@ if (!empty($dbProducts)) {
                 NAVIGATE
             </h4>
 
+
             <a href="index.php#home">
                 Home
             </a>
+
 
             <a href="collection.php">
                 Collection
             </a>
 
+
             <a href="index.php#preorders">
                 Pre-Orders
             </a>
 
+
             <a href="index.php#about">
                 About
             </a>
+
 
             <a href="index.php#contact">
                 Contact
@@ -1077,15 +1265,18 @@ if (!empty($dbProducts)) {
         </div>
 
 
+
         <div class="footer-links">
 
             <h4>
                 CONNECT
             </h4>
 
+
             <a href="mailto:mimichvn.collectibles@gmail.com">
                 mimichvn.collectibles@gmail.com
             </a>
+
 
             <a href="tel:+639657457775">
                 +63 965 745 7775
@@ -1093,6 +1284,7 @@ if (!empty($dbProducts)) {
 
 
             <div class="socials">
+
 
                 <a
                     href="#"
@@ -1111,6 +1303,7 @@ if (!empty($dbProducts)) {
                 </a>
 
 
+
                 <a
                     href="#"
                     aria-label="Instagram"
@@ -1127,11 +1320,14 @@ if (!empty($dbProducts)) {
 
                 </a>
 
+
             </div>
 
         </div>
 
+
     </div>
+
 
 
     <div class="footer-bottom">
@@ -1139,6 +1335,7 @@ if (!empty($dbProducts)) {
         <span>
             © 2026 Mimic Haven Collectibles. All Rights Reserved.
         </span>
+
 
         <span>
             Crafted with precision &amp; passion.
@@ -1149,6 +1346,7 @@ if (!empty($dbProducts)) {
 </footer>
 
 
+
 <div
     id="toast"
     class="toast"
@@ -1157,7 +1355,9 @@ if (!empty($dbProducts)) {
 ></div>
 
 
+
 <script src="script.js"></script>
+
 
 
 <script>
@@ -1169,47 +1369,67 @@ if (!empty($dbProducts)) {
 const collectionCards =
     [...document.querySelectorAll('.collection-product-card')];
 
+
 const collectionGrid =
     document.getElementById('collectionProductGrid');
+
 
 const collectionSearch =
     document.getElementById('collectionSearchInput');
 
+
 const collectionSort =
     document.getElementById('collectionSort');
+
 
 const collectionPagination =
     document.getElementById('collectionPagination');
 
+
 const collectionNoResults =
     document.getElementById('collectionNoResults');
+
 
 const collectionResultStart =
     document.getElementById('collectionResultStart');
 
+
 const collectionResultEnd =
     document.getElementById('collectionResultEnd');
+
 
 const collectionResultTotal =
     document.getElementById('collectionResultTotal');
 
+
 const collectionGridView =
     document.getElementById('collectionGridView');
 
+
 const collectionListView =
     document.getElementById('collectionListView');
+
 
 const clearFiltersButton =
     document.getElementById('clearFilters');
 
 
+/* =========================================================
+   SERIES SENT FROM HOMEPAGE
+========================================================= */
+
+const selectedSeries =
+    <?= json_encode($selectedSeries, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+
+
 const COLLECTION_PER_PAGE = 12;
+
 
 let collectionCurrentPage = 1;
 
+
 let collectionFiltered =
     [...collectionCards];
-
 
 
 /* =========================================================
@@ -1219,11 +1439,12 @@ let collectionFiltered =
 function collectionCheckedValues(selector) {
 
     return [
-        ...document.querySelectorAll(selector + ':checked')
+        ...document.querySelectorAll(
+            selector + ':checked'
+        )
     ].map(input => input.value);
 
 }
-
 
 
 /* =========================================================
@@ -1239,23 +1460,36 @@ function filterCollection() {
 
 
     const categories =
-        collectionCheckedValues('.category-filter');
+        collectionCheckedValues(
+            '.category-filter'
+        );
+
 
     const franchises =
-        collectionCheckedValues('.franchise-filter');
+        collectionCheckedValues(
+            '.franchise-filter'
+        );
+
 
     const conditions =
-        collectionCheckedValues('.condition-filter');
+        collectionCheckedValues(
+            '.condition-filter'
+        );
+
 
     const availability =
-        collectionCheckedValues('.availability-filter');
+        collectionCheckedValues(
+            '.availability-filter'
+        );
 
 
     collectionFiltered =
         collectionCards.filter(card => {
 
+
             const name =
                 card.dataset.name.toLowerCase();
+
 
             const series =
                 card.dataset.series.toLowerCase();
@@ -1308,10 +1542,10 @@ function filterCollection() {
 
     collectionCurrentPage = 1;
 
+
     sortCollection();
 
 }
-
 
 
 /* =========================================================
@@ -1326,6 +1560,7 @@ function sortCollection() {
 
     collectionFiltered.sort((a, b) => {
 
+
         if (sort === 'name') {
 
             return a.dataset.name.localeCompare(
@@ -1337,22 +1572,28 @@ function sortCollection() {
 
         if (sort === 'price-low') {
 
-            return Number(a.dataset.price) -
-                   Number(b.dataset.price);
+            return (
+                Number(a.dataset.price) -
+                Number(b.dataset.price)
+            );
 
         }
 
 
         if (sort === 'price-high') {
 
-            return Number(b.dataset.price) -
-                   Number(a.dataset.price);
+            return (
+                Number(b.dataset.price) -
+                Number(a.dataset.price)
+            );
 
         }
 
 
-        return Number(a.dataset.index) -
-               Number(b.dataset.index);
+        return (
+            Number(a.dataset.index) -
+            Number(b.dataset.index)
+        );
 
     });
 
@@ -1360,7 +1601,6 @@ function sortCollection() {
     renderCollection();
 
 }
-
 
 
 /* =========================================================
@@ -1387,14 +1627,19 @@ function renderCollection() {
 
 
     const visibleCards =
-        collectionFiltered.slice(start, end);
+        collectionFiltered.slice(
+            start,
+            end
+        );
 
 
     visibleCards.forEach(card => {
 
         card.style.display = '';
 
-        collectionGrid.appendChild(card);
+        collectionGrid.appendChild(
+            card
+        );
 
     });
 
@@ -1412,8 +1657,10 @@ function renderCollection() {
         collectionNoResults.style.display =
             'block';
 
+
         collectionResultStart.textContent =
             '0';
+
 
         collectionResultEnd.textContent =
             '0';
@@ -1423,11 +1670,16 @@ function renderCollection() {
         collectionNoResults.style.display =
             'none';
 
+
         collectionResultStart.textContent =
             start + 1;
 
+
         collectionResultEnd.textContent =
-            Math.min(end, total);
+            Math.min(
+                end,
+                total
+            );
 
     }
 
@@ -1435,7 +1687,6 @@ function renderCollection() {
     renderCollectionPagination();
 
 }
-
 
 
 /* =========================================================
@@ -1455,7 +1706,9 @@ function renderCollectionPagination() {
 
 
     if (totalPages <= 1) {
+
         return;
+
     }
 
 
@@ -1465,21 +1718,32 @@ function renderCollectionPagination() {
         page++
     ) {
 
-        const button =
-            document.createElement('button');
 
-        button.type = 'button';
+        const button =
+            document.createElement(
+                'button'
+            );
+
+
+        button.type =
+            'button';
+
 
         button.className =
             'collection-page-button';
+
 
         button.textContent =
             page;
 
 
-        if (page === collectionCurrentPage) {
+        if (
+            page === collectionCurrentPage
+        ) {
 
-            button.classList.add('active');
+            button.classList.add(
+                'active'
+            );
 
         }
 
@@ -1491,11 +1755,16 @@ function renderCollectionPagination() {
                 collectionCurrentPage =
                     page;
 
+
                 renderCollection();
 
+
                 window.scrollTo({
+
                     top: 400,
+
                     behavior: 'smooth'
+
                 });
 
             }
@@ -1511,7 +1780,6 @@ function renderCollectionPagination() {
 }
 
 
-
 /* =========================================================
    CLEAR FILTERS
 ========================================================= */
@@ -1519,6 +1787,7 @@ function renderCollectionPagination() {
 clearFiltersButton.addEventListener(
     'click',
     () => {
+
 
         document
             .querySelectorAll(
@@ -1531,15 +1800,18 @@ clearFiltersButton.addEventListener(
             });
 
 
-        collectionSearch.value = '';
+        collectionSearch.value =
+            '';
 
-        collectionSort.value = 'newest';
+
+        collectionSort.value =
+            'newest';
+
 
         filterCollection();
 
     }
 );
-
 
 
 /* =========================================================
@@ -1564,6 +1836,7 @@ document
     )
     .forEach(input => {
 
+
         input.addEventListener(
             'change',
             filterCollection
@@ -1572,18 +1845,23 @@ document
     });
 
 
-
 /* =========================================================
    FAVORITES
 ========================================================= */
 
 document
-    .querySelectorAll('.collection-favorite')
+    .querySelectorAll(
+        '.collection-favorite'
+    )
     .forEach(button => {
+
 
         button.addEventListener(
             'click',
-            () => {
+            event => {
+
+                event.stopPropagation();
+
 
                 button.classList.toggle(
                     'favorited'
@@ -1602,35 +1880,47 @@ document
 
     });
 
-    /* =========================================================
+
+/* =========================================================
    OPEN PRODUCT DETAILS
 ========================================================= */
 
 document
-    .querySelectorAll('.collection-product-card')
+    .querySelectorAll(
+        '.collection-product-card'
+    )
     .forEach(card => {
 
-        card.addEventListener('click', event => {
 
-            /* Don't open the product page when
-               clicking the favorite button */
-            if (
-                event.target.closest('.collection-favorite')
-            ) {
-                return;
+        card.addEventListener(
+            'click',
+            event => {
+
+
+                if (
+                    event.target.closest(
+                        '.collection-favorite'
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                const productId =
+                    card.dataset.productId;
+
+
+                if (productId) {
+
+                    window.location.href =
+                        `product.php?id=${encodeURIComponent(productId)}`;
+
+                }
+
             }
-
-            const productId =
-                card.dataset.productId;
-
-            if (productId) {
-
-                window.location.href =
-                    `product.php?id=${productId}`;
-
-            }
-
-        });
+        );
 
     });
 
@@ -1643,13 +1933,16 @@ collectionGridView.addEventListener(
     'click',
     () => {
 
+
         collectionGrid.classList.remove(
             'list-view'
         );
 
+
         collectionGridView.classList.add(
             'active'
         );
+
 
         collectionListView.classList.remove(
             'active'
@@ -1663,13 +1956,16 @@ collectionListView.addEventListener(
     'click',
     () => {
 
+
         collectionGrid.classList.add(
             'list-view'
         );
 
+
         collectionListView.classList.add(
             'active'
         );
+
 
         collectionGridView.classList.remove(
             'active'
@@ -1679,14 +1975,29 @@ collectionListView.addEventListener(
 );
 
 
-
 /* =========================================================
    INITIAL LOAD
 ========================================================= */
 
-renderCollection();
+if (selectedSeries) {
+
+    /*
+     * A homepage collection card was clicked.
+     * The matching franchise checkbox is already
+     * checked by PHP, so apply the filter immediately.
+     */
+
+    filterCollection();
+
+} else {
+
+    renderCollection();
+
+}
 
 </script>
 
+
 </body>
+
 </html>
