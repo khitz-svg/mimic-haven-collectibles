@@ -14,15 +14,18 @@ require_once 'db.php';
 
 function asset(string $name): string
 {
-    foreach (['png','jpg','jpeg','webp','svg'] as $ext) {
+    foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
 
-        $assetFile = __DIR__ . "/assets/{$name}.{$ext}";
+        $assetFile =
+            __DIR__ . "/assets/{$name}.{$ext}";
 
         if (file_exists($assetFile)) {
             return "assets/{$name}.{$ext}";
         }
 
-        $rootFile = __DIR__ . "/{$name}.{$ext}";
+
+        $rootFile =
+            __DIR__ . "/{$name}.{$ext}";
 
         if (file_exists($rootFile)) {
             return "{$name}.{$ext}";
@@ -35,9 +38,10 @@ function asset(string $name): string
 
 function icon(string $name): string
 {
-    foreach (['png','jpg','jpeg','webp','svg'] as $ext) {
+    foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
 
-        $file = __DIR__ . "/assets/icons/{$name}.{$ext}";
+        $file =
+            __DIR__ . "/assets/icons/{$name}.{$ext}";
 
         if (file_exists($file)) {
             return "assets/icons/{$name}.{$ext}";
@@ -70,12 +74,15 @@ requireLogin();
 ========================================================= */
 
 if (empty($_SESSION['checkout_csrf'])) {
-    $_SESSION['checkout_csrf'] = bin2hex(
-        random_bytes(32)
-    );
+
+    $_SESSION['checkout_csrf'] =
+        bin2hex(
+            random_bytes(32)
+        );
 }
 
-$checkoutCsrf = $_SESSION['checkout_csrf'];
+$checkoutCsrf =
+    $_SESSION['checkout_csrf'];
 
 
 /* =========================================================
@@ -88,65 +95,97 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     try {
 
+        /* =================================================
+           READ JSON REQUEST
+        ================================================= */
+
         $input = json_decode(
             file_get_contents('php://input'),
             true
         );
 
+
         if (!is_array($input)) {
-            throw new Exception('Invalid request.');
+
+            throw new Exception(
+                'Invalid request.'
+            );
         }
 
 
-        /* -------------------------------------------------
+        /* =================================================
            CSRF
-        ------------------------------------------------- */
+        ================================================= */
 
-        $csrfToken = $input['csrf_token'] ?? '';
+        $csrfToken =
+            $input['csrf_token'] ?? '';
+
 
         if (
             !is_string($csrfToken) ||
+            !isset($_SESSION['checkout_csrf']) ||
             !hash_equals(
                 $_SESSION['checkout_csrf'],
                 $csrfToken
             )
         ) {
-            throw new Exception('Security validation failed.');
+
+            throw new Exception(
+                'Security validation failed.'
+            );
         }
 
 
-        /* -------------------------------------------------
+        /* =================================================
            CURRENT USER
-        ------------------------------------------------- */
+        ================================================= */
 
-        $userId = currentUserId();
+        $userId =
+            currentUserId();
+
 
         if (!$userId) {
+
             throw new Exception(
                 'You must be logged in to place an order.'
             );
         }
 
 
-        /* -------------------------------------------------
+        /* =================================================
            CUSTOMER INFORMATION
-        ------------------------------------------------- */
+        ================================================= */
 
-        $firstName = trim(
-            (string)($input['firstName'] ?? '')
-        );
+        $firstName =
+            trim(
+                (string)(
+                    $input['firstName'] ?? ''
+                )
+            );
 
-        $lastName = trim(
-            (string)($input['lastName'] ?? '')
-        );
 
-        $email = trim(
-            (string)($input['email'] ?? '')
-        );
+        $lastName =
+            trim(
+                (string)(
+                    $input['lastName'] ?? ''
+                )
+            );
 
-        $phone = trim(
-            (string)($input['phone'] ?? '')
-        );
+
+        $email =
+            trim(
+                (string)(
+                    $input['email'] ?? ''
+                )
+            );
+
+
+        $phone =
+            trim(
+                (string)(
+                    $input['phone'] ?? ''
+                )
+            );
 
 
         if (
@@ -155,42 +194,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $email === '' ||
             $phone === ''
         ) {
+
             throw new Exception(
                 'Please complete all customer information.'
             );
         }
 
 
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        if (
+            !filter_var(
+                $email,
+                FILTER_VALIDATE_EMAIL
+            )
+        ) {
+
             throw new Exception(
                 'Please enter a valid email address.'
             );
         }
 
 
-        /* -------------------------------------------------
+        /* =================================================
            DELIVERY INFORMATION
-        ------------------------------------------------- */
+        ================================================= */
 
-        $address = trim(
-            (string)($input['address'] ?? '')
-        );
+        $address =
+            trim(
+                (string)(
+                    $input['address'] ?? ''
+                )
+            );
 
-        $city = trim(
-            (string)($input['city'] ?? '')
-        );
 
-        $province = trim(
-            (string)($input['province'] ?? '')
-        );
+        $city =
+            trim(
+                (string)(
+                    $input['city'] ?? ''
+                )
+            );
 
-        $postalCode = trim(
-            (string)($input['postalCode'] ?? '')
-        );
 
-        $country = trim(
-            (string)($input['country'] ?? '')
-        );
+        $province =
+            trim(
+                (string)(
+                    $input['province'] ?? ''
+                )
+            );
+
+
+        $postalCode =
+            trim(
+                (string)(
+                    $input['postalCode'] ?? ''
+                )
+            );
+
+
+        $country =
+            trim(
+                (string)(
+                    $input['country'] ?? ''
+                )
+            );
 
 
         if (
@@ -200,6 +265,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $postalCode === '' ||
             $country === ''
         ) {
+
             throw new Exception(
                 'Please complete the delivery address.'
             );
@@ -214,23 +280,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $country;
 
 
-        /* -------------------------------------------------
-           PAYMENT
-        ------------------------------------------------- */
+        /* =================================================
+           PAYMENT METHOD
+        ================================================= */
 
-        $payment = strtolower(
-            trim((string)($input['payment'] ?? ''))
-        );
+        $payment =
+            strtolower(
+                trim(
+                    (string)(
+                        $input['payment'] ?? ''
+                    )
+                )
+            );
 
 
         $allowedPayments = [
-            'gcash' => 'GCash',
-            'bank' => 'Bank Transfer',
-            'cod' => 'Cash on Delivery'
+
+            'gcash' =>
+                'GCash',
+
+            'bank' =>
+                'Bank Transfer',
+
+            'cod' =>
+                'Cash on Delivery'
+
         ];
 
 
-        if (!isset($allowedPayments[$payment])) {
+        if (
+            !isset(
+                $allowedPayments[$payment]
+            )
+        ) {
+
             throw new Exception(
                 'Invalid payment method.'
             );
@@ -241,122 +324,225 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $allowedPayments[$payment];
 
 
-        /* -------------------------------------------------
+        /* =================================================
            NOTES
-        ------------------------------------------------- */
+        ================================================= */
 
-        $notes = trim(
-            (string)($input['notes'] ?? '')
-        );
+        $notes =
+            trim(
+                (string)(
+                    $input['notes'] ?? ''
+                )
+            );
 
-        if (strlen($notes) > 2000) {
+
+        if (
+            strlen($notes) > 2000
+        ) {
+
             throw new Exception(
                 'Order notes are too long.'
             );
         }
 
 
-        /* -------------------------------------------------
+        /* =================================================
            CART
-        ------------------------------------------------- */
+        ================================================= */
 
-        $cart = $input['cart'] ?? null;
+        $cart =
+            $input['cart'] ?? null;
 
-        if (!is_array($cart) || empty($cart)) {
+
+        if (
+            !is_array($cart) ||
+            empty($cart)
+        ) {
+
             throw new Exception(
                 'Your cart is empty.'
             );
         }
 
 
-        /* -------------------------------------------------
-           TRANSACTION
-        ------------------------------------------------- */
+        /* =================================================
+           START TRANSACTION
+        ================================================= */
 
         $conn->begin_transaction();
 
 
-        $totalAmount = 0;
+        $totalAmount = 0.00;
+
         $validatedItems = [];
 
 
-        /* -------------------------------------------------
-           VALIDATE EVERY PRODUCT AGAINST DATABASE
-        ------------------------------------------------- */
+        /* =================================================
+           PRODUCT QUERY
+        ================================================= */
 
-        $productStmt = $conn->prepare(
-            "SELECT
-                id,
-                name,
-                price,
-                availability
-             FROM products
-             WHERE id = ?
-             LIMIT 1"
-        );
+        $productStmt =
+            $conn->prepare(
+                "SELECT
+                    id,
+                    name,
+                    price,
+                    availability,
+                    stock
+
+                 FROM products
+
+                 WHERE id = ?
+
+                 LIMIT 1
+
+                 FOR UPDATE"
+            );
 
 
         if (!$productStmt) {
+
             throw new Exception(
-                'Unable to prepare product query.'
+                'Unable to process the order.'
             );
         }
 
 
+        /* =================================================
+           VALIDATE EVERY CART ITEM
+        ================================================= */
+
         foreach ($cart as $item) {
 
-          $productId = isset($item['id'])
-    ? (int)$item['id']
-    : 0;
+            $productId =
+                isset($item['id'])
+                    ? (int)$item['id']
+                    : 0;
 
-$quantity = isset($item['quantity'])
-    ? (int)$item['quantity']
-    : 1;
 
-if (
-    $productId <= 0 ||
-    $quantity < 1 ||
-    $quantity > 20
-) {
-    throw new Exception(
-        'Invalid cart item.'
-    );
-}
+            $quantity =
+                isset($item['quantity'])
+                    ? (int)$item['quantity']
+                    : 1;
 
+
+            /* ---------------------------------------------
+               VALID PRODUCT ID / QUANTITY
+            --------------------------------------------- */
+
+            if (
+                $productId <= 0 ||
+                $quantity < 1 ||
+                $quantity > 20
+            ) {
+
+                throw new Exception(
+                    'Invalid cart item.'
+                );
+            }
+
+
+            /* ---------------------------------------------
+               GET PRODUCT FROM DATABASE
+            --------------------------------------------- */
 
             $productStmt->bind_param(
                 "i",
                 $productId
             );
 
-            $productStmt->execute();
+
+            if (
+                !$productStmt->execute()
+            ) {
+
+                throw new Exception(
+                    'Unable to process the order.'
+                );
+            }
+
 
             $productResult =
                 $productStmt->get_result();
+
 
             $product =
                 $productResult->fetch_assoc();
 
 
             if (!$product) {
+
                 throw new Exception(
                     'One of the products in your cart no longer exists.'
                 );
             }
 
 
-            $price = (float)$product['price'];
+            /* ---------------------------------------------
+               ONLY IN-STOCK PRODUCTS
+            --------------------------------------------- */
+
+            if (
+                $product['availability']
+                !== 'In Stock'
+            ) {
+
+                throw new Exception(
+                    $product['name']
+                    . ' is not currently available for normal checkout.'
+                );
+            }
+
+
+            /* ---------------------------------------------
+               STOCK CHECK
+            --------------------------------------------- */
+
+            $stock =
+                (int)$product['stock'];
+
+
+            if (
+                $quantity > $stock
+            ) {
+
+                throw new Exception(
+                    'Not enough stock available for '
+                    . $product['name']
+                    . '. Only '
+                    . $stock
+                    . ' item(s) remain.'
+                );
+            }
+
+
+            /* ---------------------------------------------
+               SERVER-SIDE PRICE
+            --------------------------------------------- */
+
+            $price =
+                (float)$product['price'];
+
 
             $itemTotal =
                 $price * $quantity;
 
-            $totalAmount += $itemTotal;
+
+            $totalAmount +=
+                $itemTotal;
 
 
             $validatedItems[] = [
-                'product_id' => (int)$product['id'],
-                'quantity' => $quantity,
-                'price' => $price
+
+                'product_id' =>
+                    (int)$product['id'],
+
+                'quantity' =>
+                    $quantity,
+
+                'price' =>
+                    $price
+
             ];
         }
 
@@ -364,34 +550,52 @@ if (
         $productStmt->close();
 
 
-        if ($totalAmount <= 0) {
+        /* =================================================
+           VALIDATE TOTAL
+        ================================================= */
+
+        if (
+            $totalAmount <= 0
+        ) {
+
             throw new Exception(
                 'Invalid order total.'
             );
         }
 
 
-        /* -------------------------------------------------
+        /* =================================================
            SAVE ORDER
-        ------------------------------------------------- */
+        ================================================= */
 
-        $orderStmt = $conn->prepare(
-            "INSERT INTO orders
-            (
-                user_id,
-                total_amount,
-                payment_method,
-                status,
-                delivery_address,
-                order_notes
-            )
-            VALUES (?, ?, ?, 'Pending', ?, ?)"
-        );
+        $orderStmt =
+            $conn->prepare(
+                "INSERT INTO orders
+                (
+                    user_id,
+                    total_amount,
+                    payment_method,
+                    status,
+                    delivery_address,
+                    order_notes
+                )
+
+                VALUES
+                (
+                    ?,
+                    ?,
+                    ?,
+                    'Pending',
+                    ?,
+                    ?
+                )"
+            );
 
 
         if (!$orderStmt) {
+
             throw new Exception(
-                'Unable to prepare order query.'
+                'Unable to process the order.'
             );
         }
 
@@ -406,7 +610,10 @@ if (
         );
 
 
-        if (!$orderStmt->execute()) {
+        if (
+            !$orderStmt->execute()
+        ) {
+
             throw new Exception(
                 'Unable to save your order.'
             );
@@ -420,30 +627,71 @@ if (
         $orderStmt->close();
 
 
-        /* -------------------------------------------------
+        /* =================================================
            SAVE ORDER ITEMS
-        ------------------------------------------------- */
+        ================================================= */
 
-        $itemStmt = $conn->prepare(
-            "INSERT INTO order_items
-            (
-                order_id,
-                product_id,
-                quantity,
-                price
-            )
-            VALUES (?, ?, ?, ?)"
-        );
+        $itemStmt =
+            $conn->prepare(
+                "INSERT INTO order_items
+                (
+                    order_id,
+                    product_id,
+                    quantity,
+                    price
+                )
+
+                VALUES
+                (
+                    ?,
+                    ?,
+                    ?,
+                    ?
+                )"
+            );
 
 
         if (!$itemStmt) {
+
             throw new Exception(
-                'Unable to prepare order item query.'
+                'Unable to process order items.'
             );
         }
 
 
-        foreach ($validatedItems as $item) {
+        /* =================================================
+           STOCK UPDATE STATEMENT
+        ================================================= */
+
+        $stockStmt =
+            $conn->prepare(
+                "UPDATE products
+                 SET stock = stock - ?
+                 WHERE id = ?
+                   AND stock >= ?"
+            );
+
+
+        if (!$stockStmt) {
+
+            throw new Exception(
+                'Unable to update inventory.'
+            );
+        }
+
+
+        /* =================================================
+           SAVE ITEMS + REDUCE STOCK
+        ================================================= */
+
+        foreach (
+            $validatedItems
+            as $item
+        ) {
+
+            /* ---------------------------------------------
+               SAVE ORDER ITEM
+            --------------------------------------------- */
 
             $itemStmt->bind_param(
                 "iiid",
@@ -454,45 +702,193 @@ if (
             );
 
 
-            if (!$itemStmt->execute()) {
+            if (
+                !$itemStmt->execute()
+            ) {
+
                 throw new Exception(
                     'Unable to save order items.'
+                );
+            }
+
+
+            /* ---------------------------------------------
+               REDUCE STOCK
+            --------------------------------------------- */
+
+            $stockStmt->bind_param(
+                "iii",
+                $item['quantity'],
+                $item['product_id'],
+                $item['quantity']
+            );
+
+
+            if (
+                !$stockStmt->execute()
+                ||
+                $stockStmt->affected_rows !== 1
+            ) {
+
+                throw new Exception(
+                    'Unable to update product stock.'
                 );
             }
         }
 
 
         $itemStmt->close();
+        $stockStmt->close();
 
 
-        /* -------------------------------------------------
+        /* =================================================
            COMMIT
-        ------------------------------------------------- */
+        ================================================= */
 
         $conn->commit();
 
 
-        /* -------------------------------------------------
-           NEW CSRF TOKEN
-        ------------------------------------------------- */
+        /* =================================================
+           REFRESH CSRF TOKEN
+        ================================================= */
 
         $_SESSION['checkout_csrf'] =
-            bin2hex(random_bytes(32));
+            bin2hex(
+                random_bytes(32)
+            );
 
+
+        /* =================================================
+           SUCCESS RESPONSE
+        ================================================= */
 
         echo json_encode([
-            'success' => true,
-            'order_id' => $orderId,
-            'message' => 'Your order has been placed successfully!'
+
+            'success' =>
+                true,
+
+            'order_id' =>
+                $orderId,
+
+            'message' =>
+                'Your order has been placed successfully!'
+
         ]);
+
 
         exit;
 
 
     } catch (Throwable $error) {
 
-        if ($conn->thread_id) {
+
+        /* =================================================
+           ROLLBACK
+        ================================================= */
+
+        try {
+
             $conn->rollback();
+
+        } catch (Throwable $rollbackError) {
+
+            // Ignore rollback failure.
+
+        }
+
+
+        /* =================================================
+           LOG REAL ERROR
+        ================================================= */
+
+        error_log(
+            'Checkout Error: '
+            . $error->getMessage()
+        );
+
+
+        /* =================================================
+           SAFE USER MESSAGE
+        ================================================= */
+
+        $message =
+            $error->getMessage();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Known validation messages
+        |--------------------------------------------------------------------------
+        */
+
+        $safeMessages = [
+
+            'Invalid request.',
+
+            'Security validation failed.',
+
+            'You must be logged in to place an order.',
+
+            'Please complete all customer information.',
+
+            'Please enter a valid email address.',
+
+            'Please complete the delivery address.',
+
+            'Invalid payment method.',
+
+            'Order notes are too long.',
+
+            'Your cart is empty.',
+
+            'Invalid cart item.',
+
+            'One of the products in your cart no longer exists.'
+
+        ];
+
+
+        $isKnownMessage =
+            in_array(
+                $message,
+                $safeMessages,
+                true
+            );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Safe stock / availability messages
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            str_starts_with(
+                $message,
+                'Not enough stock available for'
+            )
+            ||
+            str_ends_with(
+                $message,
+                'is not currently available for normal checkout.'
+            )
+        ) {
+
+            $isKnownMessage =
+                true;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Generic internal error
+        |--------------------------------------------------------------------------
+        */
+
+        if (!$isKnownMessage) {
+
+            $message =
+                'Unable to place your order right now. Please try again.';
         }
 
 
@@ -500,9 +896,15 @@ if (
 
 
         echo json_encode([
-            'success' => false,
-            'message' => $error->getMessage()
+
+            'success' =>
+                false,
+
+            'message' =>
+                $message
+
         ]);
+
 
         exit;
     }
@@ -531,7 +933,10 @@ if (
         content="Complete your Mimic Haven Collectibles order."
     >
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
 
     <link
         rel="preconnect"
@@ -551,6 +956,7 @@ if (
 
 </head>
 
+
 <body>
 
 
@@ -565,6 +971,7 @@ if (
 
     <div class="header-inner">
 
+
         <a
             class="brand"
             href="index.php"
@@ -575,7 +982,7 @@ if (
 
                 <img
                     class="brand-logo"
-                    src="<?= asset('logo') ?>"
+                    src="<?= e(asset('logo')) ?>"
                     alt="Mimic Haven Collectibles"
                 >
 
@@ -663,6 +1070,39 @@ if (
             </a>
 
 
+            <?php if (isLoggedIn()): ?>
+
+                <a
+                    class="nav-user"
+                    href="account.php"
+                >
+                    Hi, <?= e(currentFirstName()) ?>
+                </a>
+
+            <?php endif; ?>
+
+
+            <?php if (isLoggedIn()): ?>
+
+                <a
+                    class="nav-account"
+                    href="logout.php"
+                >
+                    Logout
+                </a>
+
+            <?php else: ?>
+
+                <a
+                    class="nav-account"
+                    href="login.php"
+                >
+                    Login
+                </a>
+
+            <?php endif; ?>
+
+
             <a
                 class="browse-btn"
                 href="collection.php"
@@ -695,9 +1135,7 @@ if (
 <main class="checkout-page">
 
 
-    <!-- =====================================================
-         BREADCRUMB
-    ====================================================== -->
+    <!-- BREADCRUMB -->
 
     <div class="checkout-breadcrumb">
 
@@ -705,13 +1143,17 @@ if (
             Home
         </a>
 
-        <span>›</span>
+        <span>
+            ›
+        </span>
 
         <a href="cart.php">
             Cart
         </a>
 
-        <span>›</span>
+        <span>
+            ›
+        </span>
 
         Checkout
 
@@ -719,9 +1161,7 @@ if (
 
 
 
-    <!-- =====================================================
-         HEADING
-    ====================================================== -->
+    <!-- HEADING -->
 
     <div class="checkout-heading">
 
@@ -730,8 +1170,7 @@ if (
         </span>
 
         <h1>
-            Check
-            <strong>out.</strong>
+            Check<strong>out.</strong>
         </h1>
 
         <p>
@@ -742,9 +1181,7 @@ if (
 
 
 
-    <!-- =====================================================
-         CHECKOUT LAYOUT
-    ====================================================== -->
+    <!-- CHECKOUT LAYOUT -->
 
     <section class="checkout-layout">
 
@@ -817,6 +1254,7 @@ if (
 
                     </div>
 
+
                 </div>
 
 
@@ -855,6 +1293,7 @@ if (
                         >
 
                     </div>
+
 
                 </div>
 
@@ -940,6 +1379,7 @@ if (
 
                     </div>
 
+
                 </div>
 
 
@@ -975,13 +1415,17 @@ if (
                             required
                         >
 
-                            <option value="Philippines" selected>
+                            <option
+                                value="Philippines"
+                                selected
+                            >
                                 Philippines
                             </option>
 
                         </select>
 
                     </div>
+
 
                 </div>
 
@@ -1086,6 +1530,7 @@ if (
 
                     </label>
 
+
                 </div>
 
             </div>
@@ -1144,6 +1589,7 @@ if (
 
         <aside class="checkout-summary">
 
+
             <div class="checkout-summary-header">
 
                 <span>
@@ -1151,8 +1597,7 @@ if (
                 </span>
 
                 <h2>
-                    Order
-                    <strong>Summary</strong>
+                    Order <strong>Summary</strong>
                 </h2>
 
             </div>
@@ -1235,7 +1680,9 @@ if (
 
         </aside>
 
+
     </section>
+
 
 </main>
 
@@ -1256,11 +1703,12 @@ if (
 
                 <img
                     class="footer-logo"
-                    src="<?= asset('logo') ?>"
+                    src="<?= e(asset('logo')) ?>"
                     alt="Mimic Haven Collectibles"
                 >
 
             <?php endif; ?>
+
 
             <p>
                 A sanctuary for anime collectors, offering authentic
@@ -1314,6 +1762,7 @@ if (
                 +63 965 745 7775
             </a>
 
+
             <div class="socials">
 
                 <a
@@ -1353,6 +1802,7 @@ if (
 
         </div>
 
+
     </div>
 
 
@@ -1383,6 +1833,7 @@ if (
 <script src="script.js"></script>
 
 
+
 <script>
 
 /* =========================================================
@@ -1390,24 +1841,41 @@ if (
 ========================================================= */
 
 const checkoutItems =
-    document.getElementById('checkoutItems');
+    document.getElementById(
+        'checkoutItems'
+    );
+
 
 const checkoutSubtotal =
-    document.getElementById('checkoutSubtotal');
+    document.getElementById(
+        'checkoutSubtotal'
+    );
+
 
 const checkoutTotal =
-    document.getElementById('checkoutTotal');
+    document.getElementById(
+        'checkoutTotal'
+    );
+
 
 const placeOrderButton =
-    document.getElementById('placeOrderButton');
+    document.getElementById(
+        'placeOrderButton'
+    );
 
+
+/* =========================================================
+   GET CART
+========================================================= */
 
 function getCheckoutCart() {
 
     try {
 
         return JSON.parse(
-            localStorage.getItem('mimicHavenCart') || '[]'
+            localStorage.getItem(
+                'mimicHavenCart'
+            ) || '[]'
         );
 
     } catch (error) {
@@ -1424,32 +1892,68 @@ function getCheckoutCart() {
 }
 
 
-function formatCheckoutPrice(value) {
+/* =========================================================
+   FORMAT PRICE
+========================================================= */
+
+function formatCheckoutPrice(
+    value
+) {
 
     return '₱' +
-        Number(value).toLocaleString('en-PH');
+        Number(value).toLocaleString(
+            'en-PH'
+        );
 
 }
 
 
-function escapeCheckoutHtml(value) {
+/* =========================================================
+   ESCAPE HTML
+========================================================= */
+
+function escapeCheckoutHtml(
+    value
+) {
 
     return String(value)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
+        .replaceAll(
+            '&',
+            '&amp;'
+        )
+        .replaceAll(
+            '<',
+            '&lt;'
+        )
+        .replaceAll(
+            '>',
+            '&gt;'
+        )
+        .replaceAll(
+            '"',
+            '&quot;'
+        )
+        .replaceAll(
+            "'",
+            '&#039;'
+        );
 
 }
 
+
+/* =========================================================
+   RENDER CHECKOUT
+========================================================= */
 
 function renderCheckout() {
 
     const cart =
         getCheckoutCart();
 
-    checkoutItems.innerHTML = '';
+
+    checkoutItems.innerHTML =
+        '';
+
 
     let subtotal = 0;
 
@@ -1472,17 +1976,20 @@ function renderCheckout() {
 
         `;
 
+
         checkoutSubtotal.textContent =
             '₱0';
+
 
         checkoutTotal.textContent =
             '₱0';
 
+
         placeOrderButton.disabled =
             true;
 
-        return;
 
+        return;
     }
 
 
@@ -1490,81 +1997,110 @@ function renderCheckout() {
         false;
 
 
-    cart.forEach(item => {
+    cart.forEach(
+        item => {
 
-        const quantity =
-            Number(item.quantity || 1);
-
-        const price =
-            Number(item.price || 0);
-
-        const itemTotal =
-            price * quantity;
+            const quantity =
+                Number(
+                    item.quantity || 1
+                );
 
 
-        subtotal += itemTotal;
+            const price =
+                Number(
+                    item.price || 0
+                );
 
 
-        const itemElement =
-            document.createElement('div');
+            const itemTotal =
+                price * quantity;
 
 
-        itemElement.className =
-            'checkout-item';
+            subtotal +=
+                itemTotal;
 
 
-        itemElement.innerHTML = `
+            const itemElement =
+                document.createElement(
+                    'div'
+                );
 
-            <div class="checkout-item-info">
+
+            itemElement.className =
+                'checkout-item';
+
+
+            itemElement.innerHTML = `
+
+                <div class="checkout-item-info">
+
+                    <strong>
+                        ${escapeCheckoutHtml(
+                            item.name ||
+                            'Anime Figure'
+                        )}
+                    </strong>
+
+                    <span>
+                        Qty: ${quantity}
+                    </span>
+
+                </div>
 
                 <strong>
-                    ${escapeCheckoutHtml(
-                        item.name || 'Anime Figure'
+                    ${formatCheckoutPrice(
+                        itemTotal
                     )}
                 </strong>
 
-                <span>
-                    Qty: ${quantity}
-                </span>
-
-            </div>
-
-            <strong>
-                ${formatCheckoutPrice(itemTotal)}
-            </strong>
-
-        `;
+            `;
 
 
-        checkoutItems.appendChild(
-            itemElement
-        );
+            checkoutItems.appendChild(
+                itemElement
+            );
 
-    });
+        }
+    );
 
 
     checkoutSubtotal.textContent =
-        formatCheckoutPrice(subtotal);
+        formatCheckoutPrice(
+            subtotal
+        );
+
 
     checkoutTotal.textContent =
-        formatCheckoutPrice(subtotal);
+        formatCheckoutPrice(
+            subtotal
+        );
 
 }
 
 
+/* =========================================================
+   PLACE ORDER
+========================================================= */
 
 placeOrderButton?.addEventListener(
     'click',
     async () => {
 
-        const cart = getCheckoutCart();
+        const cart =
+            getCheckoutCart();
+
 
         if (cart.length === 0) {
             return;
         }
 
 
+        /* ---------------------------------------------
+           REQUIRED FIELDS
+        --------------------------------------------- */
+
         const requiredFields = [
+
             'firstName',
             'lastName',
             'email',
@@ -1573,29 +2109,48 @@ placeOrderButton?.addEventListener(
             'city',
             'province',
             'postalCode'
+
         ];
 
 
-        for (const fieldId of requiredFields) {
+        for (
+            const fieldId
+            of requiredFields
+        ) {
 
             const field =
-                document.getElementById(fieldId);
+                document.getElementById(
+                    fieldId
+                );
 
-            if (!field || !field.value.trim()) {
+
+            if (
+                !field ||
+                !field.value.trim()
+            ) {
 
                 field?.focus();
 
-                if (typeof showToast === 'function') {
+
+                if (
+                    typeof showToast ===
+                    'function'
+                ) {
 
                     showToast(
                         'Please complete all required fields.'
                     );
                 }
 
+
                 return;
             }
         }
 
+
+        /* ---------------------------------------------
+           PAYMENT
+        --------------------------------------------- */
 
         const payment =
             document.querySelector(
@@ -1605,72 +2160,127 @@ placeOrderButton?.addEventListener(
 
         if (!payment) {
 
-            if (typeof showToast === 'function') {
+            if (
+                typeof showToast ===
+                'function'
+            ) {
 
                 showToast(
                     'Please select a payment method.'
                 );
             }
 
+
             return;
         }
 
 
-        placeOrderButton.disabled = true;
+        /* ---------------------------------------------
+           BUTTON
+        --------------------------------------------- */
+
+        placeOrderButton.disabled =
+            true;
+
 
         placeOrderButton.textContent =
             'Processing...';
 
 
+        /* ---------------------------------------------
+           ORDER DATA
+        --------------------------------------------- */
+
         const orderData = {
 
             csrf_token:
-                <?= json_encode($checkoutCsrf) ?>,
+                <?= json_encode(
+                    $checkoutCsrf
+                ) ?>,
+
 
             firstName:
-                document.getElementById('firstName').value.trim(),
+                document.getElementById(
+                    'firstName'
+                ).value.trim(),
+
 
             lastName:
-                document.getElementById('lastName').value.trim(),
+                document.getElementById(
+                    'lastName'
+                ).value.trim(),
+
 
             email:
-                document.getElementById('email').value.trim(),
+                document.getElementById(
+                    'email'
+                ).value.trim(),
+
 
             phone:
-                document.getElementById('phone').value.trim(),
+                document.getElementById(
+                    'phone'
+                ).value.trim(),
+
 
             address:
-                document.getElementById('address').value.trim(),
+                document.getElementById(
+                    'address'
+                ).value.trim(),
+
 
             city:
-                document.getElementById('city').value.trim(),
+                document.getElementById(
+                    'city'
+                ).value.trim(),
+
 
             province:
-                document.getElementById('province').value.trim(),
+                document.getElementById(
+                    'province'
+                ).value.trim(),
+
 
             postalCode:
-                document.getElementById('postalCode').value.trim(),
+                document.getElementById(
+                    'postalCode'
+                ).value.trim(),
+
 
             country:
-                document.getElementById('country').value,
+                document.getElementById(
+                    'country'
+                ).value,
+
 
             payment:
                 payment.value,
 
-            notes:
-                document.getElementById('notes').value.trim(),
 
-            cart: cart
+            notes:
+                document.getElementById(
+                    'notes'
+                ).value.trim(),
+
+
+            cart:
+                cart
+
         };
 
 
         try {
 
+            /* -----------------------------------------
+               SEND ORDER
+            ----------------------------------------- */
+
             const response =
                 await fetch(
                     'checkout.php',
                     {
-                        method: 'POST',
+                        method:
+                            'POST',
 
                         headers: {
                             'Content-Type':
@@ -1678,7 +2288,9 @@ placeOrderButton?.addEventListener(
                         },
 
                         body:
-                            JSON.stringify(orderData)
+                            JSON.stringify(
+                                orderData
+                            )
                     }
                 );
 
@@ -1687,7 +2299,10 @@ placeOrderButton?.addEventListener(
                 await response.json();
 
 
-            if (!response.ok || !result.success) {
+            if (
+                !response.ok ||
+                !result.success
+            ) {
 
                 throw new Error(
                     result.message ||
@@ -1696,25 +2311,40 @@ placeOrderButton?.addEventListener(
             }
 
 
+            /* -----------------------------------------
+               CLEAR CART
+            ----------------------------------------- */
+
             localStorage.removeItem(
                 'mimicHavenCart'
             );
 
 
             const cartCount =
-                document.getElementById('cart-count');
+                document.getElementById(
+                    'cart-count'
+                );
 
 
             if (cartCount) {
-                cartCount.textContent = '0';
+
+                cartCount.textContent =
+                    '0';
             }
 
+
+            /* -----------------------------------------
+               SUCCESS
+            ----------------------------------------- */
 
             placeOrderButton.textContent =
                 'Order Placed ✓';
 
 
-            if (typeof showToast === 'function') {
+            if (
+                typeof showToast ===
+                'function'
+            ) {
 
                 showToast(
                     `Order #${result.order_id} placed successfully!`
@@ -1722,12 +2352,15 @@ placeOrderButton?.addEventListener(
             }
 
 
-            setTimeout(() => {
+            setTimeout(
+                () => {
 
-                window.location.href =
-                    'account.php';
+                    window.location.href =
+                        'account.php';
 
-            }, 1800);
+                },
+                1800
+            );
 
 
         } catch (error) {
@@ -1738,30 +2371,40 @@ placeOrderButton?.addEventListener(
             );
 
 
-            placeOrderButton.disabled = false;
+            placeOrderButton.disabled =
+                false;
+
 
             placeOrderButton.textContent =
                 'Place Order →';
 
 
-            if (typeof showToast === 'function') {
+            if (
+                typeof showToast ===
+                'function'
+            ) {
 
                 showToast(
                     error.message ||
                     'Unable to place your order.'
                 );
             }
+
         }
 
     }
 );
 
 
-
+/* =========================================================
+   INITIAL RENDER
+========================================================= */
 
 renderCheckout();
 
 </script>
 
+
 </body>
+
 </html>
