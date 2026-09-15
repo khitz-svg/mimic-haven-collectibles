@@ -4,18 +4,26 @@
    MIMIC HAVEN - CART PAGE
 ========================================================= */
 
+require_once 'auth.php';
+
+
 function asset(string $name): string {
+
     foreach (['png','jpg','jpeg','webp','svg'] as $ext) {
 
-        $assetFile = __DIR__ . "/assets/{$name}.{$ext}";
+        $assetFile =
+            __DIR__ . "/assets/{$name}.{$ext}";
 
         if (file_exists($assetFile)) {
+
             return "assets/{$name}.{$ext}";
         }
 
-        $rootFile = __DIR__ . "/{$name}.{$ext}";
+        $rootFile =
+            __DIR__ . "/{$name}.{$ext}";
 
         if (file_exists($rootFile)) {
+
             return "{$name}.{$ext}";
         }
     }
@@ -23,12 +31,16 @@ function asset(string $name): string {
     return "";
 }
 
+
 function icon(string $name): string {
+
     foreach (['png','jpg','jpeg','webp','svg'] as $ext) {
 
-        $file = __DIR__ . "/assets/icons/{$name}.{$ext}";
+        $file =
+            __DIR__ . "/assets/icons/{$name}.{$ext}";
 
         if (file_exists($file)) {
+
             return "assets/icons/{$name}.{$ext}";
         }
     }
@@ -36,8 +48,20 @@ function icon(string $name): string {
     return "";
 }
 
+
+function e(string $value): string {
+
+    return htmlspecialchars(
+        $value,
+        ENT_QUOTES,
+        'UTF-8'
+    );
+}
+
 ?>
+
 <!doctype html>
+
 <html lang="en">
 
 <head>
@@ -58,7 +82,10 @@ function icon(string $name): string {
         content="Review your selected anime figures and proceed to checkout."
     >
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
 
     <link
         rel="preconnect"
@@ -78,11 +105,12 @@ function icon(string $name): string {
 
 </head>
 
+
 <body>
 
 
 <!-- =========================================================
-     SAME HEADER AS HOMEPAGE
+     HEADER
 ========================================================= -->
 
 <header
@@ -91,6 +119,9 @@ function icon(string $name): string {
 >
 
     <div class="header-inner">
+
+
+        <!-- LOGO -->
 
         <a
             class="brand"
@@ -109,8 +140,13 @@ function icon(string $name): string {
             <?php else: ?>
 
                 <div class="brand-fallback">
+
                     MIMIC HAVEN
-                    <span>COLLECTIBLES</span>
+
+                    <span>
+                        COLLECTIBLES
+                    </span>
+
                 </div>
 
             <?php endif; ?>
@@ -118,50 +154,80 @@ function icon(string $name): string {
         </a>
 
 
+        <!-- NAVIGATION -->
+
         <nav
             class="nav"
             id="main-nav"
             aria-label="Primary navigation"
         >
 
+
             <a href="index.php">
                 Home
             </a>
+
 
             <a href="collection.php">
                 Collection
             </a>
 
+
             <a href="preorder.php">
                 Pre-Orders
             </a>
 
-            <a href="index.php#about">
+
+            <a href="about.php">
                 About
             </a>
 
-            <a href="index.php#contact">
+
+            <a href="contact.php">
                 Contact
             </a>
 
 
-            <a
-                class="nav-icon"
-                href="collection.php#collection-search"
-                aria-label="Search"
+            <!-- EXPANDABLE SEARCH -->
+
+            <div
+                class="header-search"
+                id="headerSearch"
             >
 
-                <?php if (icon('search')): ?>
+                <button
+                    type="button"
+                    class="header-search-toggle"
+                    id="headerSearchToggle"
+                    aria-label="Search"
+                    aria-expanded="false"
+                >
 
-                    <img
-                        src="<?= icon('search') ?>"
-                        alt="Search"
-                    >
+                    <?php if (icon('search')): ?>
 
-                <?php endif; ?>
+                        <img
+                            src="<?= icon('search') ?>"
+                            alt=""
+                        >
 
-            </a>
+                    <?php endif; ?>
 
+                </button>
+
+
+                <input
+                    type="search"
+                    class="header-search-input"
+                    id="headerSearchInput"
+                    placeholder="Search figures..."
+                    autocomplete="off"
+                    aria-label="Search figures"
+                >
+
+            </div>
+
+
+            <!-- CART -->
 
             <a
                 class="nav-icon cart-button"
@@ -178,6 +244,7 @@ function icon(string $name): string {
 
                 <?php endif; ?>
 
+
                 <span id="cart-count">
                     0
                 </span>
@@ -185,15 +252,41 @@ function icon(string $name): string {
             </a>
 
 
-            <a
-                class="browse-btn"
-                href="collection.php"
-            >
-                Browse Figures
-            </a>
+            <!-- ACCOUNT -->
+
+            <?php if (isLoggedIn()): ?>
+
+                <a
+                    class="nav-user"
+                    href="account.php"
+                >
+                    Hi, <?= e(currentFirstName()) ?>
+                </a>
+
+
+                <a
+                    class="nav-account"
+                    href="logout.php"
+                >
+                    Logout
+                </a>
+
+            <?php else: ?>
+
+                <a
+                    class="nav-account"
+                    href="login.php"
+                >
+                    Login
+                </a>
+
+            <?php endif; ?>
+
 
         </nav>
 
+
+        <!-- MOBILE MENU -->
 
         <button
             class="menu-toggle"
@@ -207,6 +300,7 @@ function icon(string $name): string {
     </div>
 
 </header>
+
 
 
 <!-- =========================================================
@@ -224,7 +318,9 @@ function icon(string $name): string {
             Home
         </a>
 
-        <span>›</span>
+        <span>
+            ›
+        </span>
 
         Cart
 
@@ -241,8 +337,13 @@ function icon(string $name): string {
         </span>
 
         <h1>
+
             Shopping
-            <strong>Cart</strong>
+
+            <strong>
+                Cart
+            </strong>
+
         </h1>
 
         <p>
@@ -340,7 +441,8 @@ function icon(string $name): string {
             </div>
 
 
-            <div class="cart-summary-divider"></div>
+            <div class="cart-summary-divider">
+            </div>
 
 
             <div class="cart-summary-total">
@@ -375,19 +477,23 @@ function icon(string $name): string {
 
         </aside>
 
+
     </section>
 
 </main>
 
 
+
 <!-- =========================================================
-     SAME FOOTER
+     FOOTER
 ========================================================= -->
 
 <footer id="contact">
 
     <div class="footer-grid">
 
+
+        <!-- BRAND -->
 
         <div>
 
@@ -401,6 +507,7 @@ function icon(string $name): string {
 
             <?php endif; ?>
 
+
             <p>
                 A sanctuary for anime collectors, offering authentic
                 figures, trusted pre-orders, and a premium collecting
@@ -410,34 +517,45 @@ function icon(string $name): string {
         </div>
 
 
+
+        <!-- NAVIGATION -->
+
         <div class="footer-links">
 
             <h4>
                 NAVIGATE
             </h4>
 
+
             <a href="index.php">
                 Home
             </a>
+
 
             <a href="collection.php">
                 Collection
             </a>
 
+
             <a href="preorder.php">
                 Pre-Orders
             </a>
 
-            <a href="index.php#about">
+
+            <a href="about.php">
                 About
             </a>
 
-            <a href="index.php#contact">
+
+            <a href="contact.php">
                 Contact
             </a>
 
         </div>
 
+
+
+        <!-- CONNECT -->
 
         <div class="footer-links">
 
@@ -445,9 +563,11 @@ function icon(string $name): string {
                 CONNECT
             </h4>
 
+
             <a href="mailto:mimichvn.collectibles@gmail.com">
                 mimichvn.collectibles@gmail.com
             </a>
+
 
             <a href="tel:+639657457775">
                 +63 965 745 7775
@@ -493,7 +613,9 @@ function icon(string $name): string {
 
         </div>
 
+
     </div>
+
 
 
     <div class="footer-bottom">
@@ -501,6 +623,7 @@ function icon(string $name): string {
         <span>
             © 2026 Mimic Haven Collectibles. All Rights Reserved.
         </span>
+
 
         <span>
             Crafted with precision &amp; passion.
@@ -511,6 +634,7 @@ function icon(string $name): string {
 </footer>
 
 
+
 <div
     id="toast"
     class="toast"
@@ -519,10 +643,162 @@ function icon(string $name): string {
 ></div>
 
 
+
 <script src="script.js"></script>
 
 
+
+<!-- =========================================================
+     HEADER SEARCH
+========================================================= -->
+
 <script>
+
+document.addEventListener(
+    'DOMContentLoaded',
+    function () {
+
+        const headerSearch =
+            document.getElementById('headerSearch');
+
+        const headerSearchToggle =
+            document.getElementById('headerSearchToggle');
+
+        const headerSearchInput =
+            document.getElementById('headerSearchInput');
+
+
+        if (
+            !headerSearch ||
+            !headerSearchToggle ||
+            !headerSearchInput
+        ) {
+            return;
+        }
+
+
+        headerSearchToggle.addEventListener(
+            'click',
+            function (event) {
+
+                event.stopPropagation();
+
+
+                const isOpen =
+                    headerSearch.classList.contains('active');
+
+
+                if (isOpen) {
+
+                    headerSearchInput.focus();
+
+                    return;
+                }
+
+
+                headerSearch.classList.add('active');
+
+
+                headerSearchToggle.setAttribute(
+                    'aria-expanded',
+                    'true'
+                );
+
+
+                setTimeout(
+                    function () {
+
+                        headerSearchInput.focus();
+
+                    },
+                    250
+                );
+
+            }
+        );
+
+
+        headerSearchInput.addEventListener(
+            'keydown',
+            function (event) {
+
+                if (event.key !== 'Enter') {
+                    return;
+                }
+
+
+                const search =
+                    headerSearchInput.value.trim();
+
+
+                if (!search) {
+                    return;
+                }
+
+
+                window.location.href =
+                    'collection.php?search=' +
+                    encodeURIComponent(search);
+
+            }
+        );
+
+
+        document.addEventListener(
+            'click',
+            function (event) {
+
+                if (
+                    !headerSearch.contains(event.target)
+                ) {
+
+                    headerSearch.classList.remove(
+                        'active'
+                    );
+
+
+                    headerSearchToggle.setAttribute(
+                        'aria-expanded',
+                        'false'
+                    );
+
+                }
+
+            }
+        );
+
+
+        headerSearchInput.addEventListener(
+            'keydown',
+            function (event) {
+
+                if (event.key === 'Escape') {
+
+                    headerSearch.classList.remove(
+                        'active'
+                    );
+
+
+                    headerSearchToggle.setAttribute(
+                        'aria-expanded',
+                        'false'
+                    );
+
+
+                    headerSearchInput.value = '';
+
+
+                    headerSearchToggle.focus();
+
+                }
+
+            }
+        );
+
+    }
+);
+
+
 
 /* =========================================================
    CART FUNCTIONALITY
@@ -617,9 +893,11 @@ function updateCartCount(cart) {
 
 
     if (pageCartCount) {
-    pageCartCount.textContent =
-        totalItems;
-}
+
+        pageCartCount.textContent =
+            totalItems;
+
+    }
 
 }
 
@@ -631,17 +909,24 @@ function updateCartCount(cart) {
 function getProductImage(image) {
 
     if (!image) {
+
         return '';
+
     }
 
-    let file = String(image).trim();
+
+    let file =
+        String(image).trim();
+
 
     file = file.replace(
-        /^.*?assets\/collections\//i,
+        /^.*?assets[\/\\]collections[\/\\]/i,
         ''
     );
 
+
     return `assets/collections/${encodeURI(file)}`;
+
 }
 
 
@@ -667,22 +952,26 @@ function renderCart() {
         emptyCart.style.display =
             'block';
 
+
         cartSubtotal.textContent =
             '₱0';
+
 
         cartTotal.textContent =
             '₱0';
 
+
         checkoutButton.disabled =
             true;
 
-        return;
 
+        return;
     }
 
 
     emptyCart.style.display =
         'none';
+
 
     checkoutButton.disabled =
         false;
@@ -691,133 +980,158 @@ function renderCart() {
     let subtotal = 0;
 
 
-    cart.forEach((item, index) => {
+    cart.forEach(
+        (item, index) => {
 
-        const quantity =
-            Number(item.quantity || 1);
-
-        const price =
-            Number(item.price || 0);
-
-        const itemTotal =
-            price * quantity;
+            const quantity =
+                Number(item.quantity || 1);
 
 
-        subtotal += itemTotal;
+            const price =
+                Number(item.price || 0);
 
 
-        const image = getProductImage(item.image);
+            const itemTotal =
+                price * quantity;
 
 
-        const itemElement =
-            document.createElement('div');
+            subtotal +=
+                itemTotal;
 
 
-        itemElement.className =
-            'cart-item';
+            const image =
+                getProductImage(item.image);
 
 
-        itemElement.innerHTML = `
-
-            <div class="cart-item-image">
-
-                ${
-                    image
-                    ? `
-                        <img
-                            src="${image}"
-                            alt="${escapeHtml(item.name)}"
-                        >
-                      `
-                    : `
-                        <div class="cart-item-placeholder">
-                            FIGURE
-                        </div>
-                      `
-                }
-
-            </div>
+            const itemElement =
+                document.createElement('div');
 
 
-            <div class="cart-item-info">
-
-                <span class="cart-item-series">
-                    ${escapeHtml(
-                        item.series || 'Anime Figure'
-                    )}
-                </span>
-
-                <h3>
-                    ${escapeHtml(item.name)}
-                </h3>
-
-                <span class="cart-item-condition">
-                    ${escapeHtml(
-                        item.condition || 'MISB'
-                    )}
-                </span>
-
-            </div>
+            itemElement.className =
+                'cart-item';
 
 
-            <div class="cart-item-price">
+            itemElement.innerHTML = `
 
-                ${formatPeso(price)}
+                <div class="cart-item-image">
 
-            </div>
+                    ${
+                        image
+
+                        ? `
+
+                            <img
+                                src="${image}"
+                                alt="${escapeHtml(item.name)}"
+                            >
+
+                          `
+
+                        : `
+
+                            <div class="cart-item-placeholder">
+                                FIGURE
+                            </div>
+
+                          `
+                    }
+
+                </div>
 
 
-            <div class="cart-quantity">
+                <div class="cart-item-info">
+
+                    <span class="cart-item-series">
+
+                        ${escapeHtml(
+                            item.series || 'Anime Figure'
+                        )}
+
+                    </span>
+
+
+                    <h3>
+
+                        ${escapeHtml(
+                            item.name
+                        )}
+
+                    </h3>
+
+
+                    <span class="cart-item-condition">
+
+                        ${escapeHtml(
+                            item.condition || 'MISB'
+                        )}
+
+                    </span>
+
+                </div>
+
+
+                <div class="cart-item-price">
+
+                    ${formatPeso(price)}
+
+                </div>
+
+
+                <div class="cart-quantity">
+
+                    <button
+                        type="button"
+                        onclick="changeQuantity(${index}, -1)"
+                    >
+                        −
+                    </button>
+
+
+                    <span>
+                        ${quantity}
+                    </span>
+
+
+                    <button
+                        type="button"
+                        onclick="changeQuantity(${index}, 1)"
+                    >
+                        +
+                    </button>
+
+                </div>
+
+
+                <div class="cart-item-total">
+
+                    ${formatPeso(itemTotal)}
+
+                </div>
+
 
                 <button
                     type="button"
-                    onclick="changeQuantity(${index}, -1)"
+                    class="cart-remove"
+                    onclick="removeCartItem(${index})"
+                    aria-label="Remove item"
                 >
-                    −
+                    ×
                 </button>
 
-                <span>
-                    ${quantity}
-                </span>
-
-                <button
-                    type="button"
-                    onclick="changeQuantity(${index}, 1)"
-                >
-                    +
-                </button>
-
-            </div>
+            `;
 
 
-            <div class="cart-item-total">
+            cartItemsContainer.appendChild(
+                itemElement
+            );
 
-                ${formatPeso(itemTotal)}
-
-            </div>
-
-
-            <button
-                type="button"
-                class="cart-remove"
-                onclick="removeCartItem(${index})"
-                aria-label="Remove item"
-            >
-                ×
-            </button>
-
-        `;
-
-
-        cartItemsContainer.appendChild(
-            itemElement
-        );
-
-    });
+        }
+    );
 
 
     cartSubtotal.textContent =
         formatPeso(subtotal);
+
 
     cartTotal.textContent =
         formatPeso(subtotal);
@@ -836,7 +1150,9 @@ function changeQuantity(index, amount) {
 
 
     if (!cart[index]) {
+
         return;
+
     }
 
 
@@ -847,7 +1163,10 @@ function changeQuantity(index, amount) {
 
     if (cart[index].quantity <= 0) {
 
-        cart.splice(index, 1);
+        cart.splice(
+            index,
+            1
+        );
 
     } else {
 
@@ -878,7 +1197,9 @@ function removeCartItem(index) {
 
 
     if (!cart[index]) {
+
         return;
+
     }
 
 
@@ -886,7 +1207,10 @@ function removeCartItem(index) {
         cart[index].name;
 
 
-    cart.splice(index, 1);
+    cart.splice(
+        index,
+        1
+    );
 
 
     saveCart(cart);
@@ -894,7 +1218,9 @@ function removeCartItem(index) {
     renderCart();
 
 
-    if (typeof showToast === 'function') {
+    if (
+        typeof showToast === 'function'
+    ) {
 
         showToast(
             `${itemName} removed from cart.`
@@ -918,7 +1244,9 @@ checkoutButton.addEventListener(
 
 
         if (cart.length === 0) {
+
             return;
+
         }
 
 
@@ -937,5 +1265,7 @@ renderCart();
 
 </script>
 
+
 </body>
+
 </html>

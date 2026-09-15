@@ -1,5 +1,7 @@
 <?php
 
+require_once 'auth.php';
+
 /* =========================================================
    MIMIC HAVEN - CONTACT PAGE
 ========================================================= */
@@ -36,6 +38,14 @@ function icon(string $name): string {
     return "";
 }
 
+function e(string $value): string {
+    return htmlspecialchars(
+        $value,
+        ENT_QUOTES,
+        'UTF-8'
+    );
+}
+
 ?>
 
 <!doctype html>
@@ -59,7 +69,10 @@ function icon(string $name): string {
         content="Contact Mimic Haven Collectibles for questions, product inquiries, and pre-order assistance."
     >
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
 
     <link
         rel="preconnect"
@@ -93,6 +106,9 @@ function icon(string $name): string {
 
     <div class="header-inner">
 
+
+        <!-- LOGO -->
+
         <a
             class="brand"
             href="index.php"
@@ -124,27 +140,44 @@ function icon(string $name): string {
         </a>
 
 
+        <!-- NAVIGATION -->
+
         <nav
             class="nav"
             id="main-nav"
             aria-label="Primary navigation"
         >
 
+
+            <!-- HOME -->
+
             <a href="index.php">
                 Home
             </a>
+
+
+            <!-- COLLECTION -->
 
             <a href="collection.php">
                 Collection
             </a>
 
+
+            <!-- PRE-ORDERS -->
+
             <a href="preorder.php">
                 Pre-Orders
             </a>
 
+
+            <!-- ABOUT -->
+
             <a href="about.php">
                 About
             </a>
+
+
+            <!-- CONTACT -->
 
             <a
                 href="contact.php"
@@ -154,23 +187,46 @@ function icon(string $name): string {
             </a>
 
 
-            <a
-                class="nav-icon"
-                href="collection.php#collection-search"
-                aria-label="Search"
+            <!-- EXPANDABLE SEARCH -->
+
+            <div
+                class="header-search"
+                id="headerSearch"
             >
 
-                <?php if (icon('search')): ?>
+                <button
+                    type="button"
+                    class="header-search-toggle"
+                    id="headerSearchToggle"
+                    aria-label="Search"
+                    aria-expanded="false"
+                >
 
-                    <img
-                        src="<?= icon('search') ?>"
-                        alt="Search"
-                    >
+                    <?php if (icon('search')): ?>
 
-                <?php endif; ?>
+                        <img
+                            src="<?= icon('search') ?>"
+                            alt=""
+                        >
 
-            </a>
+                    <?php endif; ?>
 
+                </button>
+
+
+                <input
+                    type="search"
+                    class="header-search-input"
+                    id="headerSearchInput"
+                    placeholder="Search figures..."
+                    autocomplete="off"
+                    aria-label="Search figures"
+                >
+
+            </div>
+
+
+            <!-- CART -->
 
             <a
                 class="nav-icon cart-button"
@@ -187,6 +243,7 @@ function icon(string $name): string {
 
                 <?php endif; ?>
 
+
                 <span id="cart-count">
                     0
                 </span>
@@ -194,15 +251,41 @@ function icon(string $name): string {
             </a>
 
 
-            <a
-                class="browse-btn"
-                href="collection.php"
-            >
-                Browse Figures
-            </a>
+            <!-- ACCOUNT -->
+
+            <?php if (isLoggedIn()): ?>
+
+                <a
+                    class="nav-user"
+                    href="account.php"
+                >
+                    Hi, <?= e(currentFirstName()) ?>
+                </a>
+
+
+                <a
+                    class="nav-account"
+                    href="logout.php"
+                >
+                    Logout
+                </a>
+
+            <?php else: ?>
+
+                <a
+                    class="nav-account"
+                    href="login.php"
+                >
+                    Login
+                </a>
+
+            <?php endif; ?>
+
 
         </nav>
 
+
+        <!-- MOBILE MENU -->
 
         <button
             class="menu-toggle"
@@ -609,6 +692,8 @@ function icon(string $name): string {
     <div class="footer-grid">
 
 
+        <!-- BRAND -->
+
         <div>
 
             <?php if (asset('logo')): ?>
@@ -629,6 +714,8 @@ function icon(string $name): string {
 
         </div>
 
+
+        <!-- NAVIGATION -->
 
         <div class="footer-links">
 
@@ -652,12 +739,17 @@ function icon(string $name): string {
                 About
             </a>
 
-            <a href="contact.php">
+            <a
+                href="contact.php"
+                class="active"
+            >
                 Contact
             </a>
 
         </div>
 
+
+        <!-- CONNECT -->
 
         <div class="footer-links">
 
@@ -743,7 +835,150 @@ function icon(string $name): string {
 <script src="script.js"></script>
 
 
+<!-- =========================================================
+     HEADER SEARCH
+========================================================= -->
+
 <script>
+
+document.addEventListener(
+    'DOMContentLoaded',
+    function () {
+
+        const headerSearch =
+            document.getElementById('headerSearch');
+
+        const headerSearchToggle =
+            document.getElementById('headerSearchToggle');
+
+        const headerSearchInput =
+            document.getElementById('headerSearchInput');
+
+
+        if (
+            !headerSearch ||
+            !headerSearchToggle ||
+            !headerSearchInput
+        ) {
+            return;
+        }
+
+
+        headerSearchToggle.addEventListener(
+            'click',
+            function (event) {
+
+                event.stopPropagation();
+
+                const isOpen =
+                    headerSearch.classList.contains('active');
+
+
+                if (isOpen) {
+
+                    headerSearchInput.focus();
+
+                    return;
+                }
+
+
+                headerSearch.classList.add('active');
+
+                headerSearchToggle.setAttribute(
+                    'aria-expanded',
+                    'true'
+                );
+
+
+                setTimeout(
+                    function () {
+
+                        headerSearchInput.focus();
+
+                    },
+                    250
+                );
+
+            }
+        );
+
+
+        headerSearchInput.addEventListener(
+            'keydown',
+            function (event) {
+
+                if (event.key !== 'Enter') {
+                    return;
+                }
+
+
+                const search =
+                    headerSearchInput.value.trim();
+
+
+                if (!search) {
+                    return;
+                }
+
+
+                window.location.href =
+                    'collection.php?search=' +
+                    encodeURIComponent(search);
+
+            }
+        );
+
+
+        document.addEventListener(
+            'click',
+            function (event) {
+
+                if (
+                    !headerSearch.contains(event.target)
+                ) {
+
+                    headerSearch.classList.remove(
+                        'active'
+                    );
+
+                    headerSearchToggle.setAttribute(
+                        'aria-expanded',
+                        'false'
+                    );
+
+                }
+
+            }
+        );
+
+
+        headerSearchInput.addEventListener(
+            'keydown',
+            function (event) {
+
+                if (event.key === 'Escape') {
+
+                    headerSearch.classList.remove(
+                        'active'
+                    );
+
+                    headerSearchToggle.setAttribute(
+                        'aria-expanded',
+                        'false'
+                    );
+
+                    headerSearchInput.value = '';
+
+                    headerSearchToggle.focus();
+
+                }
+
+            }
+        );
+
+    }
+);
+
 
 /* =========================================================
    CONTACT FORM
@@ -752,26 +987,37 @@ function icon(string $name): string {
 const contactForm =
     document.getElementById('contactForm');
 
-contactForm?.addEventListener('submit', event => {
 
-    event.preventDefault();
+contactForm?.addEventListener(
+    'submit',
+    event => {
 
-    const name =
-        document.getElementById('name')?.value.trim();
+        event.preventDefault();
 
-    if (typeof showToast === 'function') {
 
-        showToast(
-            `Thanks${name ? `, ${name}` : ''}! Your message has been received.`
-        );
+        const name =
+            document
+                .getElementById('name')
+                ?.value
+                .trim();
+
+
+        if (typeof showToast === 'function') {
+
+            showToast(
+                `Thanks${name ? `, ${name}` : ''}! Your message has been received.`
+            );
+
+        }
+
+
+        contactForm.reset();
 
     }
-
-    contactForm.reset();
-
-});
+);
 
 </script>
+
 
 </body>
 </html>

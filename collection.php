@@ -1,5 +1,6 @@
 <?php
 
+require_once 'auth.php';
 require_once 'db.php';
 
 
@@ -13,12 +14,21 @@ $selectedSeries = isset($_GET['series'])
 
 
 /* =========================================================
-   MIMIC HAVEN - COLLECTION PAGE
-   Uses the same header/footer structure as index.php
+   SEARCH FROM HEADER
 ========================================================= */
 
-function asset(string $name): string {
-    foreach (['png','jpg','jpeg','webp','svg'] as $ext) {
+$headerSearchQuery = isset($_GET['search'])
+    ? trim((string)$_GET['search'])
+    : '';
+
+
+/* =========================================================
+   MIMIC HAVEN - COLLECTION PAGE
+========================================================= */
+
+function asset(string $name): string
+{
+    foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
 
         $assetFile = __DIR__ . "/assets/{$name}.{$ext}";
 
@@ -38,8 +48,9 @@ function asset(string $name): string {
 }
 
 
-function icon(string $name): string {
-    foreach (['png','jpg','jpeg','webp','svg'] as $ext) {
+function icon(string $name): string
+{
+    foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
 
         $file = __DIR__ . "/assets/icons/{$name}.{$ext}";
 
@@ -52,7 +63,8 @@ function icon(string $name): string {
 }
 
 
-function e(string $value): string {
+function e(string $value): string
+{
     return htmlspecialchars(
         $value,
         ENT_QUOTES,
@@ -61,7 +73,8 @@ function e(string $value): string {
 }
 
 
-function peso(int $price): string {
+function peso(int $price): string
+{
     return '₱' . number_format($price);
 }
 
@@ -441,7 +454,6 @@ $products = [
 
 $dbProducts = [];
 
-
 $result = $conn->query(
     "SELECT
         id,
@@ -487,8 +499,8 @@ if (!empty($dbProducts)) {
 
 ?>
 
-
 <!doctype html>
+
 <html lang="en">
 
 <head>
@@ -530,14 +542,107 @@ if (!empty($dbProducts)) {
         href="style.css"
     >
 
-</head>
+    <style>
 
+        /* =====================================================
+           HEADER SEARCH
+        ===================================================== */
+
+        .header-search {
+            position: relative;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+
+        .header-search-toggle {
+            width: 40px;
+            height: 40px;
+
+            padding: 0;
+
+            border: 0;
+            border-radius: 50%;
+
+            background: transparent;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            cursor: pointer;
+
+            flex-shrink: 0;
+        }
+
+
+        .header-search-toggle img {
+            width: 18px;
+            height: 18px;
+            object-fit: contain;
+            display: block;
+        }
+
+
+        .header-search-input {
+            width: 0;
+            height: 38px;
+
+            padding: 0;
+
+            opacity: 0;
+
+            border: 0;
+            border-radius: 6px;
+
+            outline: none;
+
+            background: #101318;
+            color: #ffffff;
+
+            font-family: Inter, sans-serif;
+            font-size: 12px;
+
+            box-sizing: border-box;
+
+            transition:
+                width 0.3s ease,
+                opacity 0.2s ease,
+                padding 0.3s ease;
+        }
+
+
+        .header-search-input::placeholder {
+            color: #777f89;
+        }
+
+
+        .header-search.active .header-search-input {
+            width: 180px;
+
+            opacity: 1;
+
+            padding: 0 12px;
+
+            border: 1px solid rgba(255,255,255,0.10);
+        }
+
+
+        .header-search-input:focus {
+            border-color: rgba(63,169,245,0.45);
+            box-shadow: 0 0 0 1px rgba(63,169,245,0.10);
+        }
+
+    </style>
+
+</head>
 
 <body>
 
 
 <!-- =========================================================
-     SAME HEADER AS HOMEPAGE
+     HEADER
 ========================================================= -->
 
 <header
@@ -547,6 +652,8 @@ if (!empty($dbProducts)) {
 
     <div class="header-inner">
 
+
+        <!-- LOGO -->
 
         <a
             class="brand"
@@ -579,14 +686,19 @@ if (!empty($dbProducts)) {
         </a>
 
 
+        <!-- NAVIGATION -->
+
         <nav
             class="nav"
             id="main-nav"
             aria-label="Primary navigation"
         >
 
+
             <a href="index.php">
+
                 Home
+
             </a>
 
 
@@ -594,42 +706,79 @@ if (!empty($dbProducts)) {
                 class="active"
                 href="collection.php"
             >
+
                 Collection
+
             </a>
 
 
-            <a href="index.php#preorders">
+            <a href="preorder.php">
+
                 Pre-Orders
+
             </a>
 
 
-            <a href="index.php#about">
+            <a href="about.php">
+
                 About
+
             </a>
 
 
-            <a href="index.php#contact">
+            <a href="contact.php">
+
                 Contact
+
             </a>
 
 
-            <a
-                class="nav-icon"
-                href="#collection-search"
-                aria-label="Search"
+            <!-- =================================================
+                 EXPANDABLE SEARCH
+            ================================================== -->
+
+            <div
+                class="header-search"
+                id="headerSearch"
             >
 
-                <?php if (icon('search')): ?>
+                <button
+                    type="button"
+                    class="header-search-toggle"
+                    id="headerSearchToggle"
+                    aria-label="Search"
+                    aria-expanded="false"
+                >
 
-                    <img
-                        src="<?= icon('search') ?>"
-                        alt="Search"
-                    >
+                    <?php if (icon('search')): ?>
 
-                <?php endif; ?>
+                        <img
+                            src="<?= icon('search') ?>"
+                            alt="Search"
+                        >
 
-            </a>
+                    <?php else: ?>
 
+                        🔍
+
+                    <?php endif; ?>
+
+                </button>
+
+
+                <input
+                    type="search"
+                    id="headerSearchInput"
+                    class="header-search-input"
+                    placeholder="Search figures..."
+                    autocomplete="off"
+                    value="<?= e($headerSearchQuery) ?>"
+                >
+
+            </div>
+
+
+            <!-- CART -->
 
             <a
                 class="nav-icon cart-button"
@@ -648,21 +797,54 @@ if (!empty($dbProducts)) {
 
 
                 <span id="cart-count">
+
                     0
+
                 </span>
 
             </a>
 
 
-            <a
-                class="browse-btn"
-                href="#collection"
-            >
-                Browse Figures
-            </a>
+            <!-- ACCOUNT -->
+
+            <?php if (isLoggedIn()): ?>
+
+                <a
+                    class="nav-user"
+                    href="account.php"
+                >
+
+                    Hi, <?= e(currentFirstName()) ?>
+
+                </a>
+
+
+                <a
+                    class="nav-account"
+                    href="logout.php"
+                >
+
+                    Logout
+
+                </a>
+
+            <?php else: ?>
+
+                <a
+                    class="nav-account"
+                    href="login.php"
+                >
+
+                    Login
+
+                </a>
+
+            <?php endif; ?>
 
         </nav>
 
+
+        <!-- MOBILE MENU -->
 
         <button
             class="menu-toggle"
@@ -693,7 +875,9 @@ if (!empty($dbProducts)) {
         <div class="collection-page-copy">
 
             <span class="collection-eyebrow">
+
                 MIMIC HAVEN COLLECTIBLES
+
             </span>
 
 
@@ -709,8 +893,10 @@ if (!empty($dbProducts)) {
 
 
             <p>
+
                 Discover authentic anime figures, collector pieces,
                 and carefully selected treasures for every collection.
+
             </p>
 
         </div>
@@ -746,7 +932,6 @@ if (!empty($dbProducts)) {
             </div>
 
 
-
             <!-- CATEGORY -->
 
             <div class="filter-group">
@@ -759,12 +944,14 @@ if (!empty($dbProducts)) {
                 <?php
 
                 $categories = [
+
                     'Action Figures',
                     'Scale Figures',
                     'Nendoroid',
                     'Prize Figures',
                     'Statues',
                     'Others'
+
                 ];
 
                 ?>
@@ -791,7 +978,6 @@ if (!empty($dbProducts)) {
             </div>
 
 
-
             <!-- FRANCHISE -->
 
             <div class="filter-group">
@@ -804,6 +990,7 @@ if (!empty($dbProducts)) {
                 <?php
 
                 $franchises = [
+
                     "Frieren: Beyond Journey's End",
                     "The Apothecary Diaries",
                     "86 - EIGHTY SIX",
@@ -813,6 +1000,7 @@ if (!empty($dbProducts)) {
                     "One Piece",
                     "Chainsaw Man",
                     "Overlord"
+
                 ];
 
                 ?>
@@ -840,7 +1028,6 @@ if (!empty($dbProducts)) {
             </div>
 
 
-
             <!-- CONDITION -->
 
             <div class="filter-group">
@@ -850,7 +1037,10 @@ if (!empty($dbProducts)) {
                 </h3>
 
 
-                <?php foreach (['MISB','MIB','BIB','LOOSE'] as $condition): ?>
+                <?php foreach (
+                    ['MISB','MIB','BIB','LOOSE']
+                    as $condition
+                ): ?>
 
                     <label class="filter-option">
 
@@ -869,7 +1059,6 @@ if (!empty($dbProducts)) {
                 <?php endforeach; ?>
 
             </div>
-
 
 
             <!-- AVAILABILITY -->
@@ -913,7 +1102,6 @@ if (!empty($dbProducts)) {
             </div>
 
 
-
             <button
                 type="button"
                 class="clear-filters"
@@ -950,7 +1138,10 @@ if (!empty($dbProducts)) {
                     –
 
                     <strong id="collectionResultEnd">
-                        <?= min(12, count($products)) ?>
+                        <?= min(
+                            12,
+                            count($products)
+                        ) ?>
                     </strong>
 
                     of
@@ -962,7 +1153,6 @@ if (!empty($dbProducts)) {
                     results
 
                 </div>
-
 
 
                 <div class="collection-toolbar-actions">
@@ -992,7 +1182,6 @@ if (!empty($dbProducts)) {
                     </select>
 
 
-
                     <button
                         type="button"
                         class="collection-view-button active"
@@ -1001,7 +1190,6 @@ if (!empty($dbProducts)) {
                     >
                         ▦
                     </button>
-
 
 
                     <button
@@ -1020,7 +1208,7 @@ if (!empty($dbProducts)) {
 
 
 
-            <!-- SEARCH -->
+            <!-- COLLECTION SEARCH -->
 
             <div
                 class="collection-search"
@@ -1032,15 +1220,14 @@ if (!empty($dbProducts)) {
                     id="collectionSearchInput"
                     placeholder="Search figures, characters, or anime..."
                     autocomplete="off"
+                    value="<?= e($headerSearchQuery) ?>"
                 >
 
             </div>
 
 
 
-            <!-- =================================================
-                 PRODUCT GRID
-            ================================================== -->
+            <!-- PRODUCT GRID -->
 
             <div
                 class="collection-product-grid"
@@ -1048,35 +1235,72 @@ if (!empty($dbProducts)) {
             >
 
 
-                <?php foreach ($products as $index => $product): ?>
+                <?php foreach (
+                    $products
+                    as $index => $product
+                ): ?>
+
 
                     <article
+
                         class="collection-product-card"
 
                         data-index="<?= $index ?>"
 
-                        data-product-id="<?= isset($product['id']) ? (int)$product['id'] : ($index + 1) ?>"
+                        data-product-id="<?=
+                            isset($product['id'])
+                            ? (int)$product['id']
+                            : ($index + 1)
+                        ?>"
 
-                        data-name="<?= e(strtolower($product['name'])) ?>"
+                        data-name="<?=
+                            e(
+                                strtolower(
+                                    $product['name']
+                                )
+                            )
+                        ?>"
 
-                        data-series="<?= e($product['series']) ?>"
+                        data-series="<?=
+                            e($product['series'])
+                        ?>"
 
-                        data-category="<?= e($product['category']) ?>"
+                        data-category="<?=
+                            e($product['category'])
+                        ?>"
 
-                        data-price="<?= (float)$product['price'] ?>"
+                        data-price="<?=
+                            (float)$product['price']
+                        ?>"
 
-                        data-condition="<?= e($product['condition_status']) ?>"
+                        data-condition="<?=
+                            e(
+                                $product['condition_status']
+                            )
+                        ?>"
 
-                        data-availability="<?= e($product['availability']) ?>"
+                        data-availability="<?=
+                            e(
+                                $product['availability']
+                            )
+                        ?>"
 
-                        data-stock="<?= isset($product['stock']) ? max(0, (int)$product['stock']) : 0 ?>"
+                        data-stock="<?=
+                            isset($product['stock'])
+                            ? max(
+                                0,
+                                (int)$product['stock']
+                            )
+                            : 0
+                        ?>"
                     >
 
 
                         <!-- IMAGE -->
 
-                        <div class="collection-product-image">
-
+                        <div
+                            class="collection-product-image"
+                        >
 
                             <img
                                 src="assets/collections/<?= rawurlencode($product['image']) ?>"
@@ -1085,9 +1309,15 @@ if (!empty($dbProducts)) {
                             >
 
 
-                            <span class="collection-condition">
+                            <span
+                                class="collection-condition"
+                            >
 
-                                <?= e($product['condition_status']) ?>
+                                <?= e(
+                                    $product[
+                                        'condition_status'
+                                    ]
+                                ) ?>
 
                             </span>
 
@@ -1105,32 +1335,47 @@ if (!empty($dbProducts)) {
 
 
 
-                        <!-- INFO -->
+                        <!-- PRODUCT INFO -->
 
-                        <div class="collection-product-info">
+                        <div
+                            class="collection-product-info"
+                        >
 
 
-                            <div class="collection-product-series">
+                            <div
+                                class="collection-product-series"
+                            >
 
-                                <?= e($product['series']) ?>
+                                <?= e(
+                                    $product['series']
+                                ) ?>
 
                             </div>
 
 
-                            <h3 class="collection-product-name">
+                            <h3
+                                class="collection-product-name"
+                            >
 
-                                <?= e($product['name']) ?>
+                                <?= e(
+                                    $product['name']
+                                ) ?>
 
                             </h3>
 
 
+                            <div
+                                class="collection-product-bottom"
+                            >
 
-                            <div class="collection-product-bottom">
 
+                                <strong
+                                    class="collection-product-price"
+                                >
 
-                                <strong class="collection-product-price">
-
-                                    <?= peso((int)$product['price']) ?>
+                                    <?= peso(
+                                        (int)$product['price']
+                                    ) ?>
 
                                 </strong>
 
@@ -1139,7 +1384,9 @@ if (!empty($dbProducts)) {
                                     class="collection-product-status <?= $product['availability'] === 'Pre-Order' ? 'preorder' : '' ?>"
                                 >
 
-                                    <?= e($product['availability']) ?>
+                                    <?= e(
+                                        $product['availability']
+                                    ) ?>
 
                                 </span>
 
@@ -1151,6 +1398,7 @@ if (!empty($dbProducts)) {
 
 
                     </article>
+
 
                 <?php endforeach; ?>
 
@@ -1203,10 +1451,14 @@ if (!empty($dbProducts)) {
 
 <footer id="contact">
 
+
     <div class="footer-grid">
 
 
+        <!-- BRAND -->
+
         <div>
+
 
             <?php if (asset('logo')): ?>
 
@@ -1227,46 +1479,64 @@ if (!empty($dbProducts)) {
 
             </p>
 
+
         </div>
 
 
 
+        <!-- NAVIGATION -->
+
         <div class="footer-links">
+
 
             <h4>
                 NAVIGATE
             </h4>
 
 
-            <a href="index.php#home">
+            <a href="index.php">
+
                 Home
+
             </a>
 
 
             <a href="collection.php">
+
                 Collection
+
             </a>
 
 
-            <a href="index.php#preorders">
+            <a href="preorder.php">
+
                 Pre-Orders
+
             </a>
 
 
-            <a href="index.php#about">
+            <a href="about.php">
+
                 About
+
             </a>
 
 
-            <a href="index.php#contact">
+            <a href="contact.php">
+
                 Contact
+
             </a>
+
 
         </div>
 
 
 
+        <!-- CONNECT -->
+
         <div class="footer-links">
+
 
             <h4>
                 CONNECT
@@ -1274,12 +1544,16 @@ if (!empty($dbProducts)) {
 
 
             <a href="mailto:mimichvn.collectibles@gmail.com">
+
                 mimichvn.collectibles@gmail.com
+
             </a>
 
 
             <a href="tel:+639657457775">
+
                 +63 965 745 7775
+
             </a>
 
 
@@ -1303,7 +1577,6 @@ if (!empty($dbProducts)) {
                 </a>
 
 
-
                 <a
                     href="#"
                     aria-label="Instagram"
@@ -1323,6 +1596,7 @@ if (!empty($dbProducts)) {
 
             </div>
 
+
         </div>
 
 
@@ -1332,16 +1606,24 @@ if (!empty($dbProducts)) {
 
     <div class="footer-bottom">
 
+
         <span>
-            © 2026 Mimic Haven Collectibles. All Rights Reserved.
+
+            © 2026 Mimic Haven Collectibles.
+            All Rights Reserved.
+
         </span>
 
 
         <span>
+
             Crafted with precision &amp; passion.
+
         </span>
+
 
     </div>
+
 
 </footer>
 
@@ -1360,66 +1642,296 @@ if (!empty($dbProducts)) {
 
 
 
+<!-- =========================================================
+     HEADER SEARCH
+========================================================= -->
+
 <script>
 
-/* =========================================================
-   COLLECTION PAGE JAVASCRIPT
-========================================================= */
+document.addEventListener(
+    'DOMContentLoaded',
+    function () {
+
+
+        const headerSearch =
+            document.getElementById(
+                'headerSearch'
+            );
+
+
+        const headerSearchToggle =
+            document.getElementById(
+                'headerSearchToggle'
+            );
+
+
+        const headerSearchInput =
+            document.getElementById(
+                'headerSearchInput'
+            );
+
+
+        if (
+            !headerSearch ||
+            !headerSearchToggle ||
+            !headerSearchInput
+        ) {
+
+            return;
+
+        }
+
+
+        /* =================================================
+           OPEN SEARCH
+        ================================================= */
+
+        headerSearchToggle.addEventListener(
+            'click',
+            function (event) {
+
+                event.stopPropagation();
+
+
+                const isOpen =
+                    headerSearch.classList.contains(
+                        'active'
+                    );
+
+
+                if (isOpen) {
+
+                    headerSearchInput.focus();
+
+                    return;
+
+                }
+
+
+                headerSearch.classList.add(
+                    'active'
+                );
+
+
+                headerSearchToggle.setAttribute(
+                    'aria-expanded',
+                    'true'
+                );
+
+
+                setTimeout(
+                    function () {
+
+                        headerSearchInput.focus();
+
+                    },
+                    250
+                );
+
+            }
+        );
+
+
+        /* =================================================
+           ENTER TO SEARCH
+        ================================================= */
+
+        headerSearchInput.addEventListener(
+            'keydown',
+            function (event) {
+
+                if (
+                    event.key !== 'Enter'
+                ) {
+
+                    return;
+
+                }
+
+
+                const search =
+                    headerSearchInput.value.trim();
+
+
+                if (!search) {
+
+                    return;
+
+                }
+
+
+                window.location.href =
+                    'collection.php?search=' +
+                    encodeURIComponent(
+                        search
+                    );
+
+            }
+        );
+
+
+        /* =================================================
+           CLOSE WHEN CLICKING OUTSIDE
+        ================================================= */
+
+        document.addEventListener(
+            'click',
+            function (event) {
+
+                if (
+                    !headerSearch.contains(
+                        event.target
+                    )
+                ) {
+
+                    headerSearch.classList.remove(
+                        'active'
+                    );
+
+
+                    headerSearchToggle.setAttribute(
+                        'aria-expanded',
+                        'false'
+                    );
+
+                }
+
+            }
+        );
+
+
+        /* =================================================
+           ESCAPE TO CLOSE
+        ================================================= */
+
+        headerSearchInput.addEventListener(
+            'keydown',
+            function (event) {
+
+                if (
+                    event.key === 'Escape'
+                ) {
+
+                    headerSearch.classList.remove(
+                        'active'
+                    );
+
+
+                    headerSearchToggle.setAttribute(
+                        'aria-expanded',
+                        'false'
+                    );
+
+
+                    headerSearchInput.value = '';
+
+                    headerSearchToggle.focus();
+
+                }
+
+            }
+        );
+
+
+    }
+);
+
+</script>
+
+
+
+<!-- =========================================================
+     COLLECTION PAGE JAVASCRIPT
+========================================================= -->
+
+<script>
 
 const collectionCards =
-    [...document.querySelectorAll('.collection-product-card')];
+    [...document.querySelectorAll(
+        '.collection-product-card'
+    )];
 
 
 const collectionGrid =
-    document.getElementById('collectionProductGrid');
+    document.getElementById(
+        'collectionProductGrid'
+    );
 
 
 const collectionSearch =
-    document.getElementById('collectionSearchInput');
+    document.getElementById(
+        'collectionSearchInput'
+    );
 
 
 const collectionSort =
-    document.getElementById('collectionSort');
+    document.getElementById(
+        'collectionSort'
+    );
 
 
 const collectionPagination =
-    document.getElementById('collectionPagination');
+    document.getElementById(
+        'collectionPagination'
+    );
 
 
 const collectionNoResults =
-    document.getElementById('collectionNoResults');
+    document.getElementById(
+        'collectionNoResults'
+    );
 
 
 const collectionResultStart =
-    document.getElementById('collectionResultStart');
+    document.getElementById(
+        'collectionResultStart'
+    );
 
 
 const collectionResultEnd =
-    document.getElementById('collectionResultEnd');
+    document.getElementById(
+        'collectionResultEnd'
+    );
 
 
 const collectionResultTotal =
-    document.getElementById('collectionResultTotal');
+    document.getElementById(
+        'collectionResultTotal'
+    );
 
 
 const collectionGridView =
-    document.getElementById('collectionGridView');
+    document.getElementById(
+        'collectionGridView'
+    );
 
 
 const collectionListView =
-    document.getElementById('collectionListView');
+    document.getElementById(
+        'collectionListView'
+    );
 
 
 const clearFiltersButton =
-    document.getElementById('clearFilters');
+    document.getElementById(
+        'clearFilters'
+    );
 
-
-/* =========================================================
-   SERIES SENT FROM HOMEPAGE
-========================================================= */
 
 const selectedSeries =
-    <?= json_encode($selectedSeries, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    <?= json_encode(
+        $selectedSeries,
+        JSON_UNESCAPED_UNICODE |
+        JSON_UNESCAPED_SLASHES
+    ) ?>;
+
+
+const headerSearchQuery =
+    <?= json_encode(
+        $headerSearchQuery,
+        JSON_UNESCAPED_UNICODE |
+        JSON_UNESCAPED_SLASHES
+    ) ?>;
 
 
 const COLLECTION_PER_PAGE = 12;
@@ -1436,14 +1948,15 @@ let collectionFiltered =
    CHECKED VALUES
 ========================================================= */
 
-function collectionCheckedValues(selector) {
-
+function collectionCheckedValues(selector)
+{
     return [
         ...document.querySelectorAll(
             selector + ':checked'
         )
-    ].map(input => input.value);
-
+    ].map(
+        input => input.value
+    );
 }
 
 
@@ -1451,7 +1964,8 @@ function collectionCheckedValues(selector) {
    FILTER
 ========================================================= */
 
-function filterCollection() {
+function filterCollection()
+{
 
     const search =
         collectionSearch.value
@@ -1484,60 +1998,64 @@ function filterCollection() {
 
 
     collectionFiltered =
-        collectionCards.filter(card => {
+        collectionCards.filter(
+            card => {
 
 
-            const name =
-                card.dataset.name.toLowerCase();
+                const name =
+                    card.dataset.name
+                        .toLowerCase();
 
 
-            const series =
-                card.dataset.series.toLowerCase();
-
-
-            const matchesSearch =
-                !search ||
-                name.includes(search) ||
-                series.includes(search);
-
-
-            const matchesCategory =
-                categories.length === 0 ||
-                categories.includes(
-                    card.dataset.category
-                );
-
-
-            const matchesFranchise =
-                franchises.length === 0 ||
-                franchises.includes(
+                const series =
                     card.dataset.series
+                        .toLowerCase();
+
+
+                const matchesSearch =
+                    !search ||
+                    name.includes(search) ||
+                    series.includes(search);
+
+
+                const matchesCategory =
+                    categories.length === 0 ||
+                    categories.includes(
+                        card.dataset.category
+                    );
+
+
+                const matchesFranchise =
+                    franchises.length === 0 ||
+                    franchises.includes(
+                        card.dataset.series
+                    );
+
+
+                const matchesCondition =
+                    conditions.length === 0 ||
+                    conditions.includes(
+                        card.dataset.condition
+                    );
+
+
+                const matchesAvailability =
+                    availability.length === 0 ||
+                    availability.includes(
+                        card.dataset.availability
+                    );
+
+
+                return (
+                    matchesSearch &&
+                    matchesCategory &&
+                    matchesFranchise &&
+                    matchesCondition &&
+                    matchesAvailability
                 );
 
-
-            const matchesCondition =
-                conditions.length === 0 ||
-                conditions.includes(
-                    card.dataset.condition
-                );
-
-
-            const matchesAvailability =
-                availability.length === 0 ||
-                availability.includes(
-                    card.dataset.availability
-                );
-
-
-            return (
-                matchesSearch &&
-                matchesCategory &&
-                matchesFranchise &&
-                matchesCondition &&
-                matchesAvailability
-            );
-
-        });
+            }
+        );
 
 
     collectionCurrentPage = 1;
@@ -1552,50 +2070,66 @@ function filterCollection() {
    SORT
 ========================================================= */
 
-function sortCollection() {
+function sortCollection()
+{
 
     const sort =
         collectionSort.value;
 
 
-    collectionFiltered.sort((a, b) => {
+    collectionFiltered.sort(
+        (a, b) => {
 
 
-        if (sort === 'name') {
+            if (sort === 'name') {
 
-            return a.dataset.name.localeCompare(
-                b.dataset.name
-            );
+                return a.dataset.name
+                    .localeCompare(
+                        b.dataset.name
+                    );
 
-        }
+            }
 
 
-        if (sort === 'price-low') {
+            if (sort === 'price-low') {
+
+                return (
+                    Number(
+                        a.dataset.price
+                    ) -
+                    Number(
+                        b.dataset.price
+                    )
+                );
+
+            }
+
+
+            if (sort === 'price-high') {
+
+                return (
+                    Number(
+                        b.dataset.price
+                    ) -
+                    Number(
+                        a.dataset.price
+                    )
+                );
+
+            }
+
 
             return (
-                Number(a.dataset.price) -
-                Number(b.dataset.price)
+                Number(
+                    a.dataset.index
+                ) -
+                Number(
+                    b.dataset.index
+                )
             );
 
         }
-
-
-        if (sort === 'price-high') {
-
-            return (
-                Number(b.dataset.price) -
-                Number(a.dataset.price)
-            );
-
-        }
-
-
-        return (
-            Number(a.dataset.index) -
-            Number(b.dataset.index)
-        );
-
-    });
+    );
 
 
     renderCollection();
@@ -1607,17 +2141,23 @@ function sortCollection() {
    RENDER
 ========================================================= */
 
-function renderCollection() {
+function renderCollection()
+{
 
-    collectionCards.forEach(card => {
+    collectionCards.forEach(
+        card => {
 
-        card.style.display = 'none';
+            card.style.display =
+                'none';
 
-    });
+        }
+    );
 
 
     const start =
-        (collectionCurrentPage - 1) *
+        (
+            collectionCurrentPage - 1
+        ) *
         COLLECTION_PER_PAGE;
 
 
@@ -1633,15 +2173,19 @@ function renderCollection() {
         );
 
 
-    visibleCards.forEach(card => {
+    visibleCards.forEach(
+        card => {
 
-        card.style.display = '';
+            card.style.display =
+                '';
 
-        collectionGrid.appendChild(
-            card
-        );
 
-    });
+            collectionGrid.appendChild(
+                card
+            );
+
+        }
+    );
 
 
     const total =
@@ -1693,9 +2237,11 @@ function renderCollection() {
    PAGINATION
 ========================================================= */
 
-function renderCollectionPagination() {
+function renderCollectionPagination()
+{
 
-    collectionPagination.innerHTML = '';
+    collectionPagination.innerHTML =
+        '';
 
 
     const totalPages =
@@ -1738,7 +2284,8 @@ function renderCollectionPagination() {
 
 
         if (
-            page === collectionCurrentPage
+            page ===
+            collectionCurrentPage
         ) {
 
             button.classList.add(
@@ -1793,29 +2340,28 @@ clearFiltersButton.addEventListener(
             .querySelectorAll(
                 '.collection-sidebar input[type="checkbox"]'
             )
-            .forEach(input => {
+            .forEach(
+                input => {
 
-                input.checked = false;
+                    input.checked =
+                        false;
 
-            });
+                }
+            );
 
 
         collectionSearch.value =
             '';
 
 
-        collectionSort.value =
-            'newest';
-
-
-        filterCollection();
+        sortCollection();
 
     }
 );
 
 
 /* =========================================================
-   EVENTS
+   SEARCH
 ========================================================= */
 
 collectionSearch.addEventListener(
@@ -1824,25 +2370,34 @@ collectionSearch.addEventListener(
 );
 
 
+/* =========================================================
+   SORT
+========================================================= */
+
 collectionSort.addEventListener(
     'change',
     sortCollection
 );
 
 
+/* =========================================================
+   FILTER EVENTS
+========================================================= */
+
 document
     .querySelectorAll(
         '.collection-sidebar input[type="checkbox"]'
     )
-    .forEach(input => {
+    .forEach(
+        input => {
 
+            input.addEventListener(
+                'change',
+                filterCollection
+            );
 
-        input.addEventListener(
-            'change',
-            filterCollection
-        );
-
-    });
+        }
+    );
 
 
 /* =========================================================
@@ -1853,32 +2408,34 @@ document
     .querySelectorAll(
         '.collection-favorite'
     )
-    .forEach(button => {
+    .forEach(
+        button => {
 
 
-        button.addEventListener(
-            'click',
-            event => {
+            button.addEventListener(
+                'click',
+                event => {
 
-                event.stopPropagation();
-
-
-                button.classList.toggle(
-                    'favorited'
-                );
+                    event.stopPropagation();
 
 
-                button.textContent =
-                    button.classList.contains(
+                    button.classList.toggle(
                         'favorited'
-                    )
-                    ? '♥'
-                    : '♡';
+                    );
 
-            }
-        );
 
-    });
+                    button.textContent =
+                        button.classList.contains(
+                            'favorited'
+                        )
+                        ? '♥'
+                        : '♡';
+
+                }
+            );
+
+        }
+    );
 
 
 /* =========================================================
@@ -1889,40 +2446,44 @@ document
     .querySelectorAll(
         '.collection-product-card'
     )
-    .forEach(card => {
+    .forEach(
+        card => {
 
 
-        card.addEventListener(
-            'click',
-            event => {
+            card.addEventListener(
+                'click',
+                event => {
 
 
-                if (
-                    event.target.closest(
-                        '.collection-favorite'
-                    )
-                ) {
+                    if (
+                        event.target.closest(
+                            '.collection-favorite'
+                        )
+                    ) {
 
-                    return;
+                        return;
+
+                    }
+
+
+                    const productId =
+                        card.dataset.productId;
+
+
+                    if (productId) {
+
+                        window.location.href =
+                            `product.php?id=${encodeURIComponent(
+                                productId
+                            )}`;
+
+                    }
 
                 }
+            );
 
-
-                const productId =
-                    card.dataset.productId;
-
-
-                if (productId) {
-
-                    window.location.href =
-                        `product.php?id=${encodeURIComponent(productId)}`;
-
-                }
-
-            }
-        );
-
-    });
+        }
+    );
 
 
 /* =========================================================
@@ -1932,7 +2493,6 @@ document
 collectionGridView.addEventListener(
     'click',
     () => {
-
 
         collectionGrid.classList.remove(
             'list-view'
@@ -1956,7 +2516,6 @@ collectionListView.addEventListener(
     'click',
     () => {
 
-
         collectionGrid.classList.add(
             'list-view'
         );
@@ -1979,13 +2538,15 @@ collectionListView.addEventListener(
    INITIAL LOAD
 ========================================================= */
 
-if (selectedSeries) {
+if (headerSearchQuery) {
 
-    /*
-     * A homepage collection card was clicked.
-     * The matching franchise checkbox is already
-     * checked by PHP, so apply the filter immediately.
-     */
+    collectionSearch.value =
+        headerSearchQuery;
+
+
+    filterCollection();
+
+} else if (selectedSeries) {
 
     filterCollection();
 
@@ -1999,5 +2560,4 @@ if (selectedSeries) {
 
 
 </body>
-
 </html>

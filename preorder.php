@@ -23,7 +23,6 @@ function asset(string $name): string
             return "assets/{$name}.{$ext}";
         }
 
-
         $rootFile =
             __DIR__ . "/{$name}.{$ext}";
 
@@ -809,23 +808,46 @@ foreach (
             </a>
 
 
-            <a
-                class="nav-icon"
-                href="#preorder-products"
-                aria-label="Search"
+            <!-- EXPANDABLE SEARCH -->
+
+            <div
+                class="header-search"
+                id="headerSearch"
             >
 
-                <?php if (icon('search')): ?>
+                <button
+                    type="button"
+                    class="header-search-toggle"
+                    id="headerSearchToggle"
+                    aria-label="Search"
+                    aria-expanded="false"
+                >
 
-                    <img
-                        src="<?= icon('search') ?>"
-                        alt="Search"
-                    >
+                    <?php if (icon('search')): ?>
 
-                <?php endif; ?>
+                        <img
+                            src="<?= icon('search') ?>"
+                            alt=""
+                        >
 
-            </a>
+                    <?php endif; ?>
 
+                </button>
+
+
+                <input
+                    type="search"
+                    class="header-search-input"
+                    id="headerSearchInput"
+                    placeholder="Search figures..."
+                    autocomplete="off"
+                    aria-label="Search figures"
+                >
+
+            </div>
+
+
+            <!-- CART -->
 
             <a
                 class="nav-icon cart-button"
@@ -849,6 +871,8 @@ foreach (
             </a>
 
 
+            <!-- ACCOUNT -->
+
             <?php if (isLoggedIn()): ?>
 
                 <a
@@ -857,11 +881,6 @@ foreach (
                 >
                     Hi, <?= e(currentFirstName()) ?>
                 </a>
-
-            <?php endif; ?>
-
-
-            <?php if (isLoggedIn()): ?>
 
                 <a
                     class="nav-account"
@@ -881,13 +900,6 @@ foreach (
 
             <?php endif; ?>
 
-
-            <a
-                class="browse-btn"
-                href="collection.php"
-            >
-                Browse Figures
-            </a>
 
         </nav>
 
@@ -1766,6 +1778,153 @@ foreach (
 
 
 <script src="script.js"></script>
+
+
+<!-- =========================================================
+     HEADER SEARCH SCRIPT
+========================================================= -->
+
+<script>
+
+document.addEventListener(
+    'DOMContentLoaded',
+    function () {
+
+        const headerSearch =
+            document.getElementById('headerSearch');
+
+        const headerSearchToggle =
+            document.getElementById('headerSearchToggle');
+
+        const headerSearchInput =
+            document.getElementById('headerSearchInput');
+
+
+        if (
+            !headerSearch ||
+            !headerSearchToggle ||
+            !headerSearchInput
+        ) {
+            return;
+        }
+
+
+        headerSearchToggle.addEventListener(
+            'click',
+            function (event) {
+
+                event.stopPropagation();
+
+                const isOpen =
+                    headerSearch.classList.contains('active');
+
+
+                if (isOpen) {
+
+                    headerSearchInput.focus();
+
+                    return;
+                }
+
+
+                headerSearch.classList.add('active');
+
+                headerSearchToggle.setAttribute(
+                    'aria-expanded',
+                    'true'
+                );
+
+
+                setTimeout(
+                    function () {
+
+                        headerSearchInput.focus();
+
+                    },
+                    250
+                );
+
+            }
+        );
+
+
+        headerSearchInput.addEventListener(
+            'keydown',
+            function (event) {
+
+                if (event.key !== 'Enter') {
+                    return;
+                }
+
+
+                const search =
+                    headerSearchInput.value.trim();
+
+
+                if (!search) {
+                    return;
+                }
+
+
+                window.location.href =
+                    'collection.php?search=' +
+                    encodeURIComponent(search);
+
+            }
+        );
+
+
+        document.addEventListener(
+            'click',
+            function (event) {
+
+                if (
+                    !headerSearch.contains(event.target)
+                ) {
+
+                    headerSearch.classList.remove(
+                        'active'
+                    );
+
+                    headerSearchToggle.setAttribute(
+                        'aria-expanded',
+                        'false'
+                    );
+
+                }
+
+            }
+        );
+
+
+        headerSearchInput.addEventListener(
+            'keydown',
+            function (event) {
+
+                if (event.key === 'Escape') {
+
+                    headerSearch.classList.remove(
+                        'active'
+                    );
+
+                    headerSearchToggle.setAttribute(
+                        'aria-expanded',
+                        'false'
+                    );
+
+                    headerSearchInput.value = '';
+
+                    headerSearchToggle.focus();
+
+                }
+
+            }
+        );
+
+    }
+);
+
+</script>
 
 
 </body>

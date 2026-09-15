@@ -145,6 +145,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['email'] =
                     $email;
 
+                $_SESSION['role'] =
+                    'customer';
+
 
                 header(
                     'Location: index.php'

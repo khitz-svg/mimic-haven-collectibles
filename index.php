@@ -3,27 +3,30 @@
 require_once 'auth.php';
 require_once 'db.php';
 
+/* =========================================================
+   HELPER FUNCTIONS
+========================================================= */
 
-function asset(string $name): string {
-    foreach (['png','jpg','jpeg','webp','svg'] as $ext) {
-        $assetFile = __DIR__ . "/assets/{$name}.{$ext}";
-        if (file_exists($assetFile)) {
+function asset(string $name): string
+{
+    foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
+
+        $file = __DIR__ . "/assets/{$name}.{$ext}";
+
+        if (file_exists($file)) {
             return "assets/{$name}.{$ext}";
-        }
-
-        $rootFile = __DIR__ . "/{$name}.{$ext}";
-        if (file_exists($rootFile)) {
-            return "{$name}.{$ext}";
         }
     }
 
     return "";
 }
 
+function icon(string $name): string
+{
+    foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
 
-function icon(string $name): string {
-    foreach (['png','jpg','jpeg','webp','svg'] as $ext) {
         $file = __DIR__ . "/assets/icons/{$name}.{$ext}";
+
         if (file_exists($file)) {
             return "assets/icons/{$name}.{$ext}";
         }
@@ -32,205 +35,298 @@ function icon(string $name): string {
     return "";
 }
 
+function e(string $value): string
+{
+    return htmlspecialchars(
+        $value,
+        ENT_QUOTES,
+        'UTF-8'
+    );
+}
 
 /* =========================================================
    FEATURED COLLECTIONS
-   STOCK COMES FROM MYSQL
 ========================================================= */
 
-$collectionConfig = [
-    [
+$collectionSeries = [
+
+    "Frieren: Beyond Journey's End" => [
         'name' => 'Frieren Collection',
         'series' => "Frieren: Beyond Journey's End",
         'image' => 'frieren'
     ],
 
-    [
+    'The Apothecary Diaries' => [
         'name' => 'Mao Collection',
         'series' => 'The Apothecary Diaries',
         'image' => 'mao'
     ],
 
-    [
+    '86 - EIGHTY SIX' => [
         'name' => 'Lena Collection',
         'series' => '86 - EIGHTY SIX',
         'image' => 'lena'
     ],
 
-    [
+    'Violet Evergarden' => [
         'name' => 'Violet Collection',
         'series' => 'Violet Evergarden',
         'image' => 'violet'
-    ],
-
-    [
-        'name' => 'More Collections',
-        'series' => 'Explore more series',
-        'image' => 'more-collections'
     ]
 ];
 
-
 /* =========================================================
-   GET TOTAL STOCK PER SERIES
+   GET STOCK COUNTS FROM DATABASE
 ========================================================= */
 
-$stockTotals = [];
+$collectionCounts = [];
 
+foreach ($collectionSeries as $series => $collection) {
 
-$stockStmt = $conn->prepare(
-    "SELECT
-        series,
-        COALESCE(
-            SUM(
-                CASE
-                    WHEN availability = 'In Stock'
-                    THEN GREATEST(stock, 0)
-                    ELSE 0
-                END
-            ),
-            0
-        ) AS total_stock
-     FROM products
-     GROUP BY series"
-);
+    $collectionCounts[$series] = 0;
 
+    $stmt = $conn->prepare(
+        "SELECT COALESCE(SUM(stock), 0) AS total_stock
+         FROM products
+         WHERE series = ?
+           AND availability = 'In Stock'
+           AND stock > 0"
+    );
 
-if ($stockStmt) {
+    if ($stmt) {
 
-    $stockStmt->execute();
+        $stmt->bind_param(
+            "s",
+            $series
+        );
 
-    $stockResult = $stockStmt->get_result();
+        $stmt->execute();
 
-    while ($row = $stockResult->fetch_assoc()) {
+        $result = $stmt->get_result();
 
-        $stockTotals[$row['series']] =
-            max(0, (int)$row['total_stock']);
+        if ($row = $result->fetch_assoc()) {
+
+            $collectionCounts[$series] =
+                (int)$row['total_stock'];
+        }
+
+        $stmt->close();
     }
-
-    $stockStmt->close();
 }
 
-
 /* =========================================================
-   BUILD FEATURED COLLECTION DATA
+   BUILD COLLECTION CARDS
 ========================================================= */
 
 $collections = [];
 
-foreach ($collectionConfig as $collection) {
-
-    $isMoreCollections =
-        $collection['name'] === 'More Collections';
+foreach ($collectionSeries as $series => $collection) {
 
     $collections[] = [
-        'name' => $collection['name'],
-        'series' => $collection['series'],
-        'items' => $isMoreCollections
-            ? 'SEE ALL'
-            : ($stockTotals[$collection['series']] ?? 0),
-        'image' => $collection['image']
+
+        'name' =>
+            $collection['name'],
+
+        'series' =>
+            $collection['series'],
+
+        'items' =>
+            ($collectionCounts[$series] ?? 0)
+            . ' ITEMS IN STOCK',
+
+        'image' =>
+            $collection['image']
     ];
 }
 
-
 /* =========================================================
-   REVIEWS
+   MORE COLLECTIONS
 ========================================================= */
 
-$reviews = [
-    [
-        'name' => 'Marcuz Reyes',
-        'image' => 'reviewer-1',
-        'text' => 'The figure arrived safely and exactly as described. The packaging was excellent, and the whole transaction was smooth!'
-    ],
+$collections[] = [
 
-    [
-        'name' => 'Yumi Riken',
-        'image' => 'reviewer-2',
-        'text' => 'I really liked how easy the pre-order process was. I could easily check my order status and know when my figure would arrive.'
-    ],
+    'name' => 'More Collections',
 
-    [
-        'name' => 'Chaeseu Kim',
-        'image' => 'reviewer-3',
-        'text' => 'The figure condition was clearly listed, so I knew exactly what I was buying. The figure also arrived in great condition!'
-    ],
+    'series' => 'Explore more series',
+
+    'items' => 'SEE ALL',
+
+    'image' => 'more-collections'
 ];
 
+/* =========================================================
+   CUSTOMER FEEDBACK
+   ONLY APPROVED REVIEWS ARE DISPLAYED
+========================================================= */
+
+$reviews = [];
+
+$reviewStmt = $conn->prepare(
+    "SELECT
+        r.rating,
+        r.review_text,
+        u.first_name,
+        u.last_name,
+        r.created_at
+     FROM reviews r
+     INNER JOIN users u
+        ON u.id = r.user_id
+     WHERE TRIM(r.status) = 'Approved'
+     ORDER BY r.created_at DESC
+     LIMIT 3"
+);
+
+if ($reviewStmt) {
+
+    $reviewStmt->execute();
+
+    $reviewResult =
+        $reviewStmt->get_result();
+
+    while ($row = $reviewResult->fetch_assoc()) {
+
+        $reviews[] = [
+
+            'rating' =>
+                (int)$row['rating'],
+
+            'text' =>
+                $row['review_text'],
+
+            'name' =>
+                trim(
+                    $row['first_name']
+                    . ' '
+                    . $row['last_name']
+                )
+        ];
+    }
+
+    $reviewStmt->close();
+}
 
 /* =========================================================
    CONDITION GUIDE
 ========================================================= */
 
 $conditions = [
+
     [
         'code' => 'MISB',
-        'title' => 'Mint in Sealed Box',
-        'desc' => 'Brand new and factory sealed in its original packaging.',
-        'state' => 'NEW',
-        'image' => 'misb'
-    ],
 
-    [
-        'code' => 'MIB',
-        'title' => 'Mint in Box',
-        'desc' => 'Opened, but the figure remains in excellent condition with its original box.',
-        'state' => 'EXCELLENT',
-        'image' => 'mib'
-    ],
+        'title' =>
+            'Mint in Sealed Box',
 
-    [
-        'code' => 'BIB',
-        'title' => 'Box Opened',
-        'desc' => 'Opened or displayed, but the figure remains complete and well maintained.',
-        'state' => 'VERY GOOD',
-        'image' => 'bib'
+        'desc' =>
+            'Brand new and factory sealed in its original packaging.',
+
+        'state' =>
+            'NEW',
+
+        'image' =>
+            'misb'
     ],
 
     [
         'code' => 'LOOSE',
-        'title' => 'No Original Packaging',
-        'desc' => 'Figure is sold without its original box or packaging.',
-        'state' => 'GOOD',
-        'image' => 'loose'
-    ],
-];
 
+        'title' =>
+            'No Original Packaging',
+
+        'desc' =>
+            'Figure is sold without its original box or packaging.',
+
+        'state' =>
+            'GOOD',
+
+        'image' =>
+            'loose'
+    ],
+
+    [
+        'code' => 'MIB',
+
+        'title' =>
+            'Mint in Box',
+
+        'desc' =>
+            'Opened, but the figure remains in excellent condition with its original box.',
+
+        'state' =>
+            'EXCELLENT',
+
+        'image' =>
+            'mib'
+    ],
+
+    [
+        'code' => 'BIB',
+
+        'title' =>
+            'Box Opened',
+
+        'desc' =>
+            'Opened or displayed, but the figure remains complete and well maintained.',
+
+        'state' =>
+            'VERY GOOD',
+
+        'image' =>
+            'bib'
+    ]
+];
 
 /* =========================================================
    FAQ
 ========================================================= */
 
 $faqs = [
+
     [
-        'q' => 'How can I become eligible as a returning customer and what requirements do I need to meet?',
-        'a' => 'Returning-customer benefits are based on completed purchases and account history. Contact us for your eligibility status.'
+        'q' =>
+            'How can I become eligible as a returning customer and what requirements do I need to meet?',
+
+        'a' =>
+            'Returning-customer benefits are based on completed purchases and account history. Contact us for your eligibility status.'
     ],
 
     [
-        'q' => 'I missed the pre-order deadline for an item I really want. Can I still place a pre-order for it?',
-        'a' => 'Possibly. Availability depends on supplier allocations and whether extra slots remain. Contact us with the item name.'
+        'q' =>
+            'I missed the pre-order deadline for an item I really want. Can I still place a pre-order for it?',
+
+        'a' =>
+            'Possibly. Availability depends on supplier allocations and whether extra slots remain. Contact us with the item name.'
     ],
 
     [
-        'q' => 'I made a mistake with my order details after checking out. Can I still change my delivery address or pickup method?',
-        'a' => 'Contact us as soon as possible. Changes depend on whether the order has already been processed or shipped.'
+        'q' =>
+            'I made a mistake with my order details after checking out. Can I still change my delivery address or pickup method?',
+
+        'a' =>
+            'Contact us as soon as possible. Changes depend on whether the order has already been processed or shipped.'
     ],
 
     [
-        'q' => 'My pre-ordered item has not arrived even though the estimated arrival date has already passed. What should I do?',
-        'a' => 'Estimated dates can move. Send us your order details and we will check the latest supplier or shipping update.'
+        'q' =>
+            'My pre-ordered item has not arrived even though the estimated arrival date has already passed. What should I do?',
+
+        'a' =>
+            'Estimated dates can move. Send us your order details and we will check the latest supplier or shipping update.'
     ],
 
     [
-        'q' => 'What happens to my deposit if my pre-ordered item is cancelled by the supplier or manufacturer?',
-        'a' => 'Deposit handling depends on the reason and terms of the cancellation. We will communicate the available refund or replacement options.'
-    ],
+        'q' =>
+            'What happens to my deposit if my pre-ordered item is cancelled by the supplier or manufacturer?',
+
+        'a' =>
+            'Deposit handling depends on the reason and terms of the cancellation. We will communicate the available refund or replacement options.'
+    ]
 ];
 
 ?>
+
 <!doctype html>
+
 <html lang="en">
 
 <head>
@@ -242,14 +338,19 @@ $faqs = [
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Mimic Haven Collectibles</title>
+    <title>
+        Mimic Haven Collectibles
+    </title>
 
     <meta
         name="description"
         content="Authentic anime figures, trusted pre-orders, and collector-grade treasures."
     >
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
 
     <link
         rel="preconnect"
@@ -258,7 +359,7 @@ $faqs = [
     >
 
     <link
-        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Parisienne&display=swap"
         rel="stylesheet"
     >
 
@@ -267,10 +368,111 @@ $faqs = [
         href="style.css"
     >
 
+    <style>
+
+        /* =====================================================
+           HEADER SEARCH
+        ===================================================== */
+
+        .header-search {
+            position: relative;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+
+        .header-search-toggle {
+            width: 40px;
+            height: 40px;
+
+            padding: 0;
+
+            border: 0;
+            border-radius: 50%;
+
+            background: transparent;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            cursor: pointer;
+
+            flex-shrink: 0;
+        }
+
+
+        .header-search-toggle img {
+            width: 18px;
+            height: 18px;
+
+            object-fit: contain;
+
+            display: block;
+        }
+
+
+        .header-search-input {
+            width: 0;
+            height: 38px;
+
+            padding: 0;
+
+            opacity: 0;
+
+            border: 0;
+            border-radius: 6px;
+
+            outline: none;
+
+            background: #101318;
+            color: #ffffff;
+
+            font-family: Inter, sans-serif;
+            font-size: 12px;
+
+            box-sizing: border-box;
+
+            transition:
+                width 0.3s ease,
+                opacity 0.2s ease,
+                padding 0.3s ease;
+        }
+
+
+        .header-search-input::placeholder {
+            color: #777f89;
+        }
+
+
+        .header-search.active .header-search-input {
+            width: 180px;
+
+            opacity: 1;
+
+            padding: 0 12px;
+
+            border: 1px solid rgba(255,255,255,0.10);
+        }
+
+
+        .header-search-input:focus {
+            border-color: rgba(63,169,245,0.45);
+            box-shadow: 0 0 0 1px rgba(63,169,245,0.10);
+        }
+
+    </style>
+
 </head>
+
 
 <body>
 
+
+<!-- =========================================================
+     HEADER
+========================================================= -->
 
 <header
     class="site-header"
@@ -279,9 +481,12 @@ $faqs = [
 
     <div class="header-inner">
 
+
+        <!-- LOGO -->
+
         <a
             class="brand"
-            href="#home"
+            href="index.php"
             aria-label="Mimic Haven Collectibles"
         >
 
@@ -296,8 +501,13 @@ $faqs = [
             <?php else: ?>
 
                 <div class="brand-fallback">
+
                     MIMIC HAVEN
-                    <span>COLLECTIBLES</span>
+
+                    <span>
+                        COLLECTIBLES
+                    </span>
+
                 </div>
 
             <?php endif; ?>
@@ -305,80 +515,88 @@ $faqs = [
         </a>
 
 
+        <!-- NAVIGATION -->
+
         <nav
             class="nav"
+            id="main-nav"
             aria-label="Primary navigation"
         >
 
+
             <a
                 class="active"
-                href="#home"
+                href="index.php"
             >
                 Home
             </a>
+
 
             <a href="collection.php">
                 Collection
             </a>
 
+
             <a href="preorder.php">
                 Pre-Orders
             </a>
 
+
             <a href="about.php">
                 About
             </a>
+
 
             <a href="contact.php">
                 Contact
             </a>
 
 
-            <?php if (isLoggedIn()): ?>
+            <!-- =================================================
+                 EXPANDABLE SEARCH
+            ================================================== -->
 
-                <a
-                    class="nav-user"
-                    href="account.php"
-                >
-                    Hi, <?= htmlspecialchars(currentFirstName()) ?>
-                </a>
-
-                <a
-                    class="nav-account"
-                    href="logout.php"
-                >
-                    Logout
-                </a>
-
-            <?php else: ?>
-
-                <a
-                    class="nav-account"
-                    href="login.php"
-                >
-                    Login
-                </a>
-
-            <?php endif; ?>
-
-
-            <a
-                class="nav-icon"
-                href="#collection"
-                aria-label="Search"
+            <div
+                class="header-search"
+                id="headerSearch"
             >
 
-                <?php if (icon('search')): ?>
+                <button
+                    type="button"
+                    class="header-search-toggle"
+                    id="headerSearchToggle"
+                    aria-label="Search"
+                    aria-expanded="false"
+                >
 
-                    <img
-                        src="<?= icon('search') ?>"
-                        alt="Search"
-                    >
+                    <?php if (icon('search')): ?>
 
-                <?php endif; ?>
+                        <img
+                            src="<?= icon('search') ?>"
+                            alt="Search"
+                        >
 
-            </a>
+                    <?php else: ?>
 
+                        🔍
+
+                    <?php endif; ?>
+
+                </button>
+
+
+                <input
+                    type="search"
+                    id="headerSearchInput"
+                    class="header-search-input"
+                    placeholder="Search figures..."
+                    autocomplete="off"
+                >
+
+            </div>
+
+
+            <!-- CART -->
 
             <a
                 class="nav-icon cart-button"
@@ -402,15 +620,46 @@ $faqs = [
             </a>
 
 
-            <a
-                class="browse-btn"
-                href="collection.php"
-            >
-                Browse Figures
-            </a>
+            <!-- ACCOUNT -->
+
+            <?php if (isLoggedIn()): ?>
+
+                <a
+                    class="nav-user"
+                    href="account.php"
+                >
+
+                    Hi, <?= e(currentFirstName()) ?>
+
+                </a>
+
+
+                <a
+                    class="nav-account"
+                    href="logout.php"
+                >
+
+                    Logout
+
+                </a>
+
+            <?php else: ?>
+
+                <a
+                    class="nav-account"
+                    href="login.php"
+                >
+
+                    Login
+
+                </a>
+
+            <?php endif; ?>
 
         </nav>
 
+
+        <!-- MOBILE MENU -->
 
         <button
             class="menu-toggle"
@@ -426,8 +675,13 @@ $faqs = [
 </header>
 
 
+
 <main>
 
+
+<!-- =========================================================
+     HERO
+========================================================= -->
 
 <section
     class="hero"
@@ -436,32 +690,41 @@ $faqs = [
 
     <div class="hero-inner">
 
+
         <div class="hero-copy">
 
             <span class="eyebrow">
                 YOUR COLLECTION STARTS HERE
             </span>
 
+
             <h1>
                 Preserve.<br>
                 Treasure.
             </h1>
 
+
             <p class="script">
                 Every Figure
             </p>
 
+
             <p class="lede">
+
                 A premium destination for authentic anime figures,
                 trusted pre-orders, and a collector-grade experience.
+
             </p>
 
+
             <div class="cta-row">
+
 
                 <a
                     class="btn primary"
                     href="collection.php"
                 >
+
                     Explore Collection
 
                     <?php if (icon('right-arrow')): ?>
@@ -480,8 +743,11 @@ $faqs = [
                     class="btn outline"
                     href="preorder.php"
                 >
+
                     Pre-Order Now
+
                 </a>
+
 
             </div>
 
@@ -497,19 +763,31 @@ $faqs = [
 
         </div>
 
+
     </div>
 
 </section>
 
 
+
+<!-- =========================================================
+     TRUST STRIP
+========================================================= -->
+
 <section class="trust">
+
 
     <div class="trust-item">
 
-        <img
-            src="<?= icon('quality') ?>"
-            alt=""
-        >
+        <?php if (icon('quality')): ?>
+
+            <img
+                src="<?= icon('quality') ?>"
+                alt=""
+            >
+
+        <?php endif; ?>
+
 
         <div>
 
@@ -526,12 +804,18 @@ $faqs = [
     </div>
 
 
+
     <div class="trust-item">
 
-        <img
-            src="<?= icon('secure_preorder') ?>"
-            alt=""
-        >
+        <?php if (icon('pre-order')): ?>
+
+            <img
+                src="<?= icon('pre-order') ?>"
+                alt=""
+            >
+
+        <?php endif; ?>
+
 
         <div>
 
@@ -548,12 +832,18 @@ $faqs = [
     </div>
 
 
+
     <div class="trust-item">
 
-        <img
-            src="<?= icon('target') ?>"
-            alt=""
-        >
+        <?php if (icon('target')): ?>
+
+            <img
+                src="<?= icon('target') ?>"
+                alt=""
+            >
+
+        <?php endif; ?>
+
 
         <div>
 
@@ -570,12 +860,18 @@ $faqs = [
     </div>
 
 
+
     <div class="trust-item">
 
-        <img
-            src="<?= icon('present') ?>"
-            alt=""
-        >
+        <?php if (icon('present')): ?>
+
+            <img
+                src="<?= icon('present') ?>"
+                alt=""
+            >
+
+        <?php endif; ?>
+
 
         <div>
 
@@ -591,8 +887,14 @@ $faqs = [
 
     </div>
 
+
 </section>
 
+
+
+<!-- =========================================================
+     FEATURED COLLECTIONS
+========================================================= -->
 
 <section
     class="content-section"
@@ -602,8 +904,13 @@ $faqs = [
     <div class="section-heading">
 
         <h2>
+
             FEATURED
-            <span>COLLECTIONS</span>
+
+            <span>
+                COLLECTIONS
+            </span>
+
         </h2>
 
     </div>
@@ -611,53 +918,60 @@ $faqs = [
 
     <div class="collection-grid">
 
+
         <?php foreach ($collections as $collection): ?>
+
 
             <?php
 
-            $isMoreCollections =
+            $isMore =
                 $collection['items'] === 'SEE ALL';
 
-            $collectionLink =
-                $isMoreCollections
+
+            $link =
+                $isMore
+
                     ? 'collection.php'
-                    : 'collection.php?series=' . urlencode($collection['series']);
+
+                    : 'collection.php?series=' .
+                      urlencode(
+                          $collection['series']
+                      );
 
             ?>
 
+
             <a
                 class="collection-card"
-                href="<?= htmlspecialchars($collectionLink) ?>"
-                aria-label="Open <?= htmlspecialchars($collection['name']) ?>"
+                href="<?= e($link) ?>"
             >
 
                 <img
                     src="<?= asset($collection['image']) ?>"
-                    alt="<?= htmlspecialchars($collection['name']) ?>"
+                    alt="<?= e($collection['name']) ?>"
                 >
 
 
                 <div class="collection-info">
 
                     <h3>
-                        <?= htmlspecialchars($collection['name']) ?>
+                        <?= e($collection['name']) ?>
                     </h3>
 
+
                     <p>
-                        <?= htmlspecialchars($collection['series']) ?>
+                        <?= e($collection['series']) ?>
                     </p>
 
 
                     <span>
 
-                        <?php if ($isMoreCollections): ?>
+                        <?= e($collection['items']) ?>
 
-                            SEE ALL →
 
-                        <?php else: ?>
+                        <?php if ($isMore): ?>
 
-                            <?= (int)$collection['items'] ?>
-                            ITEMS IN STOCK
+                            →
 
                         <?php endif; ?>
 
@@ -667,12 +981,19 @@ $faqs = [
 
             </a>
 
+
         <?php endforeach; ?>
+
 
     </div>
 
 </section>
 
+
+
+<!-- =========================================================
+     CUSTOMER FEEDBACK
+========================================================= -->
 
 <section
     class="content-section"
@@ -682,8 +1003,13 @@ $faqs = [
     <div class="section-heading">
 
         <h2>
+
             WHAT OUR
-            <span>CUSTOMERS SAY</span>
+
+            <span>
+                CUSTOMERS SAY
+            </span>
+
         </h2>
 
     </div>
@@ -691,74 +1017,208 @@ $faqs = [
 
     <div class="review-list">
 
-        <?php foreach ($reviews as $i => $review): ?>
 
-            <article
-                class="review <?= $i === 1 ? 'right' : '' ?>"
-            >
+        <?php if (empty($reviews)): ?>
+
+
+            <article class="review">
+
 
                 <div class="quote">
 
-                    <img
-                        src="<?= icon('quote') ?>"
-                        alt=""
-                    >
+                    <?php if (icon('quote')): ?>
+
+                        <img
+                            src="<?= icon('quote') ?>"
+                            alt=""
+                        >
+
+                    <?php endif; ?>
 
                 </div>
 
 
                 <div class="review-content">
 
-                    <div class="rating">
-
-                        <img
-                            src="<?= icon('stars') ?>"
-                            alt="5 stars"
-                        >
-
-                        <span>
-                            5.0/5
-                        </span>
-
-                    </div>
-
-
                     <p>
-                        <?= htmlspecialchars($review['text']) ?>
+                        Customer feedback will appear here after
+                        an approved customer review is submitted.
                     </p>
-
-
-                    <div class="reviewer">
-
-                        <img
-                            src="<?= asset($review['image']) ?>"
-                            alt="<?= htmlspecialchars($review['name']) ?>"
-                        >
-
-                        <span>
-
-                            <b>
-                                <?= htmlspecialchars($review['name']) ?>
-                            </b>
-
-                            <small>
-                                Verified Buyer
-                            </small>
-
-                        </span>
-
-                    </div>
 
                 </div>
 
+
             </article>
 
-        <?php endforeach; ?>
+
+        <?php else: ?>
+
+
+            <?php foreach ($reviews as $i => $review): ?>
+
+
+                <?php
+
+                $initials = '';
+
+                $nameParts = preg_split(
+                    '/\s+/',
+                    trim($review['name'])
+                );
+
+
+                if (!empty($nameParts[0])) {
+
+                    $initials .= strtoupper(
+                        substr(
+                            $nameParts[0],
+                            0,
+                            1
+                        )
+                    );
+
+                }
+
+
+                if (count($nameParts) > 1) {
+
+                    $initials .= strtoupper(
+                        substr(
+                            $nameParts[
+                                count($nameParts) - 1
+                            ],
+                            0,
+                            1
+                        )
+                    );
+
+                }
+
+                ?>
+
+
+                <article
+                    class="review <?= $i % 2 === 1 ? 'right' : '' ?>"
+                >
+
+
+                    <div class="quote">
+
+                        <?php if (icon('quote')): ?>
+
+                            <img
+                                src="<?= icon('quote') ?>"
+                                alt=""
+                            >
+
+                        <?php endif; ?>
+
+                    </div>
+
+
+                    <div class="review-content">
+
+
+                        <!-- CUSTOMER RATING -->
+
+                        <div class="rating">
+
+
+                            <div
+                                class="customer-rating-stars"
+                                style="--rating: <?= (int)$review['rating'] ?>;"
+                                aria-label="<?= (int)$review['rating'] ?> out of 5 stars"
+                            >
+
+                                <span
+                                    class="stars-empty"
+                                ></span>
+
+
+                                <span
+                                    class="stars-filled"
+                                ></span>
+
+                            </div>
+
+
+                            <span>
+
+                                <?= number_format(
+                                    (int)$review['rating'],
+                                    1
+                                ) ?>/5
+
+                            </span>
+
+                        </div>
+
+
+                        <!-- CUSTOMER REVIEW -->
+
+                        <p>
+
+                            <?= e($review['text']) ?>
+
+                        </p>
+
+
+                        <!-- CUSTOMER NAME -->
+
+                        <div class="reviewer">
+
+
+                            <div
+                                class="reviewer-placeholder"
+                                aria-hidden="true"
+                            >
+
+                                <?= e($initials) ?>
+
+                            </div>
+
+
+                            <span>
+
+                                <b>
+
+                                    <?= e($review['name']) ?>
+
+                                </b>
+
+
+                                <small>
+
+                                    Verified Buyer
+
+                                </small>
+
+                            </span>
+
+
+                        </div>
+
+                    </div>
+
+
+                </article>
+
+
+            <?php endforeach; ?>
+
+
+        <?php endif; ?>
+
 
     </div>
 
 </section>
 
+
+
+<!-- =========================================================
+     CONDITION GUIDE
+========================================================= -->
 
 <section
     class="content-section"
@@ -768,8 +1228,13 @@ $faqs = [
     <div class="section-heading">
 
         <h2>
+
             CONDITION
-            <span>GUIDE</span>
+
+            <span>
+                GUIDE
+            </span>
+
         </h2>
 
     </div>
@@ -777,53 +1242,73 @@ $faqs = [
 
     <div class="condition-grid">
 
+
         <?php foreach ($conditions as $condition): ?>
+
 
             <article class="condition-card">
 
+
                 <img
                     src="<?= asset($condition['image']) ?>"
-                    alt="<?= htmlspecialchars($condition['code']) ?> condition example"
+                    alt="<?= e($condition['code']) ?> condition example"
                 >
 
 
                 <div>
 
                     <h3>
-                        <?= htmlspecialchars($condition['code']) ?>
+                        <?= e($condition['code']) ?>
                     </h3>
 
+
                     <b>
-                        <?= htmlspecialchars($condition['title']) ?>
+                        <?= e($condition['title']) ?>
                     </b>
 
+
                     <p>
-                        <?= htmlspecialchars($condition['desc']) ?>
+                        <?= e($condition['desc']) ?>
                     </p>
 
+
                     <strong>
+
                         CONDITION:
+
                         <em>
-                            <?= htmlspecialchars($condition['state']) ?>
+                            <?= e($condition['state']) ?>
                         </em>
+
                     </strong>
 
                 </div>
 
+
             </article>
 
+
         <?php endforeach; ?>
+
 
     </div>
 
 
     <p class="note">
+
         Condition details are provided on each product listing.
-        Please review the product description before placing your order.
+        Please review the product description before placing
+        your order.
+
     </p>
 
 </section>
 
+
+
+<!-- =========================================================
+     FAQ
+========================================================= -->
 
 <section
     class="content-section faq-section"
@@ -833,8 +1318,13 @@ $faqs = [
     <div class="section-heading centered">
 
         <h2>
+
             FREQUENTLY ASKED
-            <span>QUESTIONS</span>
+
+            <span>
+                QUESTIONS
+            </span>
+
         </h2>
 
     </div>
@@ -842,14 +1332,20 @@ $faqs = [
 
     <div class="faq-list">
 
+
         <?php foreach ($faqs as $faq): ?>
+
 
             <details>
 
+
                 <summary>
 
+
                     <span>
-                        <?= htmlspecialchars($faq['q']) ?>
+
+                        <?= e($faq['q']) ?>
+
                     </span>
 
 
@@ -860,23 +1356,40 @@ $faqs = [
                             alt=""
                         >
 
+                    <?php else: ?>
+
+                        <span>
+                            +
+                        </span>
+
                     <?php endif; ?>
+
 
                 </summary>
 
 
                 <p>
-                    <?= htmlspecialchars($faq['a']) ?>
+
+                    <?= e($faq['a']) ?>
+
                 </p>
+
 
             </details>
 
+
         <?php endforeach; ?>
+
 
     </div>
 
 </section>
 
+
+
+<!-- =========================================================
+     TERMS NOTICE
+========================================================= -->
 
 <section
     class="preorder-note"
@@ -884,45 +1397,26 @@ $faqs = [
 >
 
     <p>
+
         Please review our
-        <a href="#terms">
+
+        <a href="terms.php">
             Terms &amp; Conditions
         </a>
+
         before placing an order.
+
     </p>
+
 
     <a
         class="link-arrow"
-        href="#terms"
+        href="terms.php"
     >
+
         View Terms &amp; Conditions →
+
     </a>
-
-</section>
-
-
-<section
-    class="terms-section content-section"
-    id="terms"
->
-
-    <div class="terms-box">
-
-        <h2>
-            Terms &amp; Conditions
-        </h2>
-
-        <p>
-            Condition details are provided on each product listing.
-            Please review the product description before placing an order.
-        </p>
-
-        <p>
-            Pre-order availability and supplier timing may change.
-            Specific deposit and cancellation handling depends on the applicable order terms.
-        </p>
-
-    </div>
 
 </section>
 
@@ -930,11 +1424,21 @@ $faqs = [
 </main>
 
 
+
+<!-- =========================================================
+     FOOTER
+========================================================= -->
+
 <footer id="contact">
+
 
     <div class="footer-grid">
 
+
+        <!-- BRAND -->
+
         <div>
+
 
             <?php if (asset('logo')): ?>
 
@@ -948,52 +1452,72 @@ $faqs = [
 
 
             <p>
+
                 A sanctuary for anime collectors, offering authentic
                 figures, trusted pre-orders, and a premium collecting
-                experience inspired by the journey behind every masterpiece.
+                experience inspired by the journey behind every
+                masterpiece.
+
             </p>
+
 
         </div>
 
 
+
+        <!-- NAVIGATION -->
+
         <div class="footer-links">
+
 
             <h4>
                 NAVIGATE
             </h4>
 
-            <a href="#home">
+
+            <a href="index.php">
                 Home
             </a>
+
 
             <a href="collection.php">
                 Collection
             </a>
 
+
             <a href="preorder.php">
                 Pre-Orders
             </a>
+
 
             <a href="about.php">
                 About
             </a>
 
+
             <a href="contact.php">
                 Contact
             </a>
 
+
         </div>
 
 
+
+        <!-- CONNECT -->
+
         <div class="footer-links">
+
 
             <h4>
                 CONNECT
             </h4>
 
+
             <a href="mailto:mimichvn.collectibles@gmail.com">
                 mimichvn.collectibles@gmail.com
             </a>
+
 
             <a href="tel:+639657457775">
                 +63 965 745 7775
@@ -1001,6 +1525,7 @@ $faqs = [
 
 
             <div class="socials">
+
 
                 <a
                     href="#"
@@ -1035,26 +1560,40 @@ $faqs = [
 
                 </a>
 
+
             </div>
+
 
         </div>
 
+
     </div>
+
 
 
     <div class="footer-bottom">
 
-        <span>
-            © 2026 Mimic Haven Collectibles. All Rights Reserved.
-        </span>
 
         <span>
-            Crafted with precision &amp; passion.
+
+            © 2026 Mimic Haven Collectibles.
+            All Rights Reserved.
+
         </span>
+
+
+        <span>
+
+            Crafted with precision &amp; passion.
+
+        </span>
+
 
     </div>
 
+
 </footer>
+
 
 
 <div
@@ -1065,7 +1604,194 @@ $faqs = [
 ></div>
 
 
+
 <script src="script.js"></script>
+
+
+
+<!-- =========================================================
+     HEADER SEARCH JAVASCRIPT
+========================================================= -->
+
+<script>
+
+document.addEventListener(
+    'DOMContentLoaded',
+    function () {
+
+
+        const headerSearch =
+            document.getElementById(
+                'headerSearch'
+            );
+
+
+        const headerSearchToggle =
+            document.getElementById(
+                'headerSearchToggle'
+            );
+
+
+        const headerSearchInput =
+            document.getElementById(
+                'headerSearchInput'
+            );
+
+
+        if (
+            !headerSearch ||
+            !headerSearchToggle ||
+            !headerSearchInput
+        ) {
+
+            return;
+
+        }
+
+
+        /* =================================================
+           OPEN SEARCH
+        ================================================= */
+
+        headerSearchToggle.addEventListener(
+            'click',
+            function (event) {
+
+                event.stopPropagation();
+
+
+                const isOpen =
+                    headerSearch.classList.contains(
+                        'active'
+                    );
+
+
+                if (isOpen) {
+
+                    headerSearchInput.focus();
+
+                    return;
+
+                }
+
+
+                headerSearch.classList.add(
+                    'active'
+                );
+
+
+                headerSearchToggle.setAttribute(
+                    'aria-expanded',
+                    'true'
+                );
+
+
+                setTimeout(
+                    function () {
+
+                        headerSearchInput.focus();
+
+                    },
+                    250
+                );
+
+            }
+        );
+
+
+        /* =================================================
+           ENTER TO SEARCH
+        ================================================= */
+
+        headerSearchInput.addEventListener(
+            'keydown',
+            function (event) {
+
+                if (event.key !== 'Enter') {
+                    return;
+                }
+
+
+                const search =
+                    headerSearchInput.value.trim();
+
+
+                if (!search) {
+                    return;
+                }
+
+
+                window.location.href =
+                    'collection.php?search=' +
+                    encodeURIComponent(search);
+
+            }
+        );
+
+
+        /* =================================================
+           CLOSE WHEN CLICKING OUTSIDE
+        ================================================= */
+
+        document.addEventListener(
+            'click',
+            function (event) {
+
+                if (
+                    !headerSearch.contains(
+                        event.target
+                    )
+                ) {
+
+                    headerSearch.classList.remove(
+                        'active'
+                    );
+
+
+                    headerSearchToggle.setAttribute(
+                        'aria-expanded',
+                        'false'
+                    );
+
+                }
+
+            }
+        );
+
+
+        /* =================================================
+           ESCAPE TO CLOSE
+        ================================================= */
+
+        headerSearchInput.addEventListener(
+            'keydown',
+            function (event) {
+
+                if (event.key === 'Escape') {
+
+                    headerSearch.classList.remove(
+                        'active'
+                    );
+
+
+                    headerSearchToggle.setAttribute(
+                        'aria-expanded',
+                        'false'
+                    );
+
+
+                    headerSearchToggle.focus();
+
+                }
+
+            }
+        );
+
+    }
+);
+
+</script>
+
 
 </body>
 

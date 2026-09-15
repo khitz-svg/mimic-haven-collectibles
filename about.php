@@ -1,5 +1,7 @@
 <?php
 
+require_once 'auth.php';
+
 /* =========================================================
    MIMIC HAVEN - ABOUT PAGE
 ========================================================= */
@@ -36,6 +38,14 @@ function icon(string $name): string {
     return "";
 }
 
+function e(string $value): string {
+    return htmlspecialchars(
+        $value,
+        ENT_QUOTES,
+        'UTF-8'
+    );
+}
+
 ?>
 
 <!doctype html>
@@ -59,7 +69,10 @@ function icon(string $name): string {
         content="Learn more about Mimic Haven Collectibles, a sanctuary for anime collectors."
     >
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
 
     <link
         rel="preconnect"
@@ -93,6 +106,9 @@ function icon(string $name): string {
 
     <div class="header-inner">
 
+
+        <!-- LOGO -->
+
         <a
             class="brand"
             href="index.php"
@@ -124,23 +140,37 @@ function icon(string $name): string {
         </a>
 
 
+        <!-- NAVIGATION -->
+
         <nav
             class="nav"
             id="main-nav"
             aria-label="Primary navigation"
         >
 
+
+            <!-- HOME -->
+
             <a href="index.php">
                 Home
             </a>
+
+
+            <!-- COLLECTION -->
 
             <a href="collection.php">
                 Collection
             </a>
 
+
+            <!-- PRE-ORDERS -->
+
             <a href="preorder.php">
                 Pre-Orders
             </a>
+
+
+            <!-- ABOUT -->
 
             <a
                 href="about.php"
@@ -149,28 +179,54 @@ function icon(string $name): string {
                 About
             </a>
 
-            <a href="index.php#contact">
+
+            <!-- CONTACT -->
+
+            <a href="contact.php">
                 Contact
             </a>
 
 
-            <a
-                class="nav-icon"
-                href="collection.php#collection-search"
-                aria-label="Search"
+            <!-- EXPANDABLE SEARCH -->
+
+            <div
+                class="header-search"
+                id="headerSearch"
             >
 
-                <?php if (icon('search')): ?>
+                <button
+                    type="button"
+                    class="header-search-toggle"
+                    id="headerSearchToggle"
+                    aria-label="Search"
+                    aria-expanded="false"
+                >
 
-                    <img
-                        src="<?= icon('search') ?>"
-                        alt="Search"
-                    >
+                    <?php if (icon('search')): ?>
 
-                <?php endif; ?>
+                        <img
+                            src="<?= icon('search') ?>"
+                            alt=""
+                        >
 
-            </a>
+                    <?php endif; ?>
 
+                </button>
+
+
+                <input
+                    type="search"
+                    class="header-search-input"
+                    id="headerSearchInput"
+                    placeholder="Search figures..."
+                    autocomplete="off"
+                    aria-label="Search figures"
+                >
+
+            </div>
+
+
+            <!-- CART -->
 
             <a
                 class="nav-icon cart-button"
@@ -194,15 +250,41 @@ function icon(string $name): string {
             </a>
 
 
-            <a
-                class="browse-btn"
-                href="collection.php"
-            >
-                Browse Figures
-            </a>
+            <!-- ACCOUNT -->
+
+            <?php if (isLoggedIn()): ?>
+
+                <a
+                    class="nav-user"
+                    href="account.php"
+                >
+                    Hi, <?= e(currentFirstName()) ?>
+                </a>
+
+
+                <a
+                    class="nav-account"
+                    href="logout.php"
+                >
+                    Logout
+                </a>
+
+            <?php else: ?>
+
+                <a
+                    class="nav-account"
+                    href="login.php"
+                >
+                    Login
+                </a>
+
+            <?php endif; ?>
+
 
         </nav>
 
+
+        <!-- MOBILE MENU -->
 
         <button
             class="menu-toggle"
@@ -615,6 +697,8 @@ function icon(string $name): string {
     <div class="footer-grid">
 
 
+        <!-- BRAND -->
+
         <div>
 
             <?php if (asset('logo')): ?>
@@ -636,6 +720,8 @@ function icon(string $name): string {
         </div>
 
 
+        <!-- NAVIGATION -->
+
         <div class="footer-links">
 
             <h4>
@@ -654,16 +740,21 @@ function icon(string $name): string {
                 Pre-Orders
             </a>
 
-            <a href="about.php">
+            <a
+                href="about.php"
+                class="active"
+            >
                 About
             </a>
 
-            <a href="index.php#contact">
+            <a href="contact.php">
                 Contact
             </a>
 
         </div>
 
+
+        <!-- CONNECT -->
 
         <div class="footer-links">
 
@@ -746,7 +837,156 @@ function icon(string $name): string {
 ></div>
 
 
+
 <script src="script.js"></script>
+
+
+<!-- =========================================================
+     HEADER SEARCH SCRIPT
+========================================================= -->
+
+<script>
+
+document.addEventListener(
+    'DOMContentLoaded',
+    function () {
+
+        const headerSearch =
+            document.getElementById('headerSearch');
+
+        const headerSearchToggle =
+            document.getElementById('headerSearchToggle');
+
+        const headerSearchInput =
+            document.getElementById('headerSearchInput');
+
+
+        if (
+            !headerSearch ||
+            !headerSearchToggle ||
+            !headerSearchInput
+        ) {
+            return;
+        }
+
+
+        headerSearchToggle.addEventListener(
+            'click',
+            function (event) {
+
+                event.stopPropagation();
+
+                const isOpen =
+                    headerSearch.classList.contains('active');
+
+
+                if (isOpen) {
+
+                    headerSearchInput.focus();
+
+                    return;
+                }
+
+
+                headerSearch.classList.add('active');
+
+                headerSearchToggle.setAttribute(
+                    'aria-expanded',
+                    'true'
+                );
+
+
+                setTimeout(
+                    function () {
+
+                        headerSearchInput.focus();
+
+                    },
+                    250
+                );
+
+            }
+        );
+
+
+        headerSearchInput.addEventListener(
+            'keydown',
+            function (event) {
+
+                if (event.key !== 'Enter') {
+                    return;
+                }
+
+
+                const search =
+                    headerSearchInput.value.trim();
+
+
+                if (!search) {
+                    return;
+                }
+
+
+                window.location.href =
+                    'collection.php?search=' +
+                    encodeURIComponent(search);
+
+            }
+        );
+
+
+        document.addEventListener(
+            'click',
+            function (event) {
+
+                if (
+                    !headerSearch.contains(event.target)
+                ) {
+
+                    headerSearch.classList.remove(
+                        'active'
+                    );
+
+                    headerSearchToggle.setAttribute(
+                        'aria-expanded',
+                        'false'
+                    );
+
+                }
+
+            }
+        );
+
+
+        headerSearchInput.addEventListener(
+            'keydown',
+            function (event) {
+
+                if (event.key === 'Escape') {
+
+                    headerSearch.classList.remove(
+                        'active'
+                    );
+
+                    headerSearchToggle.setAttribute(
+                        'aria-expanded',
+                        'false'
+                    );
+
+                    headerSearchInput.value = '';
+
+                    headerSearchToggle.focus();
+
+                }
+
+            }
+        );
+
+    }
+);
+
+</script>
+
 
 </body>
 </html>

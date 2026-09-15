@@ -7,9 +7,20 @@ requireLogin();
 
 $userId = currentUserId();
 
-function e(string $value): string
+
+/*
+|--------------------------------------------------------------------------
+| HELPERS
+|--------------------------------------------------------------------------
+*/
+
+function e($value): string
 {
-    return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+    return htmlspecialchars(
+        (string)$value,
+        ENT_QUOTES,
+        'UTF-8'
+    );
 }
 
 
@@ -26,56 +37,147 @@ $roleStmt = $conn->prepare(
      LIMIT 1"
 );
 
-$roleStmt->bind_param("i", $userId);
+$roleStmt->bind_param(
+    "i",
+    $userId
+);
+
 $roleStmt->execute();
 
-$roleResult = $roleStmt->get_result();
-$currentUser = $roleResult->fetch_assoc();
+$roleResult =
+    $roleStmt->get_result();
+
+$currentUser =
+    $roleResult->fetch_assoc();
 
 $roleStmt->close();
 
-if (!$currentUser || $currentUser['role'] !== 'admin') {
+
+if (
+    !$currentUser ||
+    $currentUser['role'] !== 'admin'
+) {
 
     http_response_code(403);
 
     die(
         '<!DOCTYPE html>
-        <html>
+        <html lang="en">
+
         <head>
+
             <meta charset="UTF-8">
-            <title>Access Denied</title>
+
+            <meta
+                name="viewport"
+                content="width=device-width, initial-scale=1.0"
+            >
+
+            <title>
+                Access Denied | Mimic Haven Collectibles
+            </title>
 
             <style>
-                body {
-                    background: #182637;
-                    color: #fff;
-                    font-family: Arial, sans-serif;
-                    text-align: center;
-                    padding: 100px 20px;
+
+                * {
+                    box-sizing: border-box;
                 }
 
-                a {
-                    color: #97DCF7;
+                body {
+                    margin: 0;
+                    min-height: 100vh;
+
+                    background: #182637;
+                    color: #ffffff;
+
+                    font-family:
+                        Arial,
+                        sans-serif;
+
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    text-align: center;
+
+                    padding: 30px;
                 }
+
+                .access-denied {
+                    width: 100%;
+                    max-width: 600px;
+                }
+
+                .access-denied h1 {
+                    margin: 0 0 10px;
+
+                    font-size: 64px;
+
+                    color: #ffffff;
+                }
+
+                .access-denied h2 {
+                    margin: 0 0 18px;
+
+                    font-size: 28px;
+
+                    color: #ffffff;
+                }
+
+                .access-denied p {
+                    margin: 0 0 25px;
+
+                    color: #aab2ba;
+
+                    font-size: 15px;
+
+                    line-height: 1.6;
+                }
+
+                .access-denied a {
+                    display: inline-block;
+
+                    color: #97DCF7;
+
+                    text-decoration: none;
+
+                    font-weight: 600;
+
+                    font-size: 14px;
+                }
+
+                .access-denied a:hover {
+                    text-decoration: underline;
+                }
+
             </style>
 
         </head>
 
         <body>
 
-            <h1>403</h1>
+            <div class="access-denied">
 
-            <h2>Access Denied</h2>
+                <h1>
+                    403
+                </h1>
 
-            <p>
-                You do not have administrator permission.
-            </p>
+                <h2>
+                    Access Denied
+                </h2>
 
-            <a href="account.php">
-                Back to My Account
-            </a>
+                <p>
+                    You do not have administrator permission.
+                </p>
+
+                <a href="admin.php">
+                    Back to Admin Dashboard
+                </a>
+
+            </div>
 
         </body>
+
         </html>'
     );
 
@@ -101,16 +203,19 @@ $preorderCount = 0;
 |--------------------------------------------------------------------------
 */
 
-$result = $conn->query(
-    "SELECT COUNT(*) AS total
-     FROM products"
-);
+$result =
+    $conn->query(
+        "SELECT COUNT(*) AS total
+         FROM products"
+    );
 
 if ($result) {
 
-    $row = $result->fetch_assoc();
+    $row =
+        $result->fetch_assoc();
 
-    $productCount = (int)$row['total'];
+    $productCount =
+        (int)$row['total'];
 }
 
 
@@ -120,17 +225,20 @@ if ($result) {
 |--------------------------------------------------------------------------
 */
 
-$result = $conn->query(
-    "SELECT COUNT(*) AS total
-     FROM users
-     WHERE role = 'customer'"
-);
+$result =
+    $conn->query(
+        "SELECT COUNT(*) AS total
+         FROM users
+         WHERE role = 'customer'"
+    );
 
 if ($result) {
 
-    $row = $result->fetch_assoc();
+    $row =
+        $result->fetch_assoc();
 
-    $customerCount = (int)$row['total'];
+    $customerCount =
+        (int)$row['total'];
 }
 
 
@@ -140,16 +248,19 @@ if ($result) {
 |--------------------------------------------------------------------------
 */
 
-$result = $conn->query(
-    "SELECT COUNT(*) AS total
-     FROM orders"
-);
+$result =
+    $conn->query(
+        "SELECT COUNT(*) AS total
+         FROM orders"
+    );
 
 if ($result) {
 
-    $row = $result->fetch_assoc();
+    $row =
+        $result->fetch_assoc();
 
-    $orderCount = (int)$row['total'];
+    $orderCount =
+        (int)$row['total'];
 }
 
 
@@ -158,23 +269,24 @@ if ($result) {
 | PRE-ORDERS
 |--------------------------------------------------------------------------
 |
-| Count all active pre-orders.
 | Cancelled pre-orders are excluded.
 |
-|--------------------------------------------------------------------------
 */
 
-$result = $conn->query(
-    "SELECT COUNT(*) AS total
-     FROM preorders
-     WHERE status != 'Cancelled'"
-);
+$result =
+    $conn->query(
+        "SELECT COUNT(*) AS total
+         FROM preorders
+         WHERE status != 'Cancelled'"
+    );
 
 if ($result) {
 
-    $row = $result->fetch_assoc();
+    $row =
+        $result->fetch_assoc();
 
-    $preorderCount = (int)$row['total'];
+    $preorderCount =
+        (int)$row['total'];
 }
 
 
@@ -186,28 +298,38 @@ if ($result) {
 
 $recentOrders = [];
 
-$recentStmt = $conn->prepare(
-    "SELECT
-        o.id,
-        o.total_amount,
-        o.status,
-        o.created_at,
-        u.first_name,
-        u.last_name
-     FROM orders o
-     INNER JOIN users u
-        ON o.user_id = u.id
-     ORDER BY o.created_at DESC
-     LIMIT 5"
-);
+$recentStmt =
+    $conn->prepare(
+        "SELECT
+            o.id,
+            o.total_amount,
+            o.status,
+            o.created_at,
+            u.first_name,
+            u.last_name
+
+         FROM orders o
+
+         INNER JOIN users u
+            ON o.user_id = u.id
+
+         ORDER BY o.created_at DESC
+
+         LIMIT 5"
+    );
 
 $recentStmt->execute();
 
-$recentResult = $recentStmt->get_result();
+$recentResult =
+    $recentStmt->get_result();
 
-while ($order = $recentResult->fetch_assoc()) {
+while (
+    $order =
+        $recentResult->fetch_assoc()
+) {
 
-    $recentOrders[] = $order;
+    $recentOrders[] =
+        $order;
 }
 
 $recentStmt->close();
@@ -226,18 +348,24 @@ foreach (
     as $ext
 ) {
 
-    $file = __DIR__ . "/assets/logo.$ext";
+    $file =
+        __DIR__ . "/assets/logo.$ext";
 
-    if (file_exists($file)) {
+    if (
+        file_exists($file)
+    ) {
 
-        $logo = "assets/logo.$ext";
+        $logo =
+            "assets/logo.$ext";
 
         break;
     }
 }
 
 ?>
+
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
@@ -253,199 +381,495 @@ foreach (
         Admin Dashboard | Mimic Haven Collectibles
     </title>
 
+
     <link
         rel="stylesheet"
         href="style.css"
     >
 
+
     <style>
 
-        .admin-dashboard {
-            padding: 70px 20px 100px;
-        }
+/* =========================================================
+   ADMIN PAGE
+========================================================= */
 
-        .admin-container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+body {
+    margin: 0;
 
-        .admin-welcome {
-            margin-bottom: 40px;
-        }
+    background: #182637;
 
-        .admin-eyebrow {
-            display: block;
-            color: var(--blue);
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 2px;
-            margin-bottom: 10px;
-        }
+    color: #ffffff;
 
-        .admin-welcome h1 {
-            margin: 0 0 10px;
-            color: #fff;
-        }
+    font-family:
+        Arial,
+        sans-serif;
+}
 
-        .admin-welcome h1 span {
-            color: var(--blue);
-        }
 
-        .admin-welcome p {
-            color: #aab2ba;
-            margin: 0;
-        }
+.admin-container {
+    width:
+        min(
+            1550px,
+            calc(100% - 60px)
+        );
 
-        .admin-stat-grid {
-            display: grid;
-            grid-template-columns:
-                repeat(4, minmax(0, 1fr));
-            gap: 18px;
-            margin-bottom: 35px;
-        }
+    margin: 0 auto;
 
-        .admin-stat {
-            background: #191b1e;
-            border: 1px solid rgba(255,255,255,0.07);
-            border-radius: 12px;
-            padding: 24px;
-        }
+    padding:
+        30px 0 80px;
+}
 
-        .admin-stat-label {
-            color: #89929c;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
 
-        .admin-stat-number {
-            display: block;
-            margin-top: 10px;
-            color: var(--blue);
-            font-size: 32px;
-            font-weight: 700;
-        }
+/* =========================================================
+   ADMIN HEADER
+========================================================= */
 
-        .admin-menu {
-            display: grid;
-            grid-template-columns:
-                repeat(4, minmax(0, 1fr));
-            gap: 18px;
-            margin-bottom: 35px;
-        }
+.admin-header {
+    display: grid;
 
-        .admin-menu-card {
-            display: block;
-            background: #191b1e;
-            border: 1px solid rgba(255,255,255,0.07);
-            border-radius: 12px;
-            padding: 24px;
-            text-decoration: none;
-            transition:
-                transform 0.2s ease,
-                border-color 0.2s ease;
-        }
+    grid-template-columns:
+        minmax(0, 1fr)
+        auto;
 
-        .admin-menu-card:hover {
-            transform: translateY(-3px);
-            border-color: var(--blue);
-        }
+    align-items: center;
 
-        .admin-menu-icon {
-            font-size: 26px;
-            margin-bottom: 14px;
-        }
+    gap: 30px;
 
-        .admin-menu-card h3 {
-            color: #fff;
-            margin: 0 0 8px;
-        }
+    margin-bottom: 30px;
+}
 
-        .admin-menu-card p {
-            color: #89929c;
-            font-size: 13px;
-            line-height: 1.5;
-            margin: 0;
-        }
 
-        .admin-recent {
-            background: #191b1e;
-            border: 1px solid rgba(255,255,255,0.07);
-            border-radius: 12px;
-            padding: 26px;
-        }
+.admin-header-title {
+    min-width: 0;
+}
 
-        .admin-recent-header {
-            margin-bottom: 22px;
-        }
 
-        .admin-recent-header span {
-            color: var(--blue);
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 1px;
-        }
+.admin-header-title h1 {
+    margin: 0 0 8px;
 
-        .admin-recent-header h2 {
-            margin: 6px 0 0;
-            color: #fff;
-        }
+    color: #ffffff;
 
-        .admin-recent-order {
-            padding: 18px 0;
-            border-top: 1px solid rgba(255,255,255,0.06);
-        }
+    font-size: 30px;
 
-        .admin-recent-order:first-child {
-            border-top: none;
-        }
+    line-height: 1.15;
+}
 
-        .admin-recent-order-top {
-            display: flex;
-            justify-content: space-between;
-            gap: 20px;
-        }
 
-        .admin-recent-order strong {
-            color: #fff;
-        }
+.admin-header-title p {
+    margin: 0;
 
-        .admin-recent-order p {
-            color: #89929c;
-            margin: 6px 0 0;
-            font-size: 13px;
-        }
+    color: #aab2ba;
 
-        .admin-recent-status {
-            color: var(--blue);
-            font-size: 12px;
-            font-weight: 700;
-        }
+    font-size: 13px;
 
-        .admin-empty {
-            color: #89929c;
-            padding: 20px 0;
-        }
+    line-height: 1.6;
+}
 
-        @media (max-width: 900px) {
 
-            .admin-stat-grid,
-            .admin-menu {
+/* =========================================================
+   ADMIN NAVIGATION
+========================================================= */
 
-                grid-template-columns:
-                    repeat(2, minmax(0, 1fr));
-            }
-        }
+.admin-nav {
+    display: flex;
 
-        @media (max-width: 600px) {
+    align-items: center;
 
-            .admin-stat-grid,
-            .admin-menu {
+    justify-content: flex-end;
 
-                grid-template-columns: 1fr;
-            }
-        }
+    gap: 10px;
+
+    flex-wrap: nowrap;
+}
+
+
+.admin-nav a {
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    min-height: 38px;
+
+    padding:
+        10px 16px;
+
+    border-radius: 8px;
+
+    background: #9ADCF7;
+
+    color: #182637;
+
+    font-family:
+        Arial,
+        sans-serif;
+
+    font-size: 13px;
+
+    font-weight: bold;
+
+    text-decoration: none;
+
+    white-space: nowrap;
+
+    transition:
+        opacity .2s ease,
+        transform .2s ease;
+}
+
+
+.admin-nav a:hover {
+    opacity: .85;
+
+    transform:
+        translateY(-1px);
+}
+
+
+.admin-nav a.active {
+    background: #ffffff;
+
+    color: #182637;
+}
+
+
+/* =========================================================
+   STATISTICS
+========================================================= */
+
+.admin-stat-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            4,
+            minmax(0, 1fr)
+        );
+
+    gap: 18px;
+
+    margin-bottom: 30px;
+}
+
+
+.admin-stat {
+    background: #ffffff;
+
+    border-radius: 10px;
+
+    padding: 22px;
+}
+
+
+.admin-stat-label {
+    display: block;
+
+    color: #697681;
+
+    font-size: 10px;
+
+    font-weight: bold;
+
+    letter-spacing: 1px;
+
+    text-transform: uppercase;
+}
+
+
+.admin-stat-number {
+    display: block;
+
+    margin-top: 9px;
+
+    color: #182637;
+
+    font-size: 32px;
+
+    font-weight: bold;
+}
+
+
+/* =========================================================
+   MANAGEMENT MENU
+========================================================= */
+
+.admin-menu {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            4,
+            minmax(0, 1fr)
+        );
+
+    gap: 18px;
+
+    margin-bottom: 30px;
+}
+
+
+.admin-menu-card {
+    display: block;
+
+    background: #ffffff;
+
+    border-radius: 10px;
+
+    padding: 22px;
+
+    text-decoration: none;
+
+    transition:
+        transform .2s ease,
+        box-shadow .2s ease;
+}
+
+
+.admin-menu-card:hover {
+    transform:
+        translateY(-3px);
+
+    box-shadow:
+        0 10px 25px
+        rgba(0,0,0,.18);
+}
+
+
+.admin-menu-icon {
+    width: 46px;
+    height: 46px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    margin-bottom: 14px;
+
+    border-radius: 8px;
+
+    background: #e8f8fd;
+
+    font-size: 20px;
+}
+
+
+.admin-menu-card h3 {
+    margin: 0 0 8px;
+
+    color: #182637;
+
+    font-size: 14px;
+}
+
+
+.admin-menu-card p {
+    margin: 0;
+
+    color: #697681;
+
+    font-size: 11px;
+
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   RECENT ORDERS
+========================================================= */
+
+.admin-recent {
+    background: #ffffff;
+
+    border-radius: 10px;
+
+    padding: 25px;
+}
+
+
+.admin-recent-header {
+    margin-bottom: 18px;
+}
+
+
+.admin-recent-header span {
+    display: block;
+
+    margin-bottom: 6px;
+
+    color: #6c7882;
+
+    font-size: 9px;
+
+    font-weight: bold;
+
+    letter-spacing: 1.5px;
+}
+
+
+.admin-recent-header h2 {
+    margin: 0;
+
+    color: #182637;
+
+    font-size: 20px;
+}
+
+
+.admin-recent-order {
+    padding:
+        16px 0;
+
+    border-top:
+        1px solid #e1e5e8;
+}
+
+
+.admin-recent-order:first-child {
+    border-top: none;
+}
+
+
+.admin-recent-order-top {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+}
+
+
+.admin-recent-order strong {
+    color: #182637;
+
+    font-size: 12px;
+}
+
+
+.admin-recent-order p {
+    margin: 6px 0 0;
+
+    color: #697681;
+
+    font-size: 10px;
+
+    line-height: 1.5;
+}
+
+
+.admin-recent-status {
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding:
+        5px 9px;
+
+    border-radius: 20px;
+
+    background: #e8f8fd;
+
+    color: #365d6c;
+
+    font-size: 9px;
+
+    font-weight: bold;
+
+    white-space: nowrap;
+}
+
+
+.admin-empty {
+    padding:
+        20px 0;
+
+    color: #697681;
+
+    font-size: 11px;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1100px) {
+
+    .admin-header {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-nav {
+        justify-content: flex-start;
+
+        flex-wrap: wrap;
+    }
+
+}
+
+
+@media (max-width: 900px) {
+
+    .admin-stat-grid,
+    .admin-menu {
+
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0, 1fr)
+            );
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    .admin-container {
+        width:
+            calc(100% - 30px);
+
+        padding:
+            20px 0 60px;
+    }
+
+
+    .admin-stat-grid,
+    .admin-menu {
+
+        grid-template-columns: 1fr;
+    }
+
+
+    .admin-nav {
+        gap: 7px;
+    }
+
+
+    .admin-nav a {
+        min-height: 36px;
+
+        padding:
+            9px 12px;
+
+        font-size: 11px;
+    }
+
+
+    .admin-recent-order-top {
+        align-items: flex-start;
+
+        flex-direction: column;
+    }
+
+}
 
     </style>
 
@@ -455,410 +879,367 @@ foreach (
 <body>
 
 
-<header class="site-header">
-
-    <div class="header-inner">
+<div class="admin-container">
 
 
-        <!-- BRAND -->
+    <!-- =====================================================
+         ADMIN HEADER
+    ====================================================== -->
 
-        <a
-            href="admin.php"
-            class="brand"
+    <div class="admin-header">
+
+
+        <div class="admin-header-title">
+
+            <h1>
+                Admin Dashboard
+            </h1>
+
+
+            <p>
+                Welcome,
+                <?= e(currentFirstName()) ?>.
+                Manage your store from one place.
+            </p>
+
+        </div>
+
+
+        <nav
+            class="admin-nav"
+            aria-label="Admin navigation"
         >
 
-            <?php if ($logo): ?>
-
-                <img
-                    src="<?= e($logo) ?>"
-                    alt="Mimic Haven Collectibles"
-                    class="brand-logo"
-                >
-
-            <?php else: ?>
-
-                <div class="brand-fallback">
-
-                    MIMIC HAVEN
-
-                    <span>
-                        COLLECTIBLES
-                    </span>
-
-                </div>
-
-            <?php endif; ?>
-
-        </a>
-
-
-
-        <!-- NAVIGATION -->
-
-        <nav class="nav">
-
-            <a href="admin.php">
+            <a
+                href="admin.php"
+                class="active"
+            >
                 Dashboard
             </a>
+
 
             <a href="admin_orders.php">
                 Orders
             </a>
 
+
             <a href="admin_preorders.php">
                 Pre-Orders
             </a>
+
 
             <a href="admin_customers.php">
                 Customers
             </a>
 
-            <a href="account.php">
-                My Account
+
+            <a href="admin_products.php">
+                Products
             </a>
 
-            <a
-                class="nav-account"
-                href="logout.php"
-            >
+
+            <a href="logout.php">
                 Logout
             </a>
 
         </nav>
 
 
-
-        <button
-            class="menu-toggle"
-            type="button"
-            aria-expanded="false"
-            aria-controls="main-nav"
-        >
-            ☰
-        </button>
-
     </div>
 
-</header>
 
 
+    <!-- =====================================================
+         STATISTICS
+    ====================================================== -->
 
-<main class="admin-dashboard">
-
-    <div class="admin-container">
+    <section class="admin-stat-grid">
 
 
-        <!-- =====================================================
-             WELCOME
-        ====================================================== -->
+        <div class="admin-stat">
 
-        <section class="admin-welcome">
-
-            <span class="admin-eyebrow">
-                MIMIC HAVEN MANAGEMENT SYSTEM
+            <span class="admin-stat-label">
+                Products
             </span>
 
-            <h1>
-                Admin <span>Dashboard</span>
-            </h1>
+
+            <strong class="admin-stat-number">
+                <?= $productCount ?>
+            </strong>
+
+        </div>
+
+
+        <div class="admin-stat">
+
+            <span class="admin-stat-label">
+                Customers
+            </span>
+
+
+            <strong class="admin-stat-number">
+                <?= $customerCount ?>
+            </strong>
+
+        </div>
+
+
+        <div class="admin-stat">
+
+            <span class="admin-stat-label">
+                Orders
+            </span>
+
+
+            <strong class="admin-stat-number">
+                <?= $orderCount ?>
+            </strong>
+
+        </div>
+
+
+        <div class="admin-stat">
+
+            <span class="admin-stat-label">
+                Pre-Orders
+            </span>
+
+
+            <strong class="admin-stat-number">
+                <?= $preorderCount ?>
+            </strong>
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- =====================================================
+         MANAGEMENT MENU
+    ====================================================== -->
+
+    <section class="admin-menu">
+
+
+        <a
+            href="admin_orders.php"
+            class="admin-menu-card"
+        >
+
+            <div class="admin-menu-icon">
+                📦
+            </div>
+
+
+            <h3>
+                Manage Orders
+            </h3>
+
 
             <p>
-                Welcome, <?= e(currentFirstName()) ?>.
-                Manage your store from one place.
+                Review customer orders and update
+                their order status.
             </p>
 
-        </section>
+        </a>
 
 
 
-        <!-- =====================================================
-             STATISTICS
-        ====================================================== -->
+        <a
+            href="admin_products.php"
+            class="admin-menu-card"
+        >
 
-        <section class="admin-stat-grid">
-
-
-            <!-- PRODUCTS -->
-
-            <div class="admin-stat">
-
-                <span class="admin-stat-label">
-                    Products
-                </span>
-
-                <strong class="admin-stat-number">
-                    <?= $productCount ?>
-                </strong>
-
+            <div class="admin-menu-icon">
+                🛍️
             </div>
 
 
+            <h3>
+                Manage Products
+            </h3>
 
-            <!-- CUSTOMERS -->
 
-            <div class="admin-stat">
+            <p>
+                Add, edit, classify, and manage
+                collectible products and inventory.
+            </p>
 
-                <span class="admin-stat-label">
-                    Customers
-                </span>
+        </a>
 
-                <strong class="admin-stat-number">
-                    <?= $customerCount ?>
-                </strong>
 
+
+        <a
+            href="admin_customers.php"
+            class="admin-menu-card"
+        >
+
+            <div class="admin-menu-icon">
+                👥
             </div>
 
 
+            <h3>
+                Manage Customers
+            </h3>
 
-            <!-- ORDERS -->
 
-            <div class="admin-stat">
+            <p>
+                View customer profiles, pre-order
+                history, and reliability information.
+            </p>
 
-                <span class="admin-stat-label">
-                    Orders
-                </span>
+        </a>
 
-                <strong class="admin-stat-number">
-                    <?= $orderCount ?>
-                </strong>
 
+
+        <a
+            href="admin_preorders.php"
+            class="admin-menu-card"
+        >
+
+            <div class="admin-menu-icon">
+                ✦
             </div>
 
 
-
-            <!-- PRE-ORDERS -->
-
-            <div class="admin-stat">
-
-                <span class="admin-stat-label">
-                    Pre-Orders
-                </span>
-
-                <strong class="admin-stat-number">
-                    <?= $preorderCount ?>
-                </strong>
-
-            </div>
+            <h3>
+                Pre-Orders
+            </h3>
 
 
-        </section>
+            <p>
+                Manage reservations, deposits,
+                balances, payments, and release progress.
+            </p>
+
+        </a>
+
+
+    </section>
 
 
 
-        <!-- =====================================================
-             MANAGEMENT MENU
-        ====================================================== -->
+    <!-- =====================================================
+         RECENT ORDERS
+    ====================================================== -->
 
-        <section class="admin-menu">
+    <section class="admin-recent">
 
 
-            <!-- ORDERS -->
+        <div class="admin-recent-header">
 
-            <a
-                href="admin_orders.php"
-                class="admin-menu-card"
-            >
+            <span>
+                RECENT ACTIVITY
+            </span>
 
-                <div class="admin-menu-icon">
-                    📦
-                </div>
 
-                <h3>
-                    Manage Orders
-                </h3>
+            <h2>
+                Recent Orders
+            </h2>
 
-                <p>
-                    Review customer orders and update
-                    their order status.
-                </p>
-
-            </a>
+        </div>
 
 
 
-            <!-- PRODUCTS -->
+        <?php if (
+            empty($recentOrders)
+        ): ?>
 
-            <a
-    href="admin_products.php"
-    class="admin-menu-card"
->
-                <div class="admin-menu-icon">
-                    🛍️
-                </div>
+            <div class="admin-empty">
 
-                <h3>
-                    Manage Products
-                </h3>
-
-                <p>
-    Add, edit, classify, and manage collectible
-    products and inventory.
-</p>
-
-            </a>
-
-
-
-            <!-- CUSTOMERS -->
-
-            <a
-                href="admin_customers.php"
-                class="admin-menu-card"
-            >
-
-                <div class="admin-menu-icon">
-                    👥
-                </div>
-
-                <h3>
-                    Manage Customers
-                </h3>
-
-                <p>
-                    View customer profiles, pre-order
-                    history, and reliability information.
-                </p>
-
-            </a>
-
-
-
-            <!-- PRE-ORDERS -->
-
-            <a
-                href="admin_preorders.php"
-                class="admin-menu-card"
-            >
-
-                <div class="admin-menu-icon">
-                    ✦
-                </div>
-
-                <h3>
-                    Pre-Orders
-                </h3>
-
-                <p>
-                    Manage reservations, deposits,
-                    balances, payments, and release progress.
-                </p>
-
-            </a>
-
-
-        </section>
-
-
-
-        <!-- =====================================================
-             RECENT ORDERS
-        ====================================================== -->
-
-        <section class="admin-recent">
-
-
-            <div class="admin-recent-header">
-
-                <span>
-                    RECENT ACTIVITY
-                </span>
-
-                <h2>
-                    Recent Orders
-                </h2>
+                No orders have been placed yet.
 
             </div>
 
+        <?php else: ?>
 
 
-            <?php if (empty($recentOrders)): ?>
-
-                <div class="admin-empty">
-
-                    No orders have been placed yet.
-
-                </div>
-
-            <?php else: ?>
+            <?php foreach (
+                $recentOrders
+                as $order
+            ): ?>
 
 
-                <?php foreach ($recentOrders as $order): ?>
+                <div class="admin-recent-order">
 
 
-                    <div class="admin-recent-order">
+                    <div
+                        class="admin-recent-order-top"
+                    >
+
+                        <strong>
+                            Order
+                            #<?= (int)$order['id'] ?>
+                        </strong>
 
 
-                        <div class="admin-recent-order-top">
-
-
-                            <strong>
-
-                                Order #<?= (int)$order['id'] ?>
-
-                            </strong>
-
-
-                            <span class="admin-recent-status">
-
-                                <?= e(
-                                    $order['status']
-                                ) ?>
-
-                            </span>
-
-
-                        </div>
-
-
-
-                        <p>
-
+                        <span
+                            class="
+                                admin-recent-status
+                            "
+                        >
                             <?= e(
-                                $order['first_name']
-                                . ' '
-                                . $order['last_name']
+                                $order['status']
                             ) ?>
-
-                            &nbsp;•&nbsp;
-
-                            ₱<?= number_format(
-                                (float)$order['total_amount'],
-                                2
-                            ) ?>
-
-                            &nbsp;•&nbsp;
-
-                            <?= e(
-                                date(
-                                    'M j, Y',
-                                    strtotime(
-                                        $order['created_at']
-                                    )
-                                )
-                            ) ?>
-
-                        </p>
-
+                        </span>
 
                     </div>
 
 
-                <?php endforeach; ?>
+                    <p>
+
+                        <?= e(
+                            $order['first_name']
+                            . ' '
+                            . $order['last_name']
+                        ) ?>
 
 
-            <?php endif; ?>
+                        &nbsp;•&nbsp;
 
 
-        </section>
+                        ₱<?= number_format(
+                            (float)$order[
+                                'total_amount'
+                            ],
+                            2
+                        ) ?>
 
 
-    </div>
-
-</main>
+                        &nbsp;•&nbsp;
 
 
+                        <?= e(
+                            date(
+                                'M j, Y',
+                                strtotime(
+                                    $order[
+                                        'created_at'
+                                    ]
+                                )
+                            )
+                        ) ?>
 
-<script src="script.js"></script>
+                    </p>
+
+
+                </div>
+
+
+            <?php endforeach; ?>
+
+
+        <?php endif; ?>
+
+
+    </section>
+
+
+</div>
+
 
 </body>
 

@@ -16,13 +16,22 @@ $userId = currentUserId();
 
 function e($value): string
 {
-    return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
+    return htmlspecialchars(
+        (string)$value,
+        ENT_QUOTES,
+        'UTF-8'
+    );
 }
+
 
 function peso(float $amount): string
 {
-    return '₱' . number_format($amount, 2);
+    return '₱' . number_format(
+        $amount,
+        2
+    );
 }
+
 
 function productImage(?string $image): string
 {
@@ -55,19 +64,151 @@ $roleStmt = $conn->prepare(
      LIMIT 1"
 );
 
-$roleStmt->bind_param("i", $userId);
+$roleStmt->bind_param(
+    "i",
+    $userId
+);
+
 $roleStmt->execute();
 
-$roleResult = $roleStmt->get_result();
-$currentUser = $roleResult->fetch_assoc();
+$roleResult =
+    $roleStmt->get_result();
+
+$currentUser =
+    $roleResult->fetch_assoc();
 
 $roleStmt->close();
 
-if (!$currentUser || $currentUser['role'] !== 'admin') {
+
+if (
+    !$currentUser ||
+    $currentUser['role'] !== 'admin'
+) {
 
     http_response_code(403);
 
-    die('Access denied.');
+    die(
+        '<!DOCTYPE html>
+        <html lang="en">
+
+        <head>
+
+            <meta charset="UTF-8">
+
+            <meta
+                name="viewport"
+                content="width=device-width, initial-scale=1.0"
+            >
+
+            <title>
+                Access Denied | Mimic Haven Collectibles
+            </title>
+
+            <style>
+
+                * {
+                    box-sizing: border-box;
+                }
+
+                body {
+                    margin: 0;
+                    min-height: 100vh;
+
+                    background: #182637;
+                    color: #ffffff;
+
+                    font-family:
+                        Arial,
+                        sans-serif;
+
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    text-align: center;
+
+                    padding: 30px;
+                }
+
+                .access-denied {
+                    width: 100%;
+                    max-width: 600px;
+                }
+
+                .access-denied h1 {
+                    margin: 0 0 10px;
+
+                    font-size: 64px;
+
+                    color: #ffffff;
+                }
+
+                .access-denied h2 {
+                    margin: 0 0 18px;
+
+                    font-size: 28px;
+
+                    color: #ffffff;
+                }
+
+                .access-denied p {
+                    margin: 0 0 25px;
+
+                    color: #aab2ba;
+
+                    font-size: 15px;
+
+                    line-height: 1.6;
+                }
+
+                .access-denied a {
+                    display: inline-block;
+
+                    color: #97DCF7;
+
+                    text-decoration: none;
+
+                    font-weight: 600;
+
+                    font-size: 14px;
+                }
+
+                .access-denied a:hover {
+                    text-decoration: underline;
+                }
+
+            </style>
+
+        </head>
+
+        <body>
+
+            <div class="access-denied">
+
+                <h1>
+                    403
+                </h1>
+
+                <h2>
+                    Access Denied
+                </h2>
+
+                <p>
+                    You do not have administrator permission.
+                </p>
+
+                <a href="admin.php">
+                    Back to Admin Dashboard
+                </a>
+
+            </div>
+
+        </body>
+
+        </html>'
+    );
+
+    exit;
 }
 
 
@@ -77,10 +218,16 @@ if (!$currentUser || $currentUser['role'] !== 'admin') {
 |--------------------------------------------------------------------------
 */
 
-if (empty($_SESSION['admin_preorders_csrf'])) {
+if (
+    empty(
+        $_SESSION['admin_preorders_csrf']
+    )
+) {
 
     $_SESSION['admin_preorders_csrf'] =
-        bin2hex(random_bytes(32));
+        bin2hex(
+            random_bytes(32)
+        );
 }
 
 $csrfToken =
@@ -165,22 +312,29 @@ function updateReliabilityScores(mysqli $conn): void
         GROUP BY u.id
     ";
 
-    $result = $conn->query($sql);
+    $result =
+        $conn->query($sql);
 
     if (!$result) {
         return;
     }
 
-    $updateStmt = $conn->prepare(
-        "UPDATE users
-         SET
-            completed_preorders = ?,
-            cancelled_preorders = ?,
-            reliability_score = ?
-         WHERE id = ?"
-    );
 
-    while ($row = $result->fetch_assoc()) {
+    $updateStmt =
+        $conn->prepare(
+            "UPDATE users
+             SET
+                completed_preorders = ?,
+                cancelled_preorders = ?,
+                reliability_score = ?
+             WHERE id = ?"
+        );
+
+
+    while (
+        $row =
+            $result->fetch_assoc()
+    ) {
 
         $completed =
             (int)$row['completed_count'];
@@ -191,12 +345,15 @@ function updateReliabilityScores(mysqli $conn): void
         $score =
             100 - ($cancelled * 20);
 
+
         if ($score < 0) {
             $score = 0;
         }
 
+
         $customerId =
             (int)$row['id'];
+
 
         $updateStmt->bind_param(
             "iidi",
@@ -206,8 +363,10 @@ function updateReliabilityScores(mysqli $conn): void
             $customerId
         );
 
+
         $updateStmt->execute();
     }
+
 
     $updateStmt->close();
 }
@@ -219,15 +378,21 @@ function updateReliabilityScores(mysqli $conn): void
 |--------------------------------------------------------------------------
 */
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST'
+) {
 
     $postedToken =
         $_POST['csrf_token'] ?? '';
 
-    if (!hash_equals(
-        $csrfToken,
-        $postedToken
-    )) {
+
+    if (
+        !is_string($postedToken) ||
+        !hash_equals(
+            $csrfToken,
+            $postedToken
+        )
+    ) {
 
         $error =
             'Invalid security token. Please try again.';
@@ -236,6 +401,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $action =
             $_POST['action'] ?? '';
+
 
         $preorderId =
             filter_input(
@@ -251,7 +417,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         |--------------------------------------------------------------------------
         */
 
-        if ($action === 'update_status') {
+        if (
+            $action === 'update_status'
+        ) {
 
             $newStatus =
                 trim(
@@ -285,18 +453,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                          LIMIT 1"
                     );
 
+
                 $checkStmt->bind_param(
                     "i",
                     $preorderId
                 );
 
+
                 $checkStmt->execute();
+
 
                 $checkResult =
                     $checkStmt->get_result();
 
+
                 $existingPreorder =
                     $checkResult->fetch_assoc();
+
 
                 $checkStmt->close();
 
@@ -312,37 +485,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $existingPreorder['status'];
 
 
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Do not manually downgrade a fully paid pre-order
-                    |--------------------------------------------------------------------------
-                    */
-
                     $paymentCheckStmt =
                         $conn->prepare(
                             "SELECT
                                 deposit_status,
                                 balance_status
-
                              FROM preorders
-
                              WHERE id = ?
-
                              LIMIT 1"
                         );
+
 
                     $paymentCheckStmt->bind_param(
                         "i",
                         $preorderId
                     );
 
+
                     $paymentCheckStmt->execute();
+
 
                     $paymentCheckResult =
                         $paymentCheckStmt->get_result();
 
+
                     $paymentCheck =
                         $paymentCheckResult->fetch_assoc();
+
 
                     $paymentCheckStmt->close();
 
@@ -350,11 +519,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $fullyPaid = (
                         $paymentCheck
                         &&
-                        $paymentCheck['deposit_status']
-                            === 'Paid'
+                        $paymentCheck[
+                            'deposit_status'
+                        ] === 'Paid'
                         &&
-                        $paymentCheck['balance_status']
-                            === 'Paid'
+                        $paymentCheck[
+                            'balance_status'
+                        ] === 'Paid'
                     );
 
 
@@ -378,6 +549,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                  WHERE id = ?"
                             );
 
+
                         $updateStmt->bind_param(
                             "si",
                             $newStatus,
@@ -385,7 +557,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         );
 
 
-                        if ($updateStmt->execute()) {
+                        if (
+                            $updateStmt->execute()
+                        ) {
 
                             updateReliabilityScores(
                                 $conn
@@ -393,22 +567,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
                             if (
-                                $newStatus
-                                    === 'Cancelled'
+                                $newStatus === 'Cancelled'
                                 &&
-                                $oldStatus
-                                    !== 'Cancelled'
+                                $oldStatus !== 'Cancelled'
                             ) {
 
                                 $message =
                                     'Pre-order cancelled. Customer reliability score updated.';
 
                             } elseif (
-                                $oldStatus
-                                    === 'Cancelled'
+                                $oldStatus === 'Cancelled'
                                 &&
-                                $newStatus
-                                    !== 'Cancelled'
+                                $newStatus !== 'Cancelled'
                             ) {
 
                                 $message =
@@ -450,6 +620,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ] ?? ''
                 );
 
+
             $expectedReleaseDate =
                 trim(
                     $_POST[
@@ -476,17 +647,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             } else {
 
-                /*
-                |--------------------------------------------------------------------------
-                | Validate date
-                |--------------------------------------------------------------------------
-                */
-
                 $formattedDate = null;
 
+
                 if (
-                    $expectedReleaseDate
-                    !== ''
+                    $expectedReleaseDate !== ''
                 ) {
 
                     $dateObject =
@@ -494,6 +659,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'Y-m-d',
                             $expectedReleaseDate
                         );
+
 
                     $validDate =
                         $dateObject
@@ -526,6 +692,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 expected_release_date = ?
                              WHERE id = ?"
                         );
+
 
                     $releaseStmt->bind_param(
                         "ssi",
@@ -569,6 +736,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'payment_type'
                 ] ?? '';
 
+
             $paidAmount =
                 isset(
                     $_POST['paid_amount']
@@ -587,7 +755,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } elseif (
                 !in_array(
                     $paymentType,
-                    ['deposit', 'balance'],
+                    [
+                        'deposit',
+                        'balance'
+                    ],
                     true
                 )
             ) {
@@ -595,7 +766,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error =
                     'Invalid payment type.';
 
-            } elseif ($paidAmount < 0) {
+            } elseif (
+                $paidAmount < 0
+            ) {
 
                 $error =
                     'Payment amount cannot be negative.';
@@ -611,7 +784,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                             remaining_balance,
                             balance_paid_amount,
-                            balance_status
+                            balance_status,
+                            balance_paid_at
 
                          FROM preorders
 
@@ -620,18 +794,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                          LIMIT 1"
                     );
 
+
                 $preorderStmt->bind_param(
                     "i",
                     $preorderId
                 );
 
+
                 $preorderStmt->execute();
+
 
                 $preorderResult =
                     $preorderStmt->get_result();
 
+
                 $preorder =
                     $preorderResult->fetch_assoc();
+
 
                 $preorderStmt->close();
 
@@ -651,8 +830,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     */
 
                     if (
-                        $paymentType
-                            === 'deposit'
+                        $paymentType === 'deposit'
                     ) {
 
                         $requiredDeposit =
@@ -679,6 +857,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     ? 'Paid'
                                     : 'Unpaid';
 
+
                             $depositPaidAt =
                                 (
                                     $depositStatus
@@ -699,6 +878,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         deposit_paid_at = ?
                                      WHERE id = ?"
                                 );
+
 
                             $updateStmt->bind_param(
                                 "dssi",
@@ -735,15 +915,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     } else {
 
-                        $remainingBalance =
+                        $currentRemainingBalance =
                             (float)$preorder[
                                 'remaining_balance'
                             ];
 
 
+                        $currentBalancePaid =
+                            (float)$preorder[
+                                'balance_paid_amount'
+                            ];
+
+
                         if (
+                            $paidAmount <= 0
+                        ) {
+
+                            $error =
+                                'Balance payment must be greater than zero.';
+
+                        } elseif (
                             $paidAmount
-                            > $remainingBalance
+                            > $currentRemainingBalance
                         ) {
 
                             $error =
@@ -751,10 +944,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         } else {
 
+                            $newBalancePaid =
+                                $currentBalancePaid
+                                + $paidAmount;
+
+
+                            $newRemainingBalance =
+                                $currentRemainingBalance
+                                - $paidAmount;
+
+
+                            if (
+                                $newRemainingBalance < 0.01
+                            ) {
+
+                                $newRemainingBalance =
+                                    0.00;
+                            }
+
+
                             $balanceStatus =
                                 (
-                                    $paidAmount
-                                    >= $remainingBalance
+                                    $newRemainingBalance <= 0
                                 )
                                     ? 'Paid'
                                     : 'Unpaid';
@@ -762,13 +973,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                             $balancePaidAt =
                                 (
-                                    $balanceStatus
-                                    === 'Paid'
+                                    $balanceStatus === 'Paid'
                                 )
                                     ? date(
                                         'Y-m-d H:i:s'
                                     )
-                                    : null;
+                                    : $preorder[
+                                        'balance_paid_at'
+                                    ];
 
 
                             $updateStmt =
@@ -776,14 +988,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     "UPDATE preorders
                                      SET
                                         balance_paid_amount = ?,
+                                        remaining_balance = ?,
                                         balance_status = ?,
                                         balance_paid_at = ?
                                      WHERE id = ?"
                                 );
 
+
                             $updateStmt->bind_param(
-                                "dssi",
-                                $paidAmount,
+                                "ddssi",
+                                $newBalancePaid,
+                                $newRemainingBalance,
                                 $balanceStatus,
                                 $balancePaidAt,
                                 $preorderId
@@ -811,7 +1026,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     /*
                     |--------------------------------------------------------------------------
-                    | AUTOMATICALLY COMPLETE WHEN FULLY PAID
+                    | AUTO COMPLETE WHEN FULLY PAID
                     |--------------------------------------------------------------------------
                     */
 
@@ -822,26 +1037,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 "SELECT
                                     deposit_status,
                                     balance_status
-
                                  FROM preorders
-
                                  WHERE id = ?
-
                                  LIMIT 1"
                             );
+
 
                         $statusStmt->bind_param(
                             "i",
                             $preorderId
                         );
 
+
                         $statusStmt->execute();
+
 
                         $statusResult =
                             $statusStmt->get_result();
 
+
                         $paymentStatus =
                             $statusResult->fetch_assoc();
+
 
                         $statusStmt->close();
 
@@ -865,12 +1082,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                      WHERE id = ?"
                                 );
 
+
                             $completeStmt->bind_param(
                                 "i",
                                 $preorderId
                             );
 
+
                             $completeStmt->execute();
+
 
                             $completeStmt->close();
 
@@ -912,7 +1132,9 @@ $syncStmt =
            AND status != 'Cancelled'"
     );
 
+
 $syncStmt->execute();
+
 $syncStmt->close();
 
 
@@ -978,12 +1200,42 @@ $sql = "
     ORDER BY po.created_at DESC
 ";
 
+
 $result =
     $conn->query($sql);
+
+
+/*
+|--------------------------------------------------------------------------
+| LOGO
+|--------------------------------------------------------------------------
+*/
+
+$logo = '';
+
+foreach (
+    ['png', 'jpg', 'jpeg', 'webp', 'svg']
+    as $ext
+) {
+
+    $file =
+        __DIR__ . "/assets/logo.$ext";
+
+    if (
+        file_exists($file)
+    ) {
+
+        $logo =
+            "assets/logo.$ext";
+
+        break;
+    }
+}
 
 ?>
 
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
@@ -999,240 +1251,543 @@ $result =
         Manage Pre-Orders | Mimic Haven Collectibles
     </title>
 
+
     <link
         rel="stylesheet"
         href="style.css"
     >
 
+
     <style>
 
-        body {
-            background: #182637;
-            color: #ffffff;
-            margin: 0;
-            font-family: Arial, sans-serif;
-        }
+/* =========================================================
+   ADMIN PAGE
+========================================================= */
 
-        .admin-container {
-            max-width: 1550px;
-            margin: 0 auto;
-            padding: 30px;
-        }
+body {
+    margin: 0;
 
-        .admin-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
+    background: #182637;
 
-        .admin-header h1 {
-            margin: 0;
-        }
+    color: #ffffff;
 
-        .admin-header p {
-            color: #aab2ba;
-        }
+    font-family:
+        Arial,
+        sans-serif;
+}
 
-        .admin-nav {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
 
-        .admin-nav a {
-            text-decoration: none;
-            color: #182637;
-            background: #9ADCF7;
-            padding: 10px 16px;
-            border-radius: 8px;
-            font-weight: bold;
-        }
+.admin-container {
+    width:
+        min(
+            1550px,
+            calc(100% - 60px)
+        );
 
-        .admin-nav a:hover {
-            opacity: .85;
-        }
+    margin: 0 auto;
 
-        .message {
-            background: #d9f7df;
-            color: #1f5d2c;
-            padding: 14px 18px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
+    padding:
+        30px 0 80px;
+}
 
-        .error {
-            background: #ffdede;
-            color: #8a1f1f;
-            padding: 14px 18px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
 
-        .table-wrapper {
-            overflow-x: auto;
-            background: #ffffff;
-            border-radius: 12px;
-        }
+/* =========================================================
+   ADMIN HEADER
+========================================================= */
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            color: #182637;
-            min-width: 1650px;
-        }
+.admin-header {
+    display: grid;
 
-        th {
-            background: #9ADCF7;
-            padding: 14px;
-            text-align: left;
-            font-size: 13px;
-            white-space: nowrap;
-        }
+    grid-template-columns:
+        minmax(0, 1fr)
+        auto;
 
-        td {
-            padding: 14px;
-            border-bottom: 1px solid #ddd;
-            vertical-align: top;
-            font-size: 13px;
-        }
+    align-items: center;
 
-        .product-cell {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
+    gap: 30px;
 
-        .product-cell img {
-            width: 65px;
-            height: 65px;
-            object-fit: cover;
-            border-radius: 8px;
-            background: #eef4f7;
-            flex-shrink: 0;
-        }
+    margin-bottom: 30px;
+}
 
-        .product-name {
-            font-weight: bold;
-        }
 
-        .muted {
-            color: #666;
-            font-size: 12px;
-            margin-top: 4px;
-        }
+.admin-header-title {
+    min-width: 0;
+}
 
-        .status {
-            display: inline-block;
-            padding: 5px 9px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: bold;
-        }
 
-        .paid {
-            background: #d9f7df;
-            color: #1f5d2c;
-        }
+.admin-header-title h1 {
+    margin: 0 0 8px;
 
-        .unpaid {
-            background: #ffe5c2;
-            color: #8a4b00;
-        }
+    color: #ffffff;
 
-        .pending {
-            background: #e8edf2;
-            color: #364552;
-        }
+    font-size: 30px;
 
-        .completed {
-            background: #d9f7df;
-            color: #1f5d2c;
-        }
+    line-height: 1.15;
+}
 
-        .cancelled {
-            background: #ffdede;
-            color: #8a1f1f;
-        }
 
-        .payment-box,
-        .release-box,
-        .status-box {
-            margin-top: 8px;
-        }
+.admin-header-title p {
+    margin: 0;
 
-        .payment-box form,
-        .release-box form,
-        .status-box form {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
+    color: #aab2ba;
 
-        .payment-box input {
-            width: 95px;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-        }
+    font-size: 13px;
 
-        .release-box input[type="date"] {
-            width: 145px;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-        }
+    line-height: 1.6;
+}
 
-        .payment-box button,
-        .release-box button,
-        .status-box button {
-            background: #182637;
-            color: #ffffff;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-        }
 
-        .payment-box button:hover,
-        .release-box button:hover,
-        .status-box button:hover {
-            opacity: .85;
-        }
+/* =========================================================
+   ADMIN NAVIGATION
+========================================================= */
 
-        .status-box select,
-        .release-box select {
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            width: 180px;
-            background: #fff;
-        }
+.admin-nav {
+    display: flex;
 
-        .release-box select {
-            width: 210px;
-        }
+    align-items: center;
 
-        .payment-date {
-            display: block;
-            margin-top: 5px;
-            font-size: 11px;
-            color: #666;
-        }
+    justify-content: flex-end;
 
-        .release-current {
-            margin-bottom: 8px;
-        }
+    gap: 10px;
 
-        .back-link {
-            margin-top: 20px;
-            display: inline-block;
-            color: #9ADCF7;
-            text-decoration: none;
-        }
+    flex-wrap: nowrap;
+}
+
+
+.admin-nav a {
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    min-height: 38px;
+
+    padding:
+        10px 16px;
+
+    border-radius: 8px;
+
+    background: #9ADCF7;
+
+    color: #182637;
+
+    font-family:
+        Arial,
+        sans-serif;
+
+    font-size: 13px;
+
+    font-weight: bold;
+
+    text-decoration: none;
+
+    white-space: nowrap;
+
+    transition:
+        opacity .2s ease,
+        transform .2s ease;
+}
+
+
+.admin-nav a:hover {
+    opacity: .85;
+
+    transform:
+        translateY(-1px);
+}
+
+
+.admin-nav a.active {
+    background: #ffffff;
+
+    color: #182637;
+}
+
+
+/* =========================================================
+   MESSAGES
+========================================================= */
+
+.message {
+    background: #d9f7df;
+
+    color: #1f5d2c;
+
+    padding:
+        14px 18px;
+
+    border-radius: 8px;
+
+    margin-bottom: 20px;
+
+    font-size: 13px;
+}
+
+
+.error {
+    background: #ffdede;
+
+    color: #8a1f1f;
+
+    padding:
+        14px 18px;
+
+    border-radius: 8px;
+
+    margin-bottom: 20px;
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.table-wrapper {
+    overflow-x: auto;
+
+    background: #ffffff;
+
+    border-radius: 12px;
+}
+
+
+.table-wrapper table {
+    width: 100%;
+
+    min-width: 1650px;
+
+    border-collapse: collapse;
+
+    color: #182637;
+}
+
+
+.table-wrapper th {
+    background: #9ADCF7;
+
+    padding: 14px;
+
+    text-align: left;
+
+    font-size: 13px;
+
+    white-space: nowrap;
+}
+
+
+.table-wrapper td {
+    padding: 14px;
+
+    border-bottom:
+        1px solid #dddddd;
+
+    vertical-align: top;
+
+    font-size: 13px;
+}
+
+
+.table-wrapper tr:last-child td {
+    border-bottom: none;
+}
+
+
+/* =========================================================
+   PRODUCT
+========================================================= */
+
+.product-cell {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+}
+
+
+.product-cell img {
+    width: 65px;
+    height: 65px;
+
+    object-fit: cover;
+
+    border-radius: 8px;
+
+    background: #eef4f7;
+
+    flex-shrink: 0;
+}
+
+
+.product-name {
+    font-weight: bold;
+
+    line-height: 1.4;
+}
+
+
+.muted {
+    margin-top: 4px;
+
+    color: #666666;
+
+    font-size: 12px;
+
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+.status {
+    display: inline-block;
+
+    padding:
+        5px 9px;
+
+    border-radius: 20px;
+
+    font-size: 11px;
+
+    font-weight: bold;
+
+    white-space: nowrap;
+}
+
+
+.paid {
+    background: #d9f7df;
+
+    color: #1f5d2c;
+}
+
+
+.unpaid {
+    background: #ffe5c2;
+
+    color: #8a4b00;
+}
+
+
+.pending {
+    background: #e8edf2;
+
+    color: #364552;
+}
+
+
+.completed {
+    background: #d9f7df;
+
+    color: #1f5d2c;
+}
+
+
+.cancelled {
+    background: #ffdede;
+
+    color: #8a1f1f;
+}
+
+
+/* =========================================================
+   PAYMENT / STATUS / RELEASE
+========================================================= */
+
+.payment-box,
+.release-box,
+.status-box {
+    margin-top: 8px;
+}
+
+
+.payment-box form,
+.release-box form,
+.status-box form {
+    display: flex;
+
+    gap: 6px;
+
+    flex-wrap: wrap;
+}
+
+
+.payment-box input {
+    width: 95px;
+
+    padding: 8px;
+
+    border:
+        1px solid #cccccc;
+
+    border-radius: 6px;
+
+    font-family: Arial, sans-serif;
+
+    box-sizing: border-box;
+}
+
+
+.release-box input[type="date"] {
+    width: 145px;
+
+    padding: 8px;
+
+    border:
+        1px solid #cccccc;
+
+    border-radius: 6px;
+
+    font-family: Arial, sans-serif;
+
+    box-sizing: border-box;
+}
+
+
+.payment-box button,
+.release-box button,
+.status-box button {
+    background: #182637;
+
+    color: #ffffff;
+
+    border: none;
+
+    padding:
+        8px 12px;
+
+    border-radius: 6px;
+
+    cursor: pointer;
+
+    font-weight: 600;
+}
+
+
+.payment-box button:hover,
+.release-box button:hover,
+.status-box button:hover {
+    opacity: .85;
+}
+
+
+.status-box select,
+.release-box select {
+    padding: 8px;
+
+    border:
+        1px solid #cccccc;
+
+    border-radius: 6px;
+
+    background: #ffffff;
+
+    color: #182637;
+
+    width: 180px;
+
+    font-family: Arial, sans-serif;
+}
+
+
+.release-box select {
+    width: 210px;
+}
+
+
+.payment-date {
+    display: block;
+
+    margin-top: 5px;
+
+    font-size: 11px;
+
+    color: #666666;
+}
+
+
+.release-current {
+    margin-bottom: 8px;
+}
+
+
+/* =========================================================
+   BACK LINK
+========================================================= */
+
+.back-link {
+    display: inline-block;
+
+    margin-top: 20px;
+
+    color: #9ADCF7;
+
+    text-decoration: none;
+
+    font-size: 13px;
+}
+
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1100px) {
+
+    .admin-header {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-nav {
+        justify-content: flex-start;
+
+        flex-wrap: wrap;
+    }
+
+}
+
+
+@media (max-width: 700px) {
+
+    .admin-container {
+        width:
+            calc(100% - 30px);
+
+        padding:
+            20px 0 60px;
+    }
+
+
+    .admin-nav {
+        gap: 7px;
+    }
+
+
+    .admin-nav a {
+        min-height: 36px;
+
+        padding:
+            9px 12px;
+
+        font-size: 11px;
+    }
+
+
+    .product-cell {
+        align-items: flex-start;
+    }
+
+}
 
     </style>
 
@@ -1245,52 +1800,75 @@ $result =
 <div class="admin-container">
 
 
-    <!-- HEADER -->
+    <!-- =====================================================
+         ADMIN HEADER
+    ====================================================== -->
 
     <div class="admin-header">
 
-        <div>
+
+        <div class="admin-header-title">
 
             <h1>
                 Manage Pre-Orders
             </h1>
 
+
             <p>
-                View reservations, payments, release status, and expected release dates.
+                View reservations, payments, release status,
+                and expected release dates.
             </p>
 
         </div>
 
 
-        <div class="admin-nav">
+        <nav
+            class="admin-nav"
+            aria-label="Admin navigation"
+        >
 
             <a href="admin.php">
                 Dashboard
             </a>
 
+
             <a href="admin_orders.php">
                 Orders
             </a>
+
+
+            <a
+                href="admin_preorders.php"
+                class="active"
+            >
+                Pre-Orders
+            </a>
+
 
             <a href="admin_customers.php">
                 Customers
             </a>
 
-            <a href="account.php">
-                My Account
+
+            <a href="admin_products.php">
+                Products
             </a>
+
 
             <a href="logout.php">
                 Logout
             </a>
 
-        </div>
+        </nav>
+
 
     </div>
 
 
 
-    <!-- MESSAGES -->
+    <!-- =====================================================
+         MESSAGES
+    ====================================================== -->
 
     <?php if ($message): ?>
 
@@ -1311,7 +1889,9 @@ $result =
 
 
 
-    <!-- TABLE -->
+    <!-- =====================================================
+         PRE-ORDER TABLE
+    ====================================================== -->
 
     <div class="table-wrapper">
 
@@ -1387,6 +1967,7 @@ $result =
                                 ) ?>
                             </strong>
 
+
                             <div class="muted">
 
                                 <?= e(
@@ -1401,6 +1982,7 @@ $result =
                                 ) ?>
 
                             </div>
+
 
                             <div class="muted">
 
@@ -1436,6 +2018,7 @@ $result =
 
                             </strong>
 
+
                             <div class="muted">
 
                                 <?= e(
@@ -1458,12 +2041,14 @@ $result =
 
 
                                 <?php
+
                                 $img =
                                     productImage(
                                         $row[
                                             'image'
                                         ]
                                     );
+
                                 ?>
 
 
@@ -1873,14 +2458,10 @@ $result =
                                 ] === 'Cancelled'
                             ): ?>
 
-                                <span
-                                    class="
-                                        status
-                                        cancelled
-                                    "
-                                >
+                                <span class="status cancelled">
                                     Cancelled
                                 </span>
+
 
                             <?php elseif (
                                 $row[
@@ -1888,28 +2469,21 @@ $result =
                                 ] === 'Completed'
                             ): ?>
 
-                                <span
-                                    class="
-                                        status
-                                        completed
-                                    "
-                                >
+                                <span class="status completed">
                                     Completed
                                 </span>
 
+
                             <?php else: ?>
 
-                                <span
-                                    class="
-                                        status
-                                        pending
-                                    "
-                                >
+                                <span class="status pending">
+
                                     <?= e(
                                         $row[
                                             'status'
                                         ]
                                     ) ?>
+
                                 </span>
 
                             <?php endif; ?>
@@ -1919,6 +2493,7 @@ $result =
 
                                 <form method="POST">
 
+
                                     <input
                                         type="hidden"
                                         name="csrf_token"
@@ -1927,11 +2502,13 @@ $result =
                                         ) ?>"
                                     >
 
+
                                     <input
                                         type="hidden"
                                         name="action"
                                         value="update_status"
                                     >
+
 
                                     <input
                                         type="hidden"
@@ -2048,6 +2625,7 @@ $result =
 
                                 <form method="POST">
 
+
                                     <input
                                         type="hidden"
                                         name="csrf_token"
@@ -2056,11 +2634,13 @@ $result =
                                         ) ?>"
                                     >
 
+
                                     <input
                                         type="hidden"
                                         name="action"
                                         value="update_release"
                                     >
+
 
                                     <input
                                         type="hidden"
@@ -2088,7 +2668,8 @@ $result =
                                                 <?= $row[
                                                     'release_status'
                                                 ]
-                                                    === $releaseStatus
+                                                    ===
+                                                    $releaseStatus
                                                     ? 'selected'
                                                     : '' ?>
                                             >
@@ -2160,6 +2741,10 @@ $result =
 
 
 
+    <!-- =====================================================
+         BACK LINK
+    ====================================================== -->
+
     <a
         href="admin.php"
         class="back-link"
@@ -2169,6 +2754,7 @@ $result =
 
 
 </div>
+
 
 </body>
 

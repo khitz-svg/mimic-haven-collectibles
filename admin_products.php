@@ -16,13 +16,22 @@ $userId = currentUserId();
 
 function e($value): string
 {
-    return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
+    return htmlspecialchars(
+        (string)$value,
+        ENT_QUOTES,
+        'UTF-8'
+    );
 }
+
 
 function peso(float $amount): string
 {
-    return '₱' . number_format($amount, 2);
+    return '₱' . number_format(
+        $amount,
+        2
+    );
 }
+
 
 function productImage(?string $image): string
 {
@@ -55,17 +64,145 @@ $roleStmt = $conn->prepare(
      LIMIT 1"
 );
 
-$roleStmt->bind_param("i", $userId);
+$roleStmt->bind_param(
+    "i",
+    $userId
+);
+
 $roleStmt->execute();
 
-$roleResult = $roleStmt->get_result();
-$currentUser = $roleResult->fetch_assoc();
+$roleResult =
+    $roleStmt->get_result();
+
+$currentUser =
+    $roleResult->fetch_assoc();
 
 $roleStmt->close();
 
-if (!$currentUser || $currentUser['role'] !== 'admin') {
+
+if (
+    !$currentUser ||
+    $currentUser['role'] !== 'admin'
+) {
+
     http_response_code(403);
-    die('Access denied.');
+
+    die(
+        '<!DOCTYPE html>
+        <html lang="en">
+
+        <head>
+
+            <meta charset="UTF-8">
+
+            <meta
+                name="viewport"
+                content="width=device-width, initial-scale=1.0"
+            >
+
+            <title>
+                Access Denied | Mimic Haven Collectibles
+            </title>
+
+            <style>
+
+                * {
+                    box-sizing: border-box;
+                }
+
+                body {
+                    margin: 0;
+                    min-height: 100vh;
+
+                    background: #182637;
+                    color: #ffffff;
+
+                    font-family:
+                        Arial,
+                        sans-serif;
+
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    text-align: center;
+
+                    padding: 30px;
+                }
+
+                .access-denied {
+                    width: 100%;
+                    max-width: 600px;
+                }
+
+                .access-denied h1 {
+                    margin: 0 0 10px;
+
+                    font-size: 64px;
+                }
+
+                .access-denied h2 {
+                    margin: 0 0 18px;
+
+                    font-size: 28px;
+                }
+
+                .access-denied p {
+                    margin: 0 0 25px;
+
+                    color: #aab2ba;
+
+                    font-size: 15px;
+
+                    line-height: 1.6;
+                }
+
+                .access-denied a {
+                    color: #97DCF7;
+
+                    text-decoration: none;
+
+                    font-weight: 600;
+
+                    font-size: 14px;
+                }
+
+                .access-denied a:hover {
+                    text-decoration: underline;
+                }
+
+            </style>
+
+        </head>
+
+        <body>
+
+            <div class="access-denied">
+
+                <h1>
+                    403
+                </h1>
+
+                <h2>
+                    Access Denied
+                </h2>
+
+                <p>
+                    You do not have administrator permission.
+                </p>
+
+                <a href="admin.php">
+                    Back to Admin Dashboard
+                </a>
+
+            </div>
+
+        </body>
+
+        </html>'
+    );
+
+    exit;
 }
 
 
@@ -75,9 +212,16 @@ if (!$currentUser || $currentUser['role'] !== 'admin') {
 |--------------------------------------------------------------------------
 */
 
-if (empty($_SESSION['admin_products_csrf'])) {
+if (
+    empty(
+        $_SESSION['admin_products_csrf']
+    )
+) {
+
     $_SESSION['admin_products_csrf'] =
-        bin2hex(random_bytes(32));
+        bin2hex(
+            random_bytes(32)
+        );
 }
 
 $csrfToken =
@@ -118,15 +262,21 @@ $allowedConditions = [
 |--------------------------------------------------------------------------
 */
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST'
+) {
 
     $postedToken =
         $_POST['csrf_token'] ?? '';
 
-    if (!hash_equals(
-        $csrfToken,
-        $postedToken
-    )) {
+
+    if (
+        !is_string($postedToken) ||
+        !hash_equals(
+            $csrfToken,
+            $postedToken
+        )
+    ) {
 
         $error =
             'Invalid security token. Please try again.';
@@ -143,46 +293,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         |--------------------------------------------------------------------------
         */
 
-        if ($action === 'add') {
+        if (
+            $action === 'add'
+        ) {
 
             $name =
-                trim($_POST['name'] ?? '');
+                trim(
+                    $_POST['name'] ?? ''
+                );
 
             $series =
-                trim($_POST['series'] ?? '');
+                trim(
+                    $_POST['series'] ?? ''
+                );
 
             $category =
-                trim($_POST['category'] ?? '');
+                trim(
+                    $_POST['category'] ?? ''
+                );
 
             $availability =
-                trim($_POST['availability'] ?? '');
+                trim(
+                    $_POST['availability'] ?? ''
+                );
 
             $conditionStatus =
-                trim($_POST['condition_status'] ?? '');
+                trim(
+                    $_POST['condition_status'] ?? ''
+                );
 
             $price =
-                isset($_POST['price'])
+                isset(
+                    $_POST['price']
+                )
                     ? (float)$_POST['price']
                     : 0;
 
             $stock =
-                isset($_POST['stock'])
+                isset(
+                    $_POST['stock']
+                )
                     ? (int)$_POST['stock']
                     : 0;
 
             $image =
-                trim($_POST['image'] ?? '');
+                trim(
+                    $_POST['image'] ?? ''
+                );
 
             $description =
-                trim($_POST['description'] ?? '');
+                trim(
+                    $_POST['description'] ?? ''
+                );
 
 
-            if ($name === '') {
+            if (
+                $name === ''
+            ) {
 
                 $error =
                     'Product name is required.';
 
-            } elseif ($series === '') {
+            } elseif (
+                $series === ''
+            ) {
 
                 $error =
                     'Series is required.';
@@ -220,33 +394,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error =
                     'Invalid condition.';
 
-            } elseif ($price < 0) {
+            } elseif (
+                $price < 0
+            ) {
 
                 $error =
                     'Price cannot be negative.';
 
-            } elseif ($stock < 0) {
+            } elseif (
+                $stock < 0
+            ) {
 
                 $error =
                     'Stock cannot be negative.';
 
             } else {
 
-                $insertStmt = $conn->prepare(
-                    "INSERT INTO products
-                    (
-                        name,
-                        series,
-                        category,
-                        availability,
-                        condition_status,
-                        image,
-                        description,
-                        stock
-                    )
+                $insertStmt =
+                    $conn->prepare(
+                        "INSERT INTO products
+                        (
+                            name,
+                            series,
+                            category,
+                            availability,
+                            condition_status,
+                            image,
+                            description,
+                            stock
+                        )
 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-                );
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                    );
+
 
                 $insertStmt->bind_param(
                     "sssssssi",
@@ -261,24 +441,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 );
 
 
-                if ($insertStmt->execute()) {
+                if (
+                    $insertStmt->execute()
+                ) {
 
                     $newProductId =
                         $insertStmt->insert_id;
 
-
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Add price if products table supports it
-                    |--------------------------------------------------------------------------
-                    */
-
-                    /*
-                     * Your current products table needs a price
-                     * column because your storefront already uses prices.
-                     *
-                     * This update is performed separately below.
-                     */
 
                     $priceUpdateStmt =
                         $conn->prepare(
@@ -287,13 +456,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                              WHERE id = ?"
                         );
 
+
                     $priceUpdateStmt->bind_param(
                         "di",
                         $price,
                         $newProductId
                     );
 
+
                     $priceUpdateStmt->execute();
+
                     $priceUpdateStmt->close();
 
 
@@ -306,6 +478,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'Failed to add product.';
                 }
 
+
                 $insertStmt->close();
             }
 
@@ -316,7 +489,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         |--------------------------------------------------------------------------
         */
 
-        } elseif ($action === 'update') {
+        } elseif (
+            $action === 'update'
+        ) {
 
             $productId =
                 filter_input(
@@ -325,49 +500,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     FILTER_VALIDATE_INT
                 );
 
+
             $name =
-                trim($_POST['name'] ?? '');
+                trim(
+                    $_POST['name'] ?? ''
+                );
 
             $series =
-                trim($_POST['series'] ?? '');
+                trim(
+                    $_POST['series'] ?? ''
+                );
 
             $category =
-                trim($_POST['category'] ?? '');
+                trim(
+                    $_POST['category'] ?? ''
+                );
 
             $availability =
-                trim($_POST['availability'] ?? '');
+                trim(
+                    $_POST['availability'] ?? ''
+                );
 
             $conditionStatus =
-                trim($_POST['condition_status'] ?? '');
+                trim(
+                    $_POST['condition_status'] ?? ''
+                );
 
             $price =
-                isset($_POST['price'])
+                isset(
+                    $_POST['price']
+                )
                     ? (float)$_POST['price']
                     : 0;
 
             $stock =
-                isset($_POST['stock'])
+                isset(
+                    $_POST['stock']
+                )
                     ? (int)$_POST['stock']
                     : 0;
 
             $image =
-                trim($_POST['image'] ?? '');
+                trim(
+                    $_POST['image'] ?? ''
+                );
 
             $description =
-                trim($_POST['description'] ?? '');
+                trim(
+                    $_POST['description'] ?? ''
+                );
 
 
-            if (!$productId) {
+            if (
+                !$productId
+            ) {
 
                 $error =
                     'Invalid product.';
 
-            } elseif ($name === '') {
+            } elseif (
+                $name === ''
+            ) {
 
                 $error =
                     'Product name is required.';
 
-            } elseif ($series === '') {
+            } elseif (
+                $series === ''
+            ) {
 
                 $error =
                     'Series is required.';
@@ -405,12 +605,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error =
                     'Invalid condition.';
 
-            } elseif ($price < 0) {
+            } elseif (
+                $price < 0
+            ) {
 
                 $error =
                     'Price cannot be negative.';
 
-            } elseif ($stock < 0) {
+            } elseif (
+                $stock < 0
+            ) {
 
                 $error =
                     'Stock cannot be negative.';
@@ -451,7 +655,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 );
 
 
-                if ($updateStmt->execute()) {
+                if (
+                    $updateStmt->execute()
+                ) {
 
                     $message =
                         'Product updated successfully.';
@@ -473,7 +679,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         |--------------------------------------------------------------------------
         */
 
-        } elseif ($action === 'delete') {
+        } elseif (
+            $action === 'delete'
+        ) {
 
             $productId =
                 filter_input(
@@ -483,16 +691,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 );
 
 
-            if (!$productId) {
+            if (
+                !$productId
+            ) {
 
                 $error =
                     'Invalid product.';
 
             } else {
 
+
                 /*
                 |--------------------------------------------------------------------------
-                | Check existing references
+                | CHECK ORDER REFERENCES
                 |--------------------------------------------------------------------------
                 */
 
@@ -503,21 +714,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                          WHERE product_id = ?"
                     );
 
+
                 $orderCheckStmt->bind_param(
                     "i",
                     $productId
                 );
 
+
                 $orderCheckStmt->execute();
+
 
                 $orderCheckResult =
                     $orderCheckStmt->get_result();
 
+
                 $orderCheck =
                     $orderCheckResult->fetch_assoc();
 
+
                 $orderCheckStmt->close();
 
+
+                /*
+                |--------------------------------------------------------------------------
+                | CHECK PRE-ORDER REFERENCES
+                |--------------------------------------------------------------------------
+                */
 
                 $preorderCheckStmt =
                     $conn->prepare(
@@ -526,18 +748,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                          WHERE product_id = ?"
                     );
 
+
                 $preorderCheckStmt->bind_param(
                     "i",
                     $productId
                 );
 
+
                 $preorderCheckStmt->execute();
+
 
                 $preorderCheckResult =
                     $preorderCheckStmt->get_result();
 
+
                 $preorderCheck =
                     $preorderCheckResult->fetch_assoc();
+
 
                 $preorderCheckStmt->close();
 
@@ -559,13 +786,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                              WHERE id = ?"
                         );
 
+
                     $deleteStmt->bind_param(
                         "i",
                         $productId
                     );
 
 
-                    if ($deleteStmt->execute()) {
+                    if (
+                        $deleteStmt->execute()
+                    ) {
 
                         $message =
                             'Product deleted successfully.';
@@ -597,305 +827,618 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 |--------------------------------------------------------------------------
 */
 
-$productStmt = $conn->prepare(
-    "SELECT
-        id,
-        name,
-        series,
-        category,
-        availability,
-        condition_status,
-        price,
-        stock,
-        image,
-        description,
-        created_at
+$productStmt =
+    $conn->prepare(
+        "SELECT
+            id,
+            name,
+            series,
+            category,
+            availability,
+            condition_status,
+            price,
+            stock,
+            image,
+            description,
+            created_at
 
-     FROM products
+         FROM products
 
-     ORDER BY id DESC"
-);
+         ORDER BY id DESC"
+    );
+
 
 $productStmt->execute();
+
 
 $productResult =
     $productStmt->get_result();
 
 ?>
 
+
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
 
     <meta charset="UTF-8">
 
+
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
 
+
     <title>
         Manage Products | Mimic Haven Collectibles
     </title>
+
 
     <link
         rel="stylesheet"
         href="style.css"
     >
 
+
     <style>
 
-        body {
-            background: #182637;
-            color: #fff;
-            margin: 0;
-            font-family: Arial, sans-serif;
-        }
+/* =========================================================
+   ADMIN CONTAINER
+========================================================= */
 
-        .admin-container {
-            max-width: 1450px;
-            margin: 0 auto;
-            padding: 35px 20px 70px;
-        }
+.admin-container {
+    max-width: 1550px;
 
-        .admin-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
-            margin-bottom: 30px;
-        }
+    margin: 0 auto;
 
-        .admin-header h1 {
-            margin: 0 0 8px;
-        }
+    padding: 30px;
 
-        .admin-header p {
-            margin: 0;
-            color: #aab2ba;
-        }
+    box-sizing: border-box;
+}
 
-        .admin-nav {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
 
-        .admin-nav a {
-            background: #9ADCF7;
-            color: #182637;
-            padding: 9px 13px;
-            border-radius: 7px;
-            text-decoration: none;
-            font-weight: 700;
-            font-size: 13px;
-        }
+/* =========================================================
+   ADMIN HEADER
+========================================================= */
 
-        .admin-nav a:hover {
-            opacity: .85;
-        }
+.admin-header {
+    display: grid;
 
-        .message,
-        .error {
-            padding: 14px 18px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
+    grid-template-columns:
+        minmax(0, 1fr)
+        auto;
 
-        .message {
-            background: #d9f7df;
-            color: #1f5d2c;
-        }
+    align-items: center;
 
-        .error {
-            background: #ffdede;
-            color: #8a1f1f;
-        }
+    gap: 30px;
 
-        .add-card {
-            background: #191b1e;
-            border: 1px solid rgba(255,255,255,.07);
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 30px;
-        }
+    margin-bottom: 30px;
+}
 
-        .add-card h2 {
-            margin-top: 0;
-        }
 
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-        }
+.admin-header-title {
+    min-width: 0;
+}
 
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
 
-        .form-group.full {
-            grid-column: 1 / -1;
-        }
+.admin-header-title h1 {
+    margin: 0 0 8px;
 
-        .form-group label {
-            color: #aab2ba;
-            font-size: 12px;
-            font-weight: 700;
-        }
+    color: #ffffff;
 
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            box-sizing: border-box;
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #d0d5da;
-            border-radius: 7px;
-            background: #fff;
-            color: #182637;
-            font-family: inherit;
-        }
+    font-size: 30px;
 
-        .form-group textarea {
-            min-height: 90px;
-            resize: vertical;
-        }
+    line-height: 1.15;
+}
 
-        .primary-button {
-            border: none;
-            background: #9ADCF7;
-            color: #182637;
-            padding: 11px 17px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 700;
-        }
 
-        .primary-button:hover {
-            opacity: .85;
-        }
+.admin-header-title p {
+    margin: 0;
 
-        .table-wrapper {
-            background: #fff;
-            border-radius: 12px;
-            overflow-x: auto;
-        }
+    color: #aab2ba;
 
-        table {
-            width: 100%;
-            min-width: 1400px;
-            border-collapse: collapse;
-            color: #182637;
-        }
+    font-size: 13px;
 
-        th {
-            background: #9ADCF7;
-            padding: 14px;
-            text-align: left;
-            font-size: 12px;
-            text-transform: uppercase;
-        }
+    line-height: 1.6;
+}
 
-        td {
-            padding: 14px;
-            border-bottom: 1px solid #ddd;
-            vertical-align: top;
-            font-size: 13px;
-        }
 
-        .product-cell {
-            display: flex;
-            gap: 12px;
-            align-items: flex-start;
-        }
+/* =========================================================
+   ADMIN NAVIGATION
+========================================================= */
 
-        .product-cell img {
-            width: 70px;
-            height: 70px;
-            object-fit: cover;
-            border-radius: 8px;
-            background: #eef2f5;
-            flex-shrink: 0;
-        }
+.admin-nav {
+    display: flex;
 
-        .product-name {
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
+    align-items: center;
 
-        .muted {
-            color: #666;
-            font-size: 12px;
-            margin-top: 4px;
-        }
+    justify-content: flex-end;
 
-        .tag {
-            display: inline-block;
-            padding: 5px 9px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
-            background: #eef2f5;
-            color: #364552;
-        }
+    gap: 10px;
 
-        .actions {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
+    flex-wrap: nowrap;
+}
 
-        .actions details summary {
-            cursor: pointer;
-            display: inline-block;
-            background: #182637;
-            color: #fff;
-            padding: 8px 11px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 700;
-        }
 
-        .edit-form {
-            margin-top: 10px;
-            padding: 14px;
-            background: #f3f5f7;
-            border-radius: 8px;
-            color: #182637;
-        }
+.admin-nav a {
+    display: inline-flex;
 
-        .edit-form .form-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
+    align-items: center;
 
-        .danger-button {
-            border: none;
-            background: #ffdede;
-            color: #8a1f1f;
-            padding: 8px 11px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 700;
-        }
+    justify-content: center;
 
-        .empty {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-        }
+    min-height: 38px;
 
-        @media (max-width: 900px) {
+    padding:
+        10px 16px;
 
-            .form-grid,
-            .edit-form .form-grid {
-                grid-template-columns: 1fr;
-            }
-        }
+    border-radius: 8px;
+
+    background: #9ADCF7;
+
+    color: #182637;
+
+    font-family: Arial, sans-serif;
+
+    font-size: 13px;
+
+    font-weight: bold;
+
+    text-decoration: none;
+
+    white-space: nowrap;
+
+    transition:
+        opacity .2s ease,
+        transform .2s ease;
+}
+
+
+.admin-nav a:hover {
+    opacity: .85;
+
+    transform:
+        translateY(-1px);
+}
+
+
+.admin-nav a.active {
+    background: #ffffff;
+
+    color: #182637;
+}
+
+
+/* =========================================================
+   MESSAGES
+========================================================= */
+
+.message,
+.error {
+    padding:
+        14px 18px;
+
+    border-radius: 8px;
+
+    margin-bottom: 20px;
+
+    font-size: 13px;
+
+    line-height: 1.5;
+}
+
+
+.message {
+    background: #d9f7df;
+
+    color: #1f5d2c;
+}
+
+
+.error {
+    background: #ffdede;
+
+    color: #8a1f1f;
+}
+
+
+/* =========================================================
+   ADD PRODUCT
+========================================================= */
+
+.add-card {
+    background: #191b1e;
+
+    border:
+        1px solid
+        rgba(255,255,255,.07);
+
+    border-radius: 12px;
+
+    padding: 24px;
+
+    margin-bottom: 30px;
+}
+
+
+.add-card h2 {
+    margin:
+        0 0 20px;
+
+    color: #ffffff;
+
+    font-family:
+        Montserrat,
+        sans-serif;
+}
+
+
+.form-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            3,
+            minmax(0, 1fr)
+        );
+
+    gap: 16px;
+}
+
+
+.form-group {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 6px;
+}
+
+
+.form-group.full {
+    grid-column:
+        1 / -1;
+}
+
+
+.form-group label {
+    color: #aab2ba;
+
+    font-size: 12px;
+
+    font-weight: 700;
+}
+
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding:
+        10px 12px;
+
+    border:
+        1px solid #d0d5da;
+
+    border-radius: 7px;
+
+    background: #ffffff;
+
+    color: #182637;
+
+    font-family:
+        Arial,
+        sans-serif;
+}
+
+
+.form-group textarea {
+    min-height: 90px;
+
+    resize: vertical;
+}
+
+
+.primary-button {
+    border: none;
+
+    background: #9ADCF7;
+
+    color: #182637;
+
+    padding:
+        11px 17px;
+
+    border-radius: 8px;
+
+    cursor: pointer;
+
+    font-weight: 700;
+}
+
+
+.primary-button:hover {
+    opacity: .85;
+}
+
+
+/* =========================================================
+   PRODUCT TABLE
+========================================================= */
+
+.table-wrapper {
+    background: #ffffff;
+
+    border-radius: 12px;
+
+    overflow-x: auto;
+}
+
+
+.table-wrapper table {
+    width: 100%;
+
+    min-width: 1400px;
+
+    border-collapse: collapse;
+
+    color: #182637;
+}
+
+
+.table-wrapper th {
+    background: #9ADCF7;
+
+    padding: 14px;
+
+    text-align: left;
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+    text-transform: uppercase;
+
+    letter-spacing: .5px;
+
+    white-space: nowrap;
+}
+
+
+.table-wrapper td {
+    padding: 14px;
+
+    border-bottom:
+        1px solid #dddddd;
+
+    vertical-align: top;
+
+    font-size: 13px;
+}
+
+
+.table-wrapper tr:last-child td {
+    border-bottom: none;
+}
+
+
+/* =========================================================
+   PRODUCT
+========================================================= */
+
+.product-cell {
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 12px;
+}
+
+
+.product-cell img {
+    width: 70px;
+    height: 70px;
+
+    object-fit: cover;
+
+    border-radius: 8px;
+
+    background: #eef2f5;
+
+    flex-shrink: 0;
+}
+
+
+.product-name {
+    margin-bottom: 4px;
+
+    color: #182637;
+
+    font-weight: 700;
+}
+
+
+.muted {
+    margin-top: 4px;
+
+    color: #666666;
+
+    font-size: 12px;
+
+    line-height: 1.5;
+}
+
+
+.tag {
+    display: inline-block;
+
+    padding:
+        5px 9px;
+
+    border-radius: 20px;
+
+    background: #eef2f5;
+
+    color: #364552;
+
+    font-size: 11px;
+
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   ACTIONS
+========================================================= */
+
+.actions {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 8px;
+}
+
+
+.actions details summary {
+    display: inline-block;
+
+    cursor: pointer;
+
+    padding:
+        8px 11px;
+
+    border-radius: 6px;
+
+    background: #182637;
+
+    color: #ffffff;
+
+    font-size: 12px;
+
+    font-weight: 700;
+}
+
+
+.edit-form {
+    margin-top: 10px;
+
+    padding: 14px;
+
+    background: #f3f5f7;
+
+    border-radius: 8px;
+
+    color: #182637;
+}
+
+
+.edit-form .form-grid {
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(0, 1fr)
+        );
+}
+
+
+.danger-button {
+    border: none;
+
+    background: #ffdede;
+
+    color: #8a1f1f;
+
+    padding:
+        8px 11px;
+
+    border-radius: 6px;
+
+    cursor: pointer;
+
+    font-weight: 700;
+}
+
+
+.danger-button:hover {
+    opacity: .85;
+}
+
+
+/* =========================================================
+   EMPTY
+========================================================= */
+
+.empty {
+    text-align: center;
+
+    padding: 40px;
+
+    color: #666666;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1100px) {
+
+    .admin-header {
+        grid-template-columns: 1fr;
+    }
+
+
+    .admin-nav {
+        justify-content: flex-start;
+
+        flex-wrap: wrap;
+    }
+
+}
+
+
+@media (max-width: 900px) {
+
+    .form-grid,
+    .edit-form .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    .admin-container {
+        width: 100%;
+
+        padding:
+            20px 15px 60px;
+    }
+
+
+    .admin-nav {
+        gap: 7px;
+    }
+
+
+    .admin-nav a {
+        min-height: 36px;
+
+        padding:
+            9px 12px;
+
+        font-size: 11px;
+    }
+
+}
 
     </style>
 
@@ -908,15 +1451,19 @@ $productResult =
 <div class="admin-container">
 
 
-    <!-- HEADER -->
+    <!-- =====================================================
+         ADMIN HEADER
+    ====================================================== -->
 
     <div class="admin-header">
 
-        <div>
+
+        <div class="admin-header-title">
 
             <h1>
                 Manage Products
             </h1>
+
 
             <p>
                 Add, edit, classify, and maintain collectible products.
@@ -925,39 +1472,53 @@ $productResult =
         </div>
 
 
-        <div class="admin-nav">
+        <nav
+            class="admin-nav"
+            aria-label="Admin navigation"
+        >
 
             <a href="admin.php">
                 Dashboard
             </a>
 
+
             <a href="admin_orders.php">
                 Orders
             </a>
+
 
             <a href="admin_preorders.php">
                 Pre-Orders
             </a>
 
+
             <a href="admin_customers.php">
                 Customers
             </a>
 
-            <a href="account.php">
-                My Account
+
+            <a
+                href="admin_products.php"
+                class="active"
+            >
+                Products
             </a>
+
 
             <a href="logout.php">
                 Logout
             </a>
 
-        </div>
+        </nav>
+
 
     </div>
 
 
 
-    <!-- MESSAGES -->
+    <!-- =====================================================
+         MESSAGES
+    ====================================================== -->
 
     <?php if ($message): ?>
 
@@ -978,21 +1539,27 @@ $productResult =
 
 
 
-    <!-- ADD PRODUCT -->
+    <!-- =====================================================
+         ADD PRODUCT
+    ====================================================== -->
 
     <section class="add-card">
+
 
         <h2>
             Add Product
         </h2>
 
+
         <form method="POST">
+
 
             <input
                 type="hidden"
                 name="csrf_token"
                 value="<?= e($csrfToken) ?>"
             >
+
 
             <input
                 type="hidden"
@@ -1004,11 +1571,14 @@ $productResult =
             <div class="form-grid">
 
 
+                <!-- NAME -->
+
                 <div class="form-group">
 
                     <label>
                         Product Name
                     </label>
+
 
                     <input
                         type="text"
@@ -1020,11 +1590,15 @@ $productResult =
                 </div>
 
 
+
+                <!-- SERIES -->
+
                 <div class="form-group">
 
                     <label>
                         Series
                     </label>
+
 
                     <input
                         type="text"
@@ -1036,11 +1610,15 @@ $productResult =
                 </div>
 
 
+
+                <!-- CATEGORY -->
+
                 <div class="form-group">
 
                     <label>
                         Category
                     </label>
+
 
                     <select
                         name="category"
@@ -1050,6 +1628,7 @@ $productResult =
                         <option value="">
                             Select Category
                         </option>
+
 
                         <?php foreach (
                             $allowedCategories
@@ -1061,9 +1640,11 @@ $productResult =
                                     $category
                                 ) ?>"
                             >
+
                                 <?= e(
                                     $category
                                 ) ?>
+
                             </option>
 
                         <?php endforeach; ?>
@@ -1073,11 +1654,15 @@ $productResult =
                 </div>
 
 
+
+                <!-- AVAILABILITY -->
+
                 <div class="form-group">
 
                     <label>
                         Availability
                     </label>
+
 
                     <select
                         name="availability"
@@ -1094,9 +1679,11 @@ $productResult =
                                     $availability
                                 ) ?>"
                             >
+
                                 <?= e(
                                     $availability
                                 ) ?>
+
                             </option>
 
                         <?php endforeach; ?>
@@ -1106,11 +1693,15 @@ $productResult =
                 </div>
 
 
+
+                <!-- CONDITION -->
+
                 <div class="form-group">
 
                     <label>
                         Condition
                     </label>
+
 
                     <select
                         name="condition_status"
@@ -1127,9 +1718,11 @@ $productResult =
                                     $condition
                                 ) ?>"
                             >
+
                                 <?= e(
                                     $condition
                                 ) ?>
+
                             </option>
 
                         <?php endforeach; ?>
@@ -1139,11 +1732,15 @@ $productResult =
                 </div>
 
 
+
+                <!-- PRICE -->
+
                 <div class="form-group">
 
                     <label>
                         Price (₱)
                     </label>
+
 
                     <input
                         type="number"
@@ -1156,11 +1753,15 @@ $productResult =
                 </div>
 
 
+
+                <!-- STOCK -->
+
                 <div class="form-group">
 
                     <label>
                         Stock
                     </label>
+
 
                     <input
                         type="number"
@@ -1174,11 +1775,15 @@ $productResult =
                 </div>
 
 
+
+                <!-- IMAGE -->
+
                 <div class="form-group">
 
                     <label>
                         Image Path
                     </label>
+
 
                     <input
                         type="text"
@@ -1190,11 +1795,15 @@ $productResult =
                 </div>
 
 
+
+                <!-- DESCRIPTION -->
+
                 <div class="form-group full">
 
                     <label>
                         Description
                     </label>
+
 
                     <textarea
                         name="description"
@@ -1203,6 +1812,9 @@ $productResult =
 
                 </div>
 
+
+
+                <!-- SUBMIT -->
 
                 <div class="form-group full">
 
@@ -1224,11 +1836,15 @@ $productResult =
 
 
 
-    <!-- PRODUCTS -->
+    <!-- =====================================================
+         PRODUCT TABLE
+    ====================================================== -->
 
     <div class="table-wrapper">
 
+
         <table>
+
 
             <thead>
 
@@ -1238,25 +1854,31 @@ $productResult =
                         Product
                     </th>
 
+
                     <th>
                         Category
                     </th>
+
 
                     <th>
                         Availability
                     </th>
 
+
                     <th>
                         Condition
                     </th>
+
 
                     <th>
                         Price
                     </th>
 
+
                     <th>
                         Stock
                     </th>
+
 
                     <th>
                         Actions
@@ -1290,23 +1912,29 @@ $productResult =
 
                         <td>
 
-                            <div class="product-cell">
+                            <div
+                                class="product-cell"
+                            >
 
 
                                 <?php
+
                                 $img =
                                     productImage(
                                         $product[
                                             'image'
                                         ]
                                     );
+
                                 ?>
 
 
                                 <?php if ($img): ?>
 
                                     <img
-                                        src="<?= e($img) ?>"
+                                        src="<?= e(
+                                            $img
+                                        ) ?>"
                                         alt="<?= e(
                                             $product[
                                                 'name'
@@ -1319,7 +1947,10 @@ $productResult =
 
                                 <div>
 
-                                    <div class="product-name">
+
+                                    <div
+                                        class="product-name"
+                                    >
 
                                         <?= e(
                                             $product[
@@ -1343,7 +1974,9 @@ $productResult =
 
                                     <div class="muted">
 
-                                        ID #<?= e(
+                                        ID #
+
+                                        <?= e(
                                             $product[
                                                 'id'
                                             ]
@@ -1351,7 +1984,9 @@ $productResult =
 
                                     </div>
 
+
                                 </div>
+
 
                             </div>
 
@@ -1445,10 +2080,14 @@ $productResult =
 
                         <td>
 
+
                             <div class="actions">
 
 
+                                <!-- EDIT -->
+
                                 <details>
+
 
                                     <summary>
                                         Edit Product
@@ -1457,7 +2096,11 @@ $productResult =
 
                                     <div class="edit-form">
 
-                                        <form method="POST">
+
+                                        <form
+                                            method="POST"
+                                        >
+
 
                                             <input
                                                 type="hidden"
@@ -1467,11 +2110,13 @@ $productResult =
                                                 ) ?>"
                                             >
 
+
                                             <input
                                                 type="hidden"
                                                 name="action"
                                                 value="update"
                                             >
+
 
                                             <input
                                                 type="hidden"
@@ -1484,14 +2129,21 @@ $productResult =
                                             >
 
 
-                                            <div class="form-grid">
+                                            <div
+                                                class="form-grid"
+                                            >
 
 
-                                                <div class="form-group">
+                                                <!-- NAME -->
+
+                                                <div
+                                                    class="form-group"
+                                                >
 
                                                     <label>
                                                         Product Name
                                                     </label>
+
 
                                                     <input
                                                         type="text"
@@ -1508,11 +2160,17 @@ $productResult =
                                                 </div>
 
 
-                                                <div class="form-group">
+
+                                                <!-- SERIES -->
+
+                                                <div
+                                                    class="form-group"
+                                                >
 
                                                     <label>
                                                         Series
                                                     </label>
+
 
                                                     <input
                                                         type="text"
@@ -1529,11 +2187,17 @@ $productResult =
                                                 </div>
 
 
-                                                <div class="form-group">
+
+                                                <!-- CATEGORY -->
+
+                                                <div
+                                                    class="form-group"
+                                                >
 
                                                     <label>
                                                         Category
                                                     </label>
+
 
                                                     <select
                                                         name="category"
@@ -1555,9 +2219,11 @@ $productResult =
                                                                     ? 'selected'
                                                                     : '' ?>
                                                             >
+
                                                                 <?= e(
                                                                     $category
                                                                 ) ?>
+
                                                             </option>
 
                                                         <?php endforeach; ?>
@@ -1567,11 +2233,17 @@ $productResult =
                                                 </div>
 
 
-                                                <div class="form-group">
+
+                                                <!-- AVAILABILITY -->
+
+                                                <div
+                                                    class="form-group"
+                                                >
 
                                                     <label>
                                                         Availability
                                                     </label>
+
 
                                                     <select
                                                         name="availability"
@@ -1593,9 +2265,11 @@ $productResult =
                                                                     ? 'selected'
                                                                     : '' ?>
                                                             >
+
                                                                 <?= e(
                                                                     $availability
                                                                 ) ?>
+
                                                             </option>
 
                                                         <?php endforeach; ?>
@@ -1605,11 +2279,17 @@ $productResult =
                                                 </div>
 
 
-                                                <div class="form-group">
+
+                                                <!-- CONDITION -->
+
+                                                <div
+                                                    class="form-group"
+                                                >
 
                                                     <label>
                                                         Condition
                                                     </label>
+
 
                                                     <select
                                                         name="condition_status"
@@ -1631,9 +2311,11 @@ $productResult =
                                                                     ? 'selected'
                                                                     : '' ?>
                                                             >
+
                                                                 <?= e(
                                                                     $condition
                                                                 ) ?>
+
                                                             </option>
 
                                                         <?php endforeach; ?>
@@ -1643,11 +2325,17 @@ $productResult =
                                                 </div>
 
 
-                                                <div class="form-group">
+
+                                                <!-- PRICE -->
+
+                                                <div
+                                                    class="form-group"
+                                                >
 
                                                     <label>
                                                         Price
                                                     </label>
+
 
                                                     <input
                                                         type="number"
@@ -1665,11 +2353,17 @@ $productResult =
                                                 </div>
 
 
-                                                <div class="form-group">
+
+                                                <!-- STOCK -->
+
+                                                <div
+                                                    class="form-group"
+                                                >
 
                                                     <label>
                                                         Stock
                                                     </label>
+
 
                                                     <input
                                                         type="number"
@@ -1687,11 +2381,17 @@ $productResult =
                                                 </div>
 
 
-                                                <div class="form-group">
+
+                                                <!-- IMAGE -->
+
+                                                <div
+                                                    class="form-group"
+                                                >
 
                                                     <label>
                                                         Image Path
                                                     </label>
+
 
                                                     <input
                                                         type="text"
@@ -1707,11 +2407,20 @@ $productResult =
                                                 </div>
 
 
-                                                <div class="form-group full">
+
+                                                <!-- DESCRIPTION -->
+
+                                                <div
+                                                    class="
+                                                        form-group
+                                                        full
+                                                    "
+                                                >
 
                                                     <label>
                                                         Description
                                                     </label>
+
 
                                                     <textarea
                                                         name="description"
@@ -1725,7 +2434,15 @@ $productResult =
                                                 </div>
 
 
-                                                <div class="form-group full">
+
+                                                <!-- SAVE -->
+
+                                                <div
+                                                    class="
+                                                        form-group
+                                                        full
+                                                    "
+                                                >
 
                                                     <button
                                                         type="submit"
@@ -1739,9 +2456,12 @@ $productResult =
 
                                             </div>
 
+
                                         </form>
 
+
                                     </div>
+
 
                                 </details>
 
@@ -1754,6 +2474,7 @@ $productResult =
                                     onsubmit="return confirm('Delete this product? This cannot be undone.');"
                                 >
 
+
                                     <input
                                         type="hidden"
                                         name="csrf_token"
@@ -1762,11 +2483,13 @@ $productResult =
                                         ) ?>"
                                     >
 
+
                                     <input
                                         type="hidden"
                                         name="action"
                                         value="delete"
                                     >
+
 
                                     <input
                                         type="hidden"
@@ -1778,6 +2501,7 @@ $productResult =
                                         ) ?>"
                                     >
 
+
                                     <button
                                         type="submit"
                                         class="danger-button"
@@ -1785,10 +2509,12 @@ $productResult =
                                         Delete
                                     </button>
 
+
                                 </form>
 
 
                             </div>
+
 
                         </td>
 
@@ -1808,7 +2534,9 @@ $productResult =
                         colspan="7"
                         class="empty"
                     >
+
                         No products found.
+
                     </td>
 
                 </tr>
@@ -1819,7 +2547,9 @@ $productResult =
 
             </tbody>
 
+
         </table>
+
 
     </div>
 
