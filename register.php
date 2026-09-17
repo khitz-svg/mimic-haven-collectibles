@@ -15,154 +15,386 @@ function e(string $value): string {
     );
 }
 
+/* =========================================================
+   CSRF TOKEN
+========================================================= */
+
+if (
+    empty($_SESSION['register_csrf'])
+) {
+    $_SESSION['register_csrf'] =
+        bin2hex(
+            random_bytes(32)
+        );
+}
+
+$csrfToken =
+    $_SESSION['register_csrf'];
+
 $message = '';
 $messageType = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    $firstName = trim($_POST['first_name'] ?? '');
-    $lastName  = trim($_POST['last_name'] ?? '');
-    $email     = trim($_POST['email'] ?? '');
-    $password  = $_POST['password'] ?? '';
-    $confirmPassword = $_POST['confirm_password'] ?? '';
+    /* =====================================================
+       VERIFY CSRF TOKEN
+    ===================================================== */
 
-    /* -----------------------------------------
-       BASIC VALIDATION
-    ----------------------------------------- */
+    $postedToken =
+        $_POST['csrf_token'] ?? '';
 
     if (
-        $firstName === '' ||
-        $lastName === '' ||
-        $email === '' ||
-        $password === '' ||
-        $confirmPassword === ''
+        !is_string($postedToken) ||
+        !hash_equals(
+            $csrfToken,
+            $postedToken
+        )
     ) {
 
-        $message = 'Please complete all required fields.';
-        $messageType = 'error';
+        $message =
+            'Security validation failed. Please try again.';
 
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-
-        $message = 'Please enter a valid email address.';
-        $messageType = 'error';
-
-    } elseif (strlen($password) < 8) {
-
-        $message = 'Password must be at least 8 characters long.';
-        $messageType = 'error';
-
-    } elseif ($password !== $confirmPassword) {
-
-        $message = 'Passwords do not match.';
-        $messageType = 'error';
+        $messageType =
+            'error';
 
     } else {
 
-        /* -----------------------------------------
-           CHECK IF EMAIL ALREADY EXISTS
-        ----------------------------------------- */
+        $firstName =
+            trim(
+                $_POST['first_name'] ?? ''
+            );
 
-        $checkStmt = $conn->prepare(
-            "SELECT id
-             FROM users
-             WHERE email = ?
-             LIMIT 1"
-        );
+        $lastName =
+            trim(
+                $_POST['last_name'] ?? ''
+            );
 
-        $checkStmt->bind_param(
-            "s",
-            $email
-        );
+        $email =
+            trim(
+                $_POST['email'] ?? ''
+            );
 
-        $checkStmt->execute();
+        $password =
+            $_POST['password'] ?? '';
 
-        $checkResult =
-            $checkStmt->get_result();
+        $confirmPassword =
+            $_POST['confirm_password'] ?? '';
 
-        $checkStmt->close();
+        /* =================================================
+           BASIC VALIDATION
+        ================================================= */
 
+        if (
+            $firstName === '' ||
+            $lastName === '' ||
+            $email === '' ||
+            $password === '' ||
+            $confirmPassword === ''
+        ) {
 
-        if ($checkResult->num_rows > 0) {
+            $message =
+                'Please complete all required fields.';
 
-            $message = 'An account with this email already exists.';
-            $messageType = 'error';
+            $messageType =
+                'error';
+
+        } elseif (
+            strlen($firstName) > 50 ||
+            strlen($lastName) > 50
+        ) {
+
+            $message =
+                'First name and last name must not exceed 50 characters.';
+
+            $messageType =
+                'error';
+
+        } elseif (
+            !filter_var(
+                $email,
+                FILTER_VALIDATE_EMAIL
+            )
+        ) {
+
+            $message =
+                'Please enter a valid email address.';
+
+            $messageType =
+                'error';
+
+        } elseif (
+            strlen($email) > 100
+        ) {
+
+            $message =
+                'Email address must not exceed 100 characters.';
+
+            $messageType =
+                'error';
+
+        } elseif (
+            strlen($password) < 8
+        ) {
+
+            $message =
+                'Password must be at least 8 characters long.';
+
+            $messageType =
+                'error';
+
+        } elseif (
+            !preg_match(
+                '/[A-Z]/',
+                $password
+            )
+        ) {
+
+            $message =
+                'Password must contain at least one uppercase letter.';
+
+            $messageType =
+                'error';
+
+        } elseif (
+            !preg_match(
+                '/[a-z]/',
+                $password
+            )
+        ) {
+
+            $message =
+                'Password must contain at least one lowercase letter.';
+
+            $messageType =
+                'error';
+
+        } elseif (
+            !preg_match(
+                '/[0-9]/',
+                $password
+            )
+        ) {
+
+            $message =
+                'Password must contain at least one number.';
+
+            $messageType =
+                'error';
+
+        } elseif (
+            !preg_match(
+                '/[^A-Za-z0-9\s]/',
+                $password
+            )
+        ) {
+
+            $message =
+                'Password must contain at least one special character.';
+
+            $messageType =
+                'error';
+
+        } elseif (
+            preg_match(
+                '/\s/',
+                $password
+            )
+        ) {
+
+            $message =
+                'Password must not contain spaces.';
+
+            $messageType =
+                'error';
+
+        } elseif (
+            $password !== $confirmPassword
+        ) {
+
+            $message =
+                'Passwords do not match.';
+
+            $messageType =
+                'error';
 
         } else {
 
-            /* -----------------------------------------
-               HASH PASSWORD
-            ----------------------------------------- */
+            /* =================================================
+               CHECK IF EMAIL ALREADY EXISTS
+            ================================================= */
 
-            $hashedPassword =
-                password_hash(
-                    $password,
-                    PASSWORD_DEFAULT
+            $checkStmt =
+                $conn->prepare(
+                    "SELECT id
+                     FROM users
+                     WHERE email = ?
+                     LIMIT 1"
                 );
 
+            if (!$checkStmt) {
 
-            /* -----------------------------------------
-               INSERT USER
-            ----------------------------------------- */
+                $message =
+                    'Unable to verify the account details. Please try again.';
 
-            $stmt = $conn->prepare(
-                "INSERT INTO users
-                (first_name, last_name, email, password)
-                VALUES (?, ?, ?, ?)"
-            );
-
-            $stmt->bind_param(
-                "ssss",
-                $firstName,
-                $lastName,
-                $email,
-                $hashedPassword
-            );
-
-
-            if ($stmt->execute()) {
-
-                $newUserId =
-                    $stmt->insert_id;
-
-                $stmt->close();
-
-
-                /* -----------------------------------------
-                   CREATE SESSION
-                ----------------------------------------- */
-
-                session_regenerate_id(true);
-
-                $_SESSION['user_id'] =
-                    $newUserId;
-
-                $_SESSION['first_name'] =
-                    $firstName;
-
-                $_SESSION['last_name'] =
-                    $lastName;
-
-                $_SESSION['email'] =
-                    $email;
-
-                $_SESSION['role'] =
-                    'customer';
-
-
-                header(
-                    'Location: index.php'
-                );
-
-                exit;
+                $messageType =
+                    'error';
 
             } else {
 
-                $message =
-                    'Unable to create your account. Please try again.';
+                $checkStmt->bind_param(
+                    "s",
+                    $email
+                );
 
-                $messageType = 'error';
+                if (
+                    !$checkStmt->execute()
+                ) {
 
-                $stmt->close();
+                    $message =
+                        'Unable to verify the account details. Please try again.';
+
+                    $messageType =
+                        'error';
+
+                    $checkStmt->close();
+
+                } else {
+
+                    $checkResult =
+                        $checkStmt->get_result();
+
+                    $checkStmt->close();
+
+                    if (
+                        $checkResult->num_rows > 0
+                    ) {
+
+                        $message =
+                            'An account with this email already exists.';
+
+                        $messageType =
+                            'error';
+
+                    } else {
+
+                        /* =================================================
+                           HASH PASSWORD
+                        ================================================= */
+
+                        $hashedPassword =
+                            password_hash(
+                                $password,
+                                PASSWORD_DEFAULT
+                            );
+
+                        if (
+                            $hashedPassword === false
+                        ) {
+
+                            $message =
+                                'Unable to secure your password. Please try again.';
+
+                            $messageType =
+                                'error';
+
+                        } else {
+
+                            /* =================================================
+                               INSERT USER
+                            ================================================= */
+
+                            $stmt =
+                                $conn->prepare(
+                                    "INSERT INTO users
+                                    (
+                                        first_name,
+                                        last_name,
+                                        email,
+                                        password
+                                    )
+                                    VALUES (?, ?, ?, ?)"
+                                );
+
+                            if (!$stmt) {
+
+                                $message =
+                                    'Unable to create your account. Please try again.';
+
+                                $messageType =
+                                    'error';
+
+                            } else {
+
+                                $stmt->bind_param(
+                                    "ssss",
+                                    $firstName,
+                                    $lastName,
+                                    $email,
+                                    $hashedPassword
+                                );
+
+                                if (
+                                    $stmt->execute()
+                                ) {
+
+                                    $newUserId =
+                                        $stmt->insert_id;
+
+                                    $stmt->close();
+
+                                    /* =================================================
+                                       CREATE SESSION
+                                    ================================================= */
+
+                                    session_regenerate_id(
+                                        true
+                                    );
+
+                                    $_SESSION['user_id'] =
+                                        $newUserId;
+
+                                    $_SESSION['first_name'] =
+                                        $firstName;
+
+                                    $_SESSION['last_name'] =
+                                        $lastName;
+
+                                    $_SESSION['email'] =
+                                        $email;
+
+                                    $_SESSION['role'] =
+                                        'customer';
+
+                                    $_SESSION['register_csrf'] =
+                                        bin2hex(
+                                            random_bytes(32)
+                                        );
+
+                                    header(
+                                        'Location: index.php'
+                                    );
+
+                                    exit;
+
+                                } else {
+
+                                    $message =
+                                        'Unable to create your account. Please try again.';
+
+                                    $messageType =
+                                        'error';
+
+                                    $stmt->close();
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+
+                }
 
             }
 
@@ -175,25 +407,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 
 <!doctype html>
+
 <html lang="en">
 
 <head>
 
-    <meta charset="UTF-8">
+```
+<meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
-    <title>
-        Create Account | Mimic Haven Collectibles
-    </title>
+<title>
+    Create Account | Mimic Haven Collectibles
+</title>
 
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
+<link
+    rel="stylesheet"
+    href="style.css"
+>
+```
 
 </head>
 
@@ -201,182 +436,201 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <main class="auth-page">
 
-    <div class="auth-card">
+```
+<div class="auth-card">
 
-        <a
-            href="index.php"
-            class="auth-logo"
+    <a
+        href="index.php"
+        class="auth-logo"
+    >
+
+        <?php if (file_exists(__DIR__ . '/logo.svg')): ?>
+
+            <img
+                src="logo.svg"
+                alt="Mimic Haven Collectibles"
+            >
+
+        <?php else: ?>
+
+            MIMIC HAVEN
+
+        <?php endif; ?>
+
+    </a>
+
+
+    <div class="auth-header">
+
+        <span>
+            JOIN THE HAVEN
+        </span>
+
+        <h1>
+            Create
+            <strong>Account.</strong>
+        </h1>
+
+        <p>
+            Create your collector account to manage your
+            orders and pre-orders.
+        </p>
+
+    </div>
+
+
+    <?php if ($message !== ''): ?>
+
+        <div
+            class="auth-message <?= e($messageType) ?>"
         >
-            <?php if (file_exists(__DIR__ . '/logo.svg')): ?>
+            <?= e($message) ?>
+        </div>
 
-                <img
-                    src="logo.svg"
-                    alt="Mimic Haven Collectibles"
+    <?php endif; ?>
+
+
+    <form
+        method="POST"
+        action="register.php"
+        class="auth-form"
+    >
+
+        <input
+            type="hidden"
+            name="csrf_token"
+            value="<?= e($csrfToken) ?>"
+        >
+
+
+        <div class="auth-form-row">
+
+            <div class="auth-field">
+
+                <label for="first_name">
+                    First Name
+                </label>
+
+                <input
+                    type="text"
+                    id="first_name"
+                    name="first_name"
+                    maxlength="50"
+                    required
                 >
 
-            <?php else: ?>
-
-                MIMIC HAVEN
-
-            <?php endif; ?>
-
-        </a>
+            </div>
 
 
-        <div class="auth-header">
+            <div class="auth-field">
 
-            <span>
-                JOIN THE HAVEN
-            </span>
+                <label for="last_name">
+                    Last Name
+                </label>
 
-            <h1>
-                Create
-                <strong>Account.</strong>
-            </h1>
+                <input
+                    type="text"
+                    id="last_name"
+                    name="last_name"
+                    maxlength="50"
+                    required
+                >
 
-            <p>
-                Create your collector account to manage your
-                orders and pre-orders.
-            </p>
+            </div>
 
         </div>
 
 
-        <?php if ($message !== ''): ?>
+        <div class="auth-field">
 
-            <div
-                class="auth-message <?= e($messageType) ?>"
+            <label for="email">
+                Email Address
+            </label>
+
+            <input
+                type="email"
+                id="email"
+                name="email"
+                maxlength="100"
+                required
+                autocomplete="email"
             >
-                <?= e($message) ?>
-            </div>
 
-        <?php endif; ?>
+        </div>
 
 
-        <form
-            method="POST"
-            action="register.php"
-            class="auth-form"
-        >
+        <div class="auth-field">
 
-            <div class="auth-form-row">
+            <label for="password">
+                Password
+            </label>
 
-                <div class="auth-field">
-
-                    <label for="first_name">
-                        First Name
-                    </label>
-
-                    <input
-                        type="text"
-                        id="first_name"
-                        name="first_name"
-                        required
-                    >
-
-                </div>
-
-
-                <div class="auth-field">
-
-                    <label for="last_name">
-                        Last Name
-                    </label>
-
-                    <input
-                        type="text"
-                        id="last_name"
-                        name="last_name"
-                        required
-                    >
-
-                </div>
-
-            </div>
-
-
-            <div class="auth-field">
-
-                <label for="email">
-                    Email Address
-                </label>
-
-                <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    required
-                    autocomplete="email"
-                >
-
-            </div>
-
-
-            <div class="auth-field">
-
-                <label for="password">
-                    Password
-                </label>
-
-                <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    minlength="8"
-                    required
-                    autocomplete="new-password"
-                >
-
-            </div>
-
-
-            <div class="auth-field">
-
-                <label for="confirm_password">
-                    Confirm Password
-                </label>
-
-                <input
-                    type="password"
-                    id="confirm_password"
-                    name="confirm_password"
-                    minlength="8"
-                    required
-                    autocomplete="new-password"
-                >
-
-            </div>
-
-
-            <button
-                type="submit"
-                class="auth-submit"
+            <input
+                type="password"
+                id="password"
+                name="password"
+                minlength="8"
+                required
+                autocomplete="new-password"
+                title="Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number, and one special character. Spaces are not allowed."
             >
-                Create Account →
-            </button>
 
-        </form>
+            <small>
+                Use at least 8 characters with uppercase,
+                lowercase, number, and special character.
+            </small>
 
-
-        <p class="auth-switch">
-
-            Already have an account?
-
-            <a href="login.php">
-                Log in
-            </a>
-
-        </p>
+        </div>
 
 
-        <a
-            href="index.php"
-            class="auth-back"
+        <div class="auth-field">
+
+            <label for="confirm_password">
+                Confirm Password
+            </label>
+
+            <input
+                type="password"
+                id="confirm_password"
+                name="confirm_password"
+                minlength="8"
+                required
+                autocomplete="new-password"
+            >
+
+        </div>
+
+
+        <button
+            type="submit"
+            class="auth-submit"
         >
-            ← Back to Mimic Haven
+            Create Account →
+        </button>
+
+    </form>
+
+
+    <p class="auth-switch">
+
+        Already have an account?
+
+        <a href="login.php">
+            Log in
         </a>
 
-    </div>
+    </p>
+
+
+    <a
+        href="index.php"
+        class="auth-back"
+    >
+        ← Back to Mimic Haven
+    </a>
+
+</div>
+```
 
 </main>
 

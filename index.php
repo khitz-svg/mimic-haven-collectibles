@@ -1605,6 +1605,14 @@ $faqs = [
 
 
 
+<script>
+window.MIMIC_HAVEN_CART_KEY = <?= json_encode(
+    isLoggedIn()
+        ? 'mimicHavenCart_' . currentUserId()
+        : 'mimicHavenGuestCart'
+) ?>;
+</script>
+
 <script src="script.js"></script>
 
 

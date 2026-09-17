@@ -6,6 +6,10 @@
 
 require_once 'auth.php';
 
+$cartStorageKey = currentUserId()
+    ? 'mimicHavenCart_' . currentUserId()
+    : 'mimicHavenGuestCart';
+
 
 function asset(string $name): string {
 
@@ -646,6 +650,10 @@ function e(string $value): string {
 
 <script src="script.js"></script>
 
+<script>
+const cartStorageKey = <?= json_encode($cartStorageKey) ?>;
+</script>
+
 
 
 <!-- =========================================================
@@ -830,7 +838,7 @@ const pageCartCount =
 function getCart() {
 
     return JSON.parse(
-        localStorage.getItem('mimicHavenCart') || '[]'
+        localStorage.getItem(cartStorageKey) || '[]'
     );
 
 }
@@ -843,7 +851,7 @@ function getCart() {
 function saveCart(cart) {
 
     localStorage.setItem(
-        'mimicHavenCart',
+        cartStorageKey,
         JSON.stringify(cart)
     );
 

@@ -23,6 +23,7 @@ function asset(string $name): string
             return "assets/{$name}.{$ext}";
         }
 
+
         $rootFile =
             __DIR__ . "/{$name}.{$ext}";
 
@@ -71,161 +72,24 @@ function peso(float $price): string
 
 
 /* =========================================================
-   PRE-ORDER CATALOG
-========================================================= */
-
-$preorderCatalog = [
-
-    [
-        'name' => 'Frieren – Maximatic Ver. 2',
-        'series' => "Frieren: Beyond Journey's End",
-        'category' => 'Prize Figure',
-        'price' => 1850,
-        'deposit' => 550,
-        'release' => 'Release Date TBA',
-        'image' => 'frieren maximatic v2.webp'
-    ],
-
-    [
-        'name' => 'Frieren – Ichibansho Art Scale Bust',
-        'series' => "Frieren: Beyond Journey's End",
-        'category' => 'Scale Figure',
-        'price' => 4200,
-        'deposit' => 1250,
-        'release' => 'Release Date TBA',
-        'image' => 'Ichibansho Frieren Art Scale Bust.webp'
-    ],
-
-    [
-        'name' => 'Fern – Yumemirize Nap Ver.',
-        'series' => "Frieren: Beyond Journey's End",
-        'category' => 'Prize Figure',
-        'price' => 1450,
-        'deposit' => 450,
-        'release' => 'Release Date TBA',
-        'image' => 'Yumemirize Fern (Nap Ver.) Figure.webp'
-    ],
-
-    [
-        'name' => 'Maomao – Moon Fairy Figure',
-        'series' => 'The Apothecary Diaries',
-        'category' => 'Scale Figure',
-        'price' => 2800,
-        'deposit' => 850,
-        'release' => 'Release Date TBA',
-        'image' => 'Maomao (Moon Fairy) Figure.webp'
-    ],
-
-    [
-        'name' => 'Satoru Gojo – 1/8 Scale Figure',
-        'series' => 'Jujutsu Kaisen',
-        'category' => 'Scale Figure',
-        'price' => 8500,
-        'deposit' => 2550,
-        'release' => 'Release Date TBA',
-        'image' => 'Gojo Satoru 1over8 Scale Figure.webp'
-    ],
-
-    [
-        'name' => 'Choso – S.H.Figuarts',
-        'series' => 'Jujutsu Kaisen',
-        'category' => 'Action Figure',
-        'price' => 3200,
-        'deposit' => 950,
-        'release' => 'Release Date TBA',
-        'image' => 'S.H.Figuarts Choso Action Figure.webp'
-    ],
-
-    [
-        'name' => 'Mahito – S.H.Figuarts',
-        'series' => 'Jujutsu Kaisen',
-        'category' => 'Action Figure',
-        'price' => 3100,
-        'deposit' => 950,
-        'release' => 'Release Date TBA',
-        'image' => 'S.H.Figuarts Mahito Action Figure.webp'
-    ],
-
-    [
-        'name' => 'Toji Fushiguro – S.H.Figuarts',
-        'series' => 'Jujutsu Kaisen',
-        'category' => 'Action Figure',
-        'price' => 3400,
-        'deposit' => 1000,
-        'release' => 'Release Date TBA',
-        'image' => 'S.H.Figuarts Toji Fushiguro Action Figure.webp'
-    ],
-
-    [
-        'name' => 'Zenitsu – Deluxe 1/4 Scale Limited Edition Statue',
-        'series' => 'Demon Slayer',
-        'category' => 'Statue',
-        'price' => 12500,
-        'deposit' => 3750,
-        'release' => 'Release Date TBA',
-        'image' => 'Zenitsu Deluxe 1over4 Scale Limited Edition Statue.jpg'
-    ],
-
-    [
-        'name' => 'Monkey D. Luffy – Gear 5 Ver. III',
-        'series' => 'One Piece',
-        'category' => 'Prize Figure',
-        'price' => 2300,
-        'deposit' => 700,
-        'release' => 'Release Date TBA',
-        'image' => 'One Piece Grandista Monkey D. Luffy (Gear 5 Ver. III) Figure.webp'
-    ],
-
-    [
-        'name' => 'Makima – FNEX 1/7 Scale Figure',
-        'series' => 'Chainsaw Man',
-        'category' => 'Scale Figure',
-        'price' => 11500,
-        'deposit' => 3450,
-        'release' => 'Release Date TBA',
-        'image' => 'Chainsaw Man FNex Makima 1over7 Scale Figure.webp'
-    ],
-
-    [
-        'name' => 'Albedo – 1/7 Scale Figure',
-        'series' => 'Overlord',
-        'category' => 'Scale Figure',
-        'price' => 9500,
-        'deposit' => 2850,
-        'release' => 'Release Date TBA',
-        'image' => 'Overlord Albedo 1over7 Scale Figure.webp'
-    ],
-
-];
-
-
-/* =========================================================
    BUILD PRE-ORDER PRODUCTS FROM DATABASE
 ========================================================= */
 
 $preorders = [];
 
 /*
- * These are the products currently marked as
- * Pre-Order in the database.
- *
- * Deposit values come from the pre-order catalog.
+ * Pre-order products are loaded directly from the database.
+ * A 30% deposit is calculated per figure and rounded to the
+ * nearest ₱50 so newly added pre-order products are included
+ * automatically without maintaining a hardcoded product list.
  */
-
-$preorderProductIds = [
-    3  => 550,
-    5  => 1250,
-    7  => 450,
-    10 => 850,
-    13 => 2550,
-    14 => 950,
-    16 => 950,
-    23 => 3750,
-    28 => 700,
-    30 => 3450,
-    33 => 2850
-];
-
+function preorderDeposit(float $price): float
+{
+    return max(
+        50.00,
+        round(($price * 0.30) / 50) * 50
+    );
+}
 
 $productStmt = $conn->prepare(
     "SELECT
@@ -234,62 +98,39 @@ $productStmt = $conn->prepare(
         series,
         category,
         price,
-        availability,
         image
      FROM products
-     WHERE id = ?
-       AND availability = 'Pre-Order'
-     LIMIT 1"
+     WHERE availability = 'Pre-Order'
+     ORDER BY id ASC"
 );
 
+if ($productStmt) {
 
-foreach ($preorderProductIds as $productId => $deposit) {
+    if ($productStmt->execute()) {
 
-    $productStmt->bind_param(
-        "i",
-        $productId
-    );
+        $result =
+            $productStmt->get_result();
 
-    $productStmt->execute();
+        while ($dbProduct = $result->fetch_assoc()) {
 
-    $result =
-        $productStmt->get_result();
+            $price =
+                (float)$dbProduct['price'];
 
-    $dbProduct =
-        $result->fetch_assoc();
-
-
-    if ($dbProduct) {
-
-        $preorders[] = [
-            'id' => (int)$dbProduct['id'],
-
-            'name' =>
-                $dbProduct['name'],
-
-            'series' =>
-                $dbProduct['series'],
-
-            'category' =>
-                $dbProduct['category'],
-
-            'price' =>
-                (float)$dbProduct['price'],
-
-            'deposit' =>
-                (float)$deposit,
-
-            'release' =>
-                'Release Date TBA',
-
-            'image' =>
-                $dbProduct['image']
-        ];
+            $preorders[] = [
+                'id' => (int)$dbProduct['id'],
+                'name' => $dbProduct['name'],
+                'series' => $dbProduct['series'],
+                'category' => $dbProduct['category'],
+                'price' => $price,
+                'deposit' => preorderDeposit($price),
+                'release' => 'Release Date TBA',
+                'image' => $dbProduct['image']
+            ];
+        }
     }
+
+    $productStmt->close();
 }
-
-
-$productStmt->close();
 
 
 /* =========================================================
@@ -808,46 +649,23 @@ foreach (
             </a>
 
 
-            <!-- EXPANDABLE SEARCH -->
-
-            <div
-                class="header-search"
-                id="headerSearch"
+            <a
+                class="nav-icon"
+                href="#preorder-products"
+                aria-label="Search"
             >
 
-                <button
-                    type="button"
-                    class="header-search-toggle"
-                    id="headerSearchToggle"
-                    aria-label="Search"
-                    aria-expanded="false"
-                >
+                <?php if (icon('search')): ?>
 
-                    <?php if (icon('search')): ?>
+                    <img
+                        src="<?= icon('search') ?>"
+                        alt="Search"
+                    >
 
-                        <img
-                            src="<?= icon('search') ?>"
-                            alt=""
-                        >
+                <?php endif; ?>
 
-                    <?php endif; ?>
+            </a>
 
-                </button>
-
-
-                <input
-                    type="search"
-                    class="header-search-input"
-                    id="headerSearchInput"
-                    placeholder="Search figures..."
-                    autocomplete="off"
-                    aria-label="Search figures"
-                >
-
-            </div>
-
-
-            <!-- CART -->
 
             <a
                 class="nav-icon cart-button"
@@ -871,8 +689,6 @@ foreach (
             </a>
 
 
-            <!-- ACCOUNT -->
-
             <?php if (isLoggedIn()): ?>
 
                 <a
@@ -881,6 +697,11 @@ foreach (
                 >
                     Hi, <?= e(currentFirstName()) ?>
                 </a>
+
+            <?php endif; ?>
+
+
+            <?php if (isLoggedIn()): ?>
 
                 <a
                     class="nav-account"
@@ -980,16 +801,6 @@ foreach (
                 </a>
 
             </div>
-
-        </div>
-
-
-        <div class="preorder-hero-art">
-
-            <img
-                src="<?= asset('frieren maximatic v2') ?>"
-                alt="Frieren pre-order figure"
-            >
 
         </div>
 
@@ -1777,154 +1588,15 @@ foreach (
 
 
 
-<script src="script.js"></script>
-
-
-<!-- =========================================================
-     HEADER SEARCH SCRIPT
-========================================================= -->
-
 <script>
-
-document.addEventListener(
-    'DOMContentLoaded',
-    function () {
-
-        const headerSearch =
-            document.getElementById('headerSearch');
-
-        const headerSearchToggle =
-            document.getElementById('headerSearchToggle');
-
-        const headerSearchInput =
-            document.getElementById('headerSearchInput');
-
-
-        if (
-            !headerSearch ||
-            !headerSearchToggle ||
-            !headerSearchInput
-        ) {
-            return;
-        }
-
-
-        headerSearchToggle.addEventListener(
-            'click',
-            function (event) {
-
-                event.stopPropagation();
-
-                const isOpen =
-                    headerSearch.classList.contains('active');
-
-
-                if (isOpen) {
-
-                    headerSearchInput.focus();
-
-                    return;
-                }
-
-
-                headerSearch.classList.add('active');
-
-                headerSearchToggle.setAttribute(
-                    'aria-expanded',
-                    'true'
-                );
-
-
-                setTimeout(
-                    function () {
-
-                        headerSearchInput.focus();
-
-                    },
-                    250
-                );
-
-            }
-        );
-
-
-        headerSearchInput.addEventListener(
-            'keydown',
-            function (event) {
-
-                if (event.key !== 'Enter') {
-                    return;
-                }
-
-
-                const search =
-                    headerSearchInput.value.trim();
-
-
-                if (!search) {
-                    return;
-                }
-
-
-                window.location.href =
-                    'collection.php?search=' +
-                    encodeURIComponent(search);
-
-            }
-        );
-
-
-        document.addEventListener(
-            'click',
-            function (event) {
-
-                if (
-                    !headerSearch.contains(event.target)
-                ) {
-
-                    headerSearch.classList.remove(
-                        'active'
-                    );
-
-                    headerSearchToggle.setAttribute(
-                        'aria-expanded',
-                        'false'
-                    );
-
-                }
-
-            }
-        );
-
-
-        headerSearchInput.addEventListener(
-            'keydown',
-            function (event) {
-
-                if (event.key === 'Escape') {
-
-                    headerSearch.classList.remove(
-                        'active'
-                    );
-
-                    headerSearchToggle.setAttribute(
-                        'aria-expanded',
-                        'false'
-                    );
-
-                    headerSearchInput.value = '';
-
-                    headerSearchToggle.focus();
-
-                }
-
-            }
-        );
-
-    }
-);
-
+window.MIMIC_HAVEN_CART_KEY = <?= json_encode(
+    isLoggedIn()
+        ? 'mimicHavenCart_' . currentUserId()
+        : 'mimicHavenGuestCart'
+) ?>;
 </script>
+
+<script src="script.js"></script>
 
 
 </body>

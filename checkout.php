@@ -68,6 +68,8 @@ function e(string $value): string
 
 requireLogin();
 
+$cartStorageKey = 'mimicHavenCart_' . currentUserId();
+
 
 /* =========================================================
    CSRF TOKEN
@@ -1832,6 +1834,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <script src="script.js"></script>
 
+<script>
+const cartStorageKey = <?= json_encode($cartStorageKey) ?>;
+</script>
+
 
 
 <script>
@@ -1874,7 +1880,7 @@ function getCheckoutCart() {
 
         return JSON.parse(
             localStorage.getItem(
-                'mimicHavenCart'
+                cartStorageKey
             ) || '[]'
         );
 
@@ -2316,7 +2322,7 @@ placeOrderButton?.addEventListener(
             ----------------------------------------- */
 
             localStorage.removeItem(
-                'mimicHavenCart'
+                cartStorageKey
             );
 
 

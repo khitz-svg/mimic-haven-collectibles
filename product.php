@@ -1,10 +1,16 @@
+```php
 <?php
 
 /* =========================================================
    MIMIC HAVEN - PRODUCT DETAILS PAGE
 ========================================================= */
 
+require_once 'auth.php';
 require_once 'db.php';
+
+$cartStorageKey = currentUserId()
+    ? 'mimicHavenCart_' . currentUserId()
+    : 'mimicHavenGuestCart';
 
 
 /* =========================================================
@@ -1592,6 +1598,14 @@ $maxQuantity =
 <script>
 
 /* =========================================================
+   ACCOUNT-SPECIFIC CART KEY
+========================================================= */
+
+const cartStorageKey =
+    <?= json_encode($cartStorageKey) ?>;
+
+
+/* =========================================================
    PRODUCT PAGE - STOCK
 ========================================================= */
 
@@ -1859,7 +1873,7 @@ addToCart?.addEventListener(
 
 
         /* -------------------------------------------------
-           LOAD CART
+           LOAD ACCOUNT-SPECIFIC CART
         ------------------------------------------------- */
 
         let cart = [];
@@ -1870,7 +1884,7 @@ addToCart?.addEventListener(
             cart =
                 JSON.parse(
                     localStorage.getItem(
-                        'mimicHavenCart'
+                        cartStorageKey
                     ) || '[]'
                 );
 
@@ -1969,11 +1983,11 @@ addToCart?.addEventListener(
 
 
         /* -------------------------------------------------
-           SAVE CART
+           SAVE ACCOUNT-SPECIFIC CART
         ------------------------------------------------- */
 
         localStorage.setItem(
-            'mimicHavenCart',
+            cartStorageKey,
             JSON.stringify(cart)
         );
 
@@ -1982,34 +1996,31 @@ addToCart?.addEventListener(
            UPDATE CART COUNT
         ------------------------------------------------- */
 
-        const cartCount =
-            document.getElementById(
-                'cart-count'
-            );
+        const productCartCount =
+    document.getElementById(
+        'cart-count'
+    );
 
+const totalItems =
+    cart.reduce(
+        (
+            total,
+            item
+        ) =>
+            total +
+            (
+                Number(item.quantity)
+                || 0
+            ),
+        0
+    );
 
-        const totalItems =
-            cart.reduce(
-                (
-                    total,
-                    item
-                ) =>
-                    total +
-                    (
-                        Number(item.quantity)
-                        || 0
-                    ),
-                0
-            );
+if (productCartCount) {
 
+    productCartCount.textContent =
+        totalItems;
 
-        if (cartCount) {
-
-            cartCount.textContent =
-                totalItems;
-
-        }
-
+}
 
         /* -------------------------------------------------
            BUTTON FEEDBACK
@@ -2046,7 +2057,7 @@ addToCart?.addEventListener(
 
 
 /* =========================================================
-   LOAD CART COUNT
+   LOAD ACCOUNT-SPECIFIC CART COUNT
 ========================================================= */
 
 let savedCart = [];
@@ -2057,7 +2068,7 @@ try {
     savedCart =
         JSON.parse(
             localStorage.getItem(
-                'mimicHavenCart'
+                cartStorageKey
             ) || '[]'
         );
 
@@ -2114,3 +2125,4 @@ updateProductQuantity();
 </body>
 
 </html>
+```

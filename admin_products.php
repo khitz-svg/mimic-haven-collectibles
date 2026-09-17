@@ -241,7 +241,8 @@ $allowedCategories = [
     'Prize Figures',
     'Scale Figures',
     'Action Figures',
-    'Statues'
+    'Statues',
+    'Others'
 ];
 
 $allowedAvailability = [
@@ -250,6 +251,8 @@ $allowedAvailability = [
 ];
 
 $allowedConditions = [
+    'MISB',
+    'MIB',
     'New',
     'Like New',
     'Used'
@@ -417,24 +420,26 @@ if (
                             name,
                             series,
                             category,
-                            availability,
+                            price,
                             condition_status,
+                            availability,
                             image,
                             description,
                             stock
                         )
 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
                     );
 
 
                 $insertStmt->bind_param(
-                    "sssssssi",
+                    "sssdssssi",
                     $name,
                     $series,
                     $category,
-                    $availability,
+                    $price,
                     $conditionStatus,
+                    $availability,
                     $image,
                     $description,
                     $stock
@@ -444,30 +449,6 @@ if (
                 if (
                     $insertStmt->execute()
                 ) {
-
-                    $newProductId =
-                        $insertStmt->insert_id;
-
-
-                    $priceUpdateStmt =
-                        $conn->prepare(
-                            "UPDATE products
-                             SET price = ?
-                             WHERE id = ?"
-                        );
-
-
-                    $priceUpdateStmt->bind_param(
-                        "di",
-                        $price,
-                        $newProductId
-                    );
-
-
-                    $priceUpdateStmt->execute();
-
-                    $priceUpdateStmt->close();
-
 
                     $message =
                         'Product added successfully.';
@@ -641,7 +622,7 @@ if (
 
 
                 $updateStmt->bind_param(
-                    "sssssissii",
+                    "sssssdssii",
                     $name,
                     $series,
                     $category,

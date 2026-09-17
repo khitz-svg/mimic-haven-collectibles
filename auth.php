@@ -14,6 +14,51 @@ if (session_status() === PHP_SESSION_NONE) {
 
 
 /* =========================================================
+   CART STORAGE KEY
+========================================================= */
+
+/*
+ * Give JavaScript the correct cart storage key.
+ *
+ * Logged-in users get:
+ * mimicHavenCart_1
+ * mimicHavenCart_2
+ * mimicHavenCart_3
+ *
+ * Guests get:
+ * mimicHavenGuestCart
+ */
+
+$cartStorageKey =
+    isset($_SESSION['user_id'])
+        ? 'mimicHavenCart_' . (int) $_SESSION['user_id']
+        : 'mimicHavenGuestCart';
+
+
+/*
+ * Store the cart key in a normal browser cookie
+ * so script.js can read it.
+ */
+
+if (!headers_sent()) {
+
+    setcookie(
+        'mimicHavenCartStorageKey',
+        $cartStorageKey,
+        [
+            'expires' => time() + (60 * 60 * 24 * 30),
+            'path' => '/',
+            'secure' => !empty($_SERVER['HTTPS'])
+                && $_SERVER['HTTPS'] !== 'off',
+            'httponly' => false,
+            'samesite' => 'Lax'
+        ]
+    );
+
+}
+
+
+/* =========================================================
    CHECK LOGIN
 ========================================================= */
 
@@ -68,10 +113,8 @@ function currentFirstName(): string
 function requireLogin(): void
 {
     if (!isLoggedIn()) {
-
         header('Location: login.php');
         exit;
-
     }
 }
 
@@ -83,6 +126,28 @@ function requireLogin(): void
 function logoutUser(): void
 {
     $_SESSION = [];
+
+    /*
+     * Clear the cart-key cookie when the user logs out.
+     */
+
+    if (!headers_sent()) {
+
+        setcookie(
+            'mimicHavenCartStorageKey',
+            '',
+            [
+                'expires' => time() - 3600,
+                'path' => '/',
+                'secure' => !empty($_SERVER['HTTPS'])
+                    && $_SERVER['HTTPS'] !== 'off',
+                'httponly' => false,
+                'samesite' => 'Lax'
+            ]
+        );
+
+    }
+
 
     if (ini_get('session.use_cookies')) {
 

@@ -1,6 +1,7 @@
 <?php
 
 require_once 'auth.php';
+require_once 'db.php';
 
 /* =========================================================
    MIMIC HAVEN - CONTACT PAGE
@@ -46,6 +47,99 @@ function e(string $value): string {
     );
 }
 
+/* =========================================================
+   CONTACT FORM HANDLING
+========================================================= */
+
+if (empty($_SESSION['contact_csrf'])) {
+    $_SESSION['contact_csrf'] = bin2hex(random_bytes(32));
+}
+
+$contactCsrf = $_SESSION['contact_csrf'];
+$contactSuccess = '';
+$contactError = '';
+
+$contactName = '';
+$contactEmail = '';
+$contactSubject = '';
+$contactMessage = '';
+
+$subjectLabels = [
+    'product' => 'Product Inquiry',
+    'preorder' => 'Pre-Order',
+    'order' => 'Existing Order',
+    'general' => 'General Question',
+    'other' => 'Other'
+];
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $postedToken = $_POST['csrf_token'] ?? '';
+    $action = $_POST['action'] ?? '';
+
+    if (
+        !is_string($postedToken) ||
+        !hash_equals($contactCsrf, $postedToken)
+    ) {
+        $contactError = 'Invalid security token. Please refresh the page and try again.';
+    } elseif ($action !== 'contact_submit') {
+        $contactError = 'Invalid request.';
+    } else {
+        $contactName = trim((string)($_POST['name'] ?? ''));
+        $contactEmail = trim((string)($_POST['email'] ?? ''));
+        $contactSubject = trim((string)($_POST['subject'] ?? ''));
+        $contactMessage = trim((string)($_POST['message'] ?? ''));
+
+        if ($contactName === '') {
+            $contactError = 'Please enter your name.';
+        } elseif (mb_strlen($contactName) > 100) {
+            $contactError = 'Name is too long.';
+        } elseif (!filter_var($contactEmail, FILTER_VALIDATE_EMAIL)) {
+            $contactError = 'Please enter a valid email address.';
+        } elseif (!isset($subjectLabels[$contactSubject])) {
+            $contactError = 'Please select a valid subject.';
+        } elseif ($contactMessage === '') {
+            $contactError = 'Please enter your message.';
+        } elseif (mb_strlen($contactMessage) > 2000) {
+            $contactError = 'Message is too long. Please keep it within 2,000 characters.';
+        }
+
+        if ($contactError === '') {
+            $subjectText = $subjectLabels[$contactSubject];
+
+            $messageStmt = $conn->prepare(
+                "INSERT INTO contact_messages (name, email, subject, message)
+                 VALUES (?, ?, ?, ?)"
+            );
+
+            if (!$messageStmt) {
+                $contactError = 'Unable to send your message right now. Please try again.';
+            } else {
+                $messageStmt->bind_param(
+                    'ssss',
+                    $contactName,
+                    $contactEmail,
+                    $subjectText,
+                    $contactMessage
+                );
+
+                if ($messageStmt->execute()) {
+                    $contactSuccess = 'Your message has been sent successfully. We will get back to you as soon as possible.';
+                    $contactName = '';
+                    $contactEmail = '';
+                    $contactSubject = '';
+                    $contactMessage = '';
+                    $_SESSION['contact_csrf'] = bin2hex(random_bytes(32));
+                    $contactCsrf = $_SESSION['contact_csrf'];
+                } else {
+                    $contactError = 'Unable to send your message right now. Please try again.';
+                }
+
+                $messageStmt->close();
+            }
+        }
+    }
+}
+
 ?>
 
 <!doctype html>
@@ -89,6 +183,27 @@ function e(string $value): string {
         rel="stylesheet"
         href="style.css"
     >
+
+
+<style>
+.contact-form-message {
+    margin: 0 0 20px;
+    padding: 13px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+.contact-form-message.success {
+    background: rgba(102, 204, 153, 0.12);
+    border: 1px solid rgba(102, 204, 153, 0.25);
+    color: #9de6bd;
+}
+.contact-form-message.error {
+    background: rgba(255, 100, 100, 0.10);
+    border: 1px solid rgba(255, 100, 100, 0.22);
+    color: #ffb4b4;
+}
+</style>
 
 </head>
 
@@ -505,10 +620,40 @@ function e(string $value): string {
                 </div>
 
 
+                <?php if ($contactSuccess): ?>
+
+                <div class="contact-form-message success" role="status">
+                    <?= e($contactSuccess) ?>
+                </div>
+
+                <?php endif; ?>
+
+                <?php if ($contactError): ?>
+
+                <div class="contact-form-message error" role="alert">
+                    <?= e($contactError) ?>
+                </div>
+
+                <?php endif; ?>
+
                 <form
                     class="contact-form"
                     id="contactForm"
+                    method="POST"
+                    action="contact.php"
                 >
+
+                    <input
+                        type="hidden"
+                        name="csrf_token"
+                        value="<?= e($contactCsrf) ?>"
+                    >
+
+                    <input
+                        type="hidden"
+                        name="action"
+                        value="contact_submit"
+                    >
 
 
                     <div class="contact-form-row">
@@ -524,6 +669,7 @@ function e(string $value): string {
                                 type="text"
                                 id="name"
                                 name="name"
+                                value="<?= e($contactName) ?>"
                                 placeholder="Your name"
                                 required
                             >
@@ -541,6 +687,7 @@ function e(string $value): string {
                                 type="email"
                                 id="email"
                                 name="email"
+                                value="<?= e($contactEmail) ?>"
                                 placeholder="your@email.com"
                                 required
                             >
@@ -564,29 +711,29 @@ function e(string $value): string {
 
                             <option
                                 value=""
-                                selected
+                                <?= $contactSubject === '' ? 'selected' : '' ?>
                                 disabled
                             >
                                 Select a topic
                             </option>
 
-                            <option value="product">
+                            <option value="product" <?= $contactSubject === 'product' ? 'selected' : '' ?>>
                                 Product Inquiry
                             </option>
 
-                            <option value="preorder">
+                            <option value="preorder" <?= $contactSubject === 'preorder' ? 'selected' : '' ?>>
                                 Pre-Order
                             </option>
 
-                            <option value="order">
+                            <option value="order" <?= $contactSubject === 'order' ? 'selected' : '' ?>>
                                 Existing Order
                             </option>
 
-                            <option value="general">
+                            <option value="general" <?= $contactSubject === 'general' ? 'selected' : '' ?>>
                                 General Question
                             </option>
 
-                            <option value="other">
+                            <option value="other" <?= $contactSubject === 'other' ? 'selected' : '' ?>>
                                 Other
                             </option>
 
@@ -607,7 +754,7 @@ function e(string $value): string {
                             rows="6"
                             placeholder="Tell us how we can help..."
                             required
-                        ></textarea>
+                        ><?= e($contactMessage) ?></textarea>
 
                     </div>
 
@@ -621,7 +768,7 @@ function e(string $value): string {
 
 
                     <p class="contact-form-note">
-                        This form is currently for front-end demonstration.
+                        Your message will be securely recorded for customer support.
                     </p>
 
                 </form>
@@ -832,6 +979,14 @@ function e(string $value): string {
 ></div>
 
 
+<script>
+window.MIMIC_HAVEN_CART_KEY = <?= json_encode(
+    isLoggedIn()
+        ? 'mimicHavenCart_' . currentUserId()
+        : 'mimicHavenGuestCart'
+) ?>;
+</script>
+
 <script src="script.js"></script>
 
 
@@ -979,42 +1134,6 @@ document.addEventListener(
     }
 );
 
-
-/* =========================================================
-   CONTACT FORM
-========================================================= */
-
-const contactForm =
-    document.getElementById('contactForm');
-
-
-contactForm?.addEventListener(
-    'submit',
-    event => {
-
-        event.preventDefault();
-
-
-        const name =
-            document
-                .getElementById('name')
-                ?.value
-                .trim();
-
-
-        if (typeof showToast === 'function') {
-
-            showToast(
-                `Thanks${name ? `, ${name}` : ''}! Your message has been received.`
-            );
-
-        }
-
-
-        contactForm.reset();
-
-    }
-);
 
 </script>
 
