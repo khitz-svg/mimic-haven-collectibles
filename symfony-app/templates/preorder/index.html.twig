@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pre-Orders | Mimic Haven Collectibles</title>
+    <meta name="description" content="Reserve upcoming anime figures and collectibles through Mimic Haven pre-orders.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('style.css') }}">
+    <style>
+        .preorder-reserve-form { margin-top: 18px; }
+        .preorder-reserve-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .preorder-quantity { width: 70px; padding: 10px; background: #111315; color: #fff; border: 1px solid rgba(255,255,255,.12); border-radius: 7px; font-family: Inter, sans-serif; }
+        .preorder-reserve-button { flex: 1; min-width: 140px; border: none; border-radius: 7px; padding: 11px 16px; background: var(--blue); color: #101214; font-family: Montserrat, sans-serif; font-size: 11px; font-weight: 700; cursor: pointer; }
+        .preorder-reserve-button:hover { opacity: .9; }
+        .preorder-login-note { margin-top: 12px; color: #89929c; font-size: 12px; line-height: 1.5; }
+        .preorder-login-note a { color: var(--blue); text-decoration: none; font-weight: 700; }
+        .preorder-message { max-width: 1000px; margin: 0 auto 30px; padding: 14px 18px; border-radius: 8px; font-size: 13px; }
+        .preorder-message.success { color: #8be3b0; background: rgba(39,174,96,.10); border: 1px solid rgba(39,174,96,.25); }
+        .preorder-message.error { color: #ff9b91; background: rgba(231,76,60,.10); border: 1px solid rgba(231,76,60,.25); }
+    </style>
+</head>
+<body>
+<header class="site-header" id="home">
+    <div class="header-inner">
+        <a class="brand" href="{{ path('app_home') }}" aria-label="Mimic Haven Collectibles">
+            <img class="brand-logo" src="{{ asset('assets/logo.svg') }}" alt="Mimic Haven Collectibles">
+        </a>
+        <nav class="nav" id="main-nav" aria-label="Primary navigation">
+            <a href="{{ path('app_home') }}">Home</a>
+            <a href="{{ path('app_collection') }}">Collection</a>
+            <a class="active" href="{{ path('app_preorder') }}">Pre-Orders</a>
+            <a href="{{ path('app_home') }}#about">About</a>
+            <a href="{{ path('app_home') }}#contact">Contact</a>
+            <a class="nav-icon" href="#preorder-products" aria-label="Search">
+                <img src="{{ asset('assets/icons/search.svg') }}" alt="">
+            </a>
+            <a class="nav-icon cart-button" href="{{ path('app_cart') }}" aria-label="Cart">
+                <img src="{{ asset('assets/icons/pre-order.png') }}" alt="Cart">
+                <span id="cart-count">0</span>
+            </a>
+            {% if app.user %}
+                <a class="nav-user" href="{{ path('app_account') }}">Hi, {{ app.user.firstName|e }}</a>
+                <a class="nav-account" href="{{ path('app_logout') }}">Logout</a>
+            {% else %}
+                <a class="nav-account" href="{{ path('app_login') }}">Login</a>
+            {% endif %}
+        </nav>
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-nav">☰</button>
+    </div>
+</header>
+
+<main>
+    <section class="preorder-hero">
+        <div class="preorder-hero-inner">
+            <div class="preorder-hero-copy">
+                <span class="preorder-eyebrow">RESERVE WHAT COMES NEXT</span>
+                <h1>Pre-Order</h1>
+                <p class="preorder-script">Upcoming Figures</p>
+                <p class="preorder-hero-description">Don't miss out on the figures you love. Reserve your piece before it arrives and secure your place in the next release.</p>
+                <div class="preorder-hero-buttons">
+                    <a class="btn primary" href="#preorder-products">Browse Pre-Orders <img src="{{ asset('assets/icons/right-arrow.svg') }}" alt=""></a>
+                    <a class="btn outline" href="#how-it-works">How It Works</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {% for message in app.flashes('success') %}
+        <div class="preorder-message success" role="status">{{ message }}</div>
+    {% endfor %}
+    {% for message in app.flashes('error') %}
+        <div class="preorder-message error" role="alert">{{ message }}</div>
+    {% endfor %}
+
+    <section class="preorder-products-section" id="preorder-products">
+        <div class="preorder-section-heading">
+            <span>AVAILABLE NOW</span>
+            <h2>CURRENT <strong>PRE-ORDERS</strong></h2>
+            <p>Figures currently available for reservation.</p>
+        </div>
+
+        {% if products is empty %}
+            <div class="preorder-section-heading">
+                <p>No pre-order figures are currently available.</p>
+            </div>
+        {% else %}
+            <div class="preorder-products-grid">
+                {% for product in products %}
+                    <article class="preorder-product-card">
+                        <div class="preorder-product-image">
+                            {% if product.image %}
+                                <img src="{{ asset('assets/collections/' ~ product.image) }}" alt="{{ product.name }}" loading="lazy">
+                            {% endif %}
+                            <span class="preorder-badge">PRE-ORDER</span>
+                            <button type="button" class="preorder-favorite" aria-label="Add to favorites">♡</button>
+                        </div>
+                        <div class="preorder-product-info">
+                            <span class="preorder-product-series">{{ product.series }}</span>
+                            <h3>{{ product.name }}</h3>
+                            <span class="preorder-product-category">{{ product.category }}</span>
+                            <div class="preorder-price-row">
+                                <strong>₱{{ product.price|number_format(2, '.', ',') }}</strong>
+                            </div>
+                            <div class="preorder-meta">
+                                <div>
+                                    <span>Deposit</span>
+                                    <strong>₱{{ product.deposit|number_format(2, '.', ',') }}</strong>
+                                </div>
+                                <div>
+                                    <span>Release</span>
+                                    <strong>{{ product.release }}</strong>
+                                </div>
+                            </div>
+                            <div class="preorder-card-footer">
+                                <span class="preorder-condition">MISB</span>
+                                <span class="preorder-status">Reservation Open</span>
+                            </div>
+
+                            {% if app.user %}
+                                <form method="post" action="{{ path('app_preorder') }}" class="preorder-reserve-form">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('preorder_reserve') }}">
+                                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                                    <div class="preorder-reserve-row">
+                                        <input type="number" name="quantity" class="preorder-quantity" min="1" max="10" value="1" required aria-label="Quantity">
+                                        <button type="submit" class="preorder-reserve-button">Reserve Now</button>
+                                    </div>
+                                    <p class="preorder-login-note">Required deposit: <strong>₱{{ product.deposit|number_format(2, '.', ',') }}</strong> per figure.</p>
+                                </form>
+                            {% else %}
+                                <p class="preorder-login-note"><a href="{{ path('app_login') }}">Log in</a> to reserve this figure.</p>
+                            {% endif %}
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="preorder-view-all">
+            <a class="btn outline" href="{{ path('app_collection') }}">View All Figures →</a>
+        </div>
+    </section>
+
+    <section class="how-it-works" id="how-it-works">
+        <div class="preorder-section-heading">
+            <span>SIMPLE &amp; SECURE</span>
+            <h2>PRE-ORDER <strong>PROCESS</strong></h2>
+            <p>Simple steps to secure your figure.</p>
+        </div>
+        <div class="preorder-steps">
+            <div class="preorder-step">
+                <div class="preorder-step-number">01</div><div class="preorder-step-icon">+</div>
+                <h3>Choose Your Figure</h3><p>Browse our upcoming releases and select the figure you want.</p>
+            </div>
+            <div class="preorder-step-line"></div>
+            <div class="preorder-step">
+                <div class="preorder-step-number">02</div><div class="preorder-step-icon">✓</div>
+                <h3>Reserve Your Slot</h3><p>Confirm your pre-order and provide your order details.</p>
+            </div>
+            <div class="preorder-step-line"></div>
+            <div class="preorder-step">
+                <div class="preorder-step-number">03</div><div class="preorder-step-icon">₱</div>
+                <h3>Pay Your Deposit</h3><p>Pay the required deposit to secure your reservation.</p>
+            </div>
+            <div class="preorder-step-line"></div>
+            <div class="preorder-step">
+                <div class="preorder-step-number">04</div><div class="preorder-step-icon">◷</div>
+                <h3>Wait for Release</h3><p>We'll keep you updated when the figure becomes available.</p>
+            </div>
+            <div class="preorder-step-line"></div>
+            <div class="preorder-step">
+                <div class="preorder-step-number">05</div><div class="preorder-step-icon">₱</div>
+                <h3>Pay Remaining Balance</h3><p>Once your figure arrives, complete the remaining balance.</p>
+            </div>
+            <div class="preorder-step-line"></div>
+            <div class="preorder-step">
+                <div class="preorder-step-number">06</div><div class="preorder-step-icon">□</div>
+                <h3>Receive Your Figure</h3><p>Your figure will be carefully packed and shipped to you.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="preorder-notice-section">
+        <div class="preorder-section-heading">
+            <span>PLEASE READ</span>
+            <h2>IMPORTANT <strong>NOTICE</strong></h2>
+        </div>
+        <div class="preorder-notice-grid">
+            <div class="preorder-notice-card"><div class="preorder-notice-icon">◈</div><h3>Deposits</h3><p>Deposits reserve your slot and are subject to the applicable pre-order terms.</p></div>
+            <div class="preorder-notice-card"><div class="preorder-notice-icon">◷</div><h3>Release Dates May Vary</h3><p>Manufacturer and supplier release dates may change without prior notice.</p></div>
+            <div class="preorder-notice-card"><div class="preorder-notice-icon">×</div><h3>Cancellation Policy</h3><p>Cancellation requests are subject to the terms agreed upon when ordering.</p></div>
+            <div class="preorder-notice-card"><div class="preorder-notice-icon">₱</div><h3>Balance Payment</h3><p>The remaining balance must be settled within the stated payment deadline.</p></div>
+        </div>
+        <p class="preorder-terms-line">By placing a pre-order, you agree to our <a href="{{ path('app_home') }}#terms">Terms &amp; Conditions</a>.</p>
+    </section>
+</main>
+
+<footer id="contact">
+    <div class="footer-grid">
+        <div>
+            <img class="footer-logo" src="{{ asset('assets/logo.svg') }}" alt="Mimic Haven Collectibles">
+            <p>A sanctuary for anime collectors, offering authentic figures, trusted pre-orders, and a premium collecting experience inspired by the journey behind every masterpiece.</p>
+        </div>
+        <div class="footer-links">
+            <h4>NAVIGATE</h4>
+            <a href="{{ path('app_home') }}">Home</a>
+            <a href="{{ path('app_collection') }}">Collection</a>
+            <a class="active" href="{{ path('app_preorder') }}">Pre-Orders</a>
+            <a href="{{ path('app_home') }}#about">About</a>
+            <a href="{{ path('app_home') }}#contact">Contact</a>
+        </div>
+        <div class="footer-links">
+            <h4>CONNECT</h4>
+            <a href="mailto:mimichvn.collectibles@gmail.com">mimichvn.collectibles@gmail.com</a>
+            <a href="tel:+639657457775">+63 965 745 7775</a>
+            <div class="socials">
+                <a href="#" aria-label="Facebook"><img src="{{ asset('assets/icons/facebook.png') }}" alt="Facebook"></a>
+                <a href="#" aria-label="Instagram"><img src="{{ asset('assets/icons/instagram.png') }}" alt="Instagram"></a>
+            </div>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <span>© 2026 Mimic Haven Collectibles. All Rights Reserved.</span>
+        <span>Crafted with precision &amp; passion.</span>
+    </div>
+</footer>
+<script src="{{ asset('script.js') }}" defer></script>
+</body>
+</html>
