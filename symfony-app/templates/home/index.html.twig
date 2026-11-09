@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mimic Haven Collectibles</title>
+    <meta name="description" content="Authentic anime figures, trusted pre-orders, and collector-grade treasures.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Parisienne&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('style.css') }}">
+
+    <style>
+        .header-search {
+            position: relative;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .header-search-toggle {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .header-search-toggle img {
+            width: 18px;
+            height: 18px;
+            object-fit: contain;
+            display: block;
+        }
+        .header-search-input {
+            width: 0;
+            height: 38px;
+            padding: 0;
+            opacity: 0;
+            border: 0;
+            border-radius: 6px;
+            outline: none;
+            background: #101318;
+            color: #ffffff;
+            font-family: Inter, sans-serif;
+            font-size: 12px;
+            box-sizing: border-box;
+            transition: width 0.3s ease, opacity 0.2s ease, padding 0.3s ease;
+        }
+        .header-search-input::placeholder { color: #777f89; }
+        .header-search.active .header-search-input {
+            width: 180px;
+            opacity: 1;
+            padding: 0 12px;
+            border: 1px solid rgba(255,255,255,0.10);
+        }
+        .header-search-input:focus {
+            border-color: rgba(63,169,245,0.45);
+            box-shadow: 0 0 0 1px rgba(63,169,245,0.10);
+        }
+    </style>
+</head>
+<body>
+<header class="site-header" id="home">
+    <div class="header-inner">
+        <a class="brand" href="{{ path('app_home') }}" aria-label="Mimic Haven Collectibles">
+            <img class="brand-logo" src="{{ asset('assets/logo.svg') }}" alt="Mimic Haven Collectibles">
+        </a>
+
+        <nav class="nav" id="main-nav" aria-label="Primary navigation">
+            <a class="active" href="{{ path('app_home') }}">Home</a>
+            <a href="/collection">Collection</a>
+            <a href="/preorders">Pre-Orders</a>
+            <a href="/about">About</a>
+            <a href="/contact">Contact</a>
+
+            <div class="header-search" id="headerSearch">
+                <button type="button" class="header-search-toggle" id="headerSearchToggle" aria-label="Search" aria-expanded="false">
+                    <img src="{{ asset('assets/icons/search.svg') }}" alt="Search">
+                </button>
+                <input type="search" id="headerSearchInput" class="header-search-input" placeholder="Search figures..." autocomplete="off">
+            </div>
+
+            <a class="nav-icon cart-button" href="/cart" aria-label="Cart">
+                <img src="{{ asset('assets/icons/pre-order.png') }}" alt="Cart">
+                <span id="cart-count">0</span>
+            </a>
+
+            {% if app.user %}
+                <a class="nav-user" href="/account">Hi, {{ app.user.firstName }}</a>
+                <a class="nav-account" href="/logout">Logout</a>
+            {% else %}
+                <a class="nav-account" href="/login">Login</a>
+            {% endif %}
+        </nav>
+
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-nav">☰</button>
+    </div>
+</header>
+
+<main>
+    <section class="hero" id="preorders">
+        <div class="hero-inner">
+            <div class="hero-copy">
+                <span class="eyebrow">YOUR COLLECTION STARTS HERE</span>
+                <h1>Preserve.<br>Treasure.</h1>
+                <p class="script">Every Figure</p>
+                <p class="lede">A premium destination for authentic anime figures, trusted pre-orders, and a collector-grade experience.</p>
+                <div class="cta-row">
+                    <a class="btn primary" href="/collection">
+                        Explore Collection
+                        <img src="{{ asset('assets/icons/right-arrow.svg') }}" alt="">
+                    </a>
+                    <a class="btn outline" href="/preorders">Pre-Order Now</a>
+                </div>
+            </div>
+            <div class="hero-art">
+                <img src="{{ asset('assets/hero-figures.png') }}" alt="Anime figure collection display">
+            </div>
+        </div>
+    </section>
+
+    <section class="trust">
+        <div class="trust-item">
+            <img src="{{ asset('assets/icons/quality.svg') }}" alt="">
+            <div><strong>100% Authentic</strong><small>Original &amp; official products</small></div>
+        </div>
+        <div class="trust-item">
+            <img src="{{ asset('assets/icons/secure_preorder.svg') }}" alt="">
+            <div><strong>Secure Pre-Order</strong><small>Safe &amp; reliable reservation</small></div>
+        </div>
+        <div class="trust-item">
+            <img src="{{ asset('assets/icons/target.svg') }}" alt="">
+            <div><strong>Collector Focused</strong><small>Made for collectors</small></div>
+        </div>
+        <div class="trust-item">
+            <img src="{{ asset('assets/icons/present.svg') }}" alt="">
+            <div><strong>Packed with Care</strong><small>Secure packaging guaranteed</small></div>
+        </div>
+    </section>
+
+    <section class="content-section" id="collection">
+        <div class="section-heading">
+            <h2>FEATURED <span>COLLECTIONS</span></h2>
+        </div>
+        <div class="collection-grid">
+            {% for collection in collections %}
+                <a class="collection-card" href="{{ collection.link }}" data-collection="{{ collection.name }}">
+                    <img src="{{ asset('assets/' ~ collection.image ~ '.png') }}" alt="{{ collection.name }}">
+                    <div class="collection-info">
+                        <h3>{{ collection.name }}</h3>
+                        <p>{{ collection.series }}</p>
+                        <span>{{ collection.items }}{% if collection.isMore %} →{% endif %}</span>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="content-section" id="about">
+        <div class="section-heading">
+            <h2>WHAT OUR <span>CUSTOMERS SAY</span></h2>
+        </div>
+        <div class="review-list">
+            {% if reviews is empty %}
+                <article class="review">
+                    <div class="quote"><img src="{{ asset('assets/icons/quote.svg') }}" alt=""></div>
+                    <div class="review-content">
+                        <p>Customer feedback will appear here after an approved customer review is submitted.</p>
+                    </div>
+                </article>
+            {% else %}
+                {% for review in reviews %}
+                    <article class="review {{ loop.index is even ? 'right' : '' }}">
+                        <div class="quote"><img src="{{ asset('assets/icons/quote.svg') }}" alt=""></div>
+                        <div class="review-content">
+                            <div class="rating">
+                                <div class="customer-rating-stars" style="--rating: {{ review.rating }};" aria-label="{{ review.rating }} out of 5 stars">
+                                    <span class="stars-empty"></span>
+                                    <span class="stars-filled"></span>
+                                </div>
+                                <span>{{ review.rating|number_format(1) }}/5</span>
+                            </div>
+                            <p>{{ review.text }}</p>
+                            <div class="reviewer">
+                                <div class="reviewer-placeholder" aria-hidden="true">{{ review.initials }}</div>
+                                <span><b>{{ review.name }}</b><small>Verified Buyer</small></span>
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="content-section" id="condition">
+        <div class="section-heading"><h2>CONDITION <span>GUIDE</span></h2></div>
+        <div class="condition-grid">
+            {% for condition in conditions %}
+                <article class="condition-card">
+                    <img src="{{ asset('assets/' ~ condition.image ~ '.png') }}" alt="{{ condition.code }} condition example">
+                    <div>
+                        <h3>{{ condition.code }}</h3>
+                        <b>{{ condition.title }}</b>
+                        <p>{{ condition.desc }}</p>
+                        <strong>CONDITION: <em>{{ condition.state }}</em></strong>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+        <p class="note">Condition details are provided on each product listing. Please review the product description before placing your order.</p>
+    </section>
+
+    <section class="content-section faq-section" id="faq">
+        <div class="section-heading centered">
+            <h2>FREQUENTLY ASKED <span>QUESTIONS</span></h2>
+        </div>
+        <div class="faq-list">
+            {% for faq in faqs %}
+                <details>
+                    <summary>
+                        <span>{{ faq.q }}</span>
+                        <img src="{{ asset('assets/icons/chevron.svg') }}" alt="">
+                    </summary>
+                    <p>{{ faq.a }}</p>
+                </details>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="preorder-note" id="preorder-info">
+        <p>Please review our <a href="/terms">Terms &amp; Conditions</a> before placing an order.</p>
+        <a class="link-arrow" href="/terms">View Terms &amp; Conditions →</a>
+    </section>
+</main>
+
+<footer id="contact">
+    <div class="footer-grid">
+        <div>
+            <img class="footer-logo" src="{{ asset('assets/logo.svg') }}" alt="Mimic Haven Collectibles">
+            <p>A sanctuary for anime collectors, offering authentic figures, trusted pre-orders, and a premium collecting experience inspired by the journey behind every masterpiece.</p>
+        </div>
+        <div class="footer-links">
+            <h4>NAVIGATE</h4>
+            <a href="{{ path('app_home') }}">Home</a>
+            <a href="/collection">Collection</a>
+            <a href="/preorders">Pre-Orders</a>
+            <a href="/about">About</a>
+            <a href="/contact">Contact</a>
+        </div>
+        <div class="footer-links">
+            <h4>CONNECT</h4>
+            <a href="mailto:mimichvn.collectibles@gmail.com">mimichvn.collectibles@gmail.com</a>
+            <a href="tel:+639657457775">+63 965 745 7775</a>
+            <div class="socials">
+                <a href="#" aria-label="Facebook"><img src="{{ asset('assets/icons/facebook.png') }}" alt="Facebook"></a>
+                <a href="#" aria-label="Instagram"><img src="{{ asset('assets/icons/instagram.png') }}" alt="Instagram"></a>
+            </div>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <span>© 2026 Mimic Haven Collectibles. All Rights Reserved.</span>
+        <span>Crafted with precision &amp; passion.</span>
+    </div>
+</footer>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="{{ asset('script.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const headerSearch = document.getElementById('headerSearch');
+    const headerSearchToggle = document.getElementById('headerSearchToggle');
+    const headerSearchInput = document.getElementById('headerSearchInput');
+
+    if (!headerSearch || !headerSearchToggle || !headerSearchInput) return;
+
+    headerSearchToggle.addEventListener('click', function (event) {
+        event.stopPropagation();
+        const isOpen = headerSearch.classList.contains('active');
+        if (isOpen) {
+            headerSearchInput.focus();
+            return;
+        }
+        headerSearch.classList.add('active');
+        headerSearchToggle.setAttribute('aria-expanded', 'true');
+        window.setTimeout(function () { headerSearchInput.focus(); }, 250);
+    });
+
+    headerSearchInput.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+            const search = headerSearchInput.value.trim();
+            if (search) window.location.href = '/collection?search=' + encodeURIComponent(search);
+        }
+        if (event.key === 'Escape') {
+            headerSearch.classList.remove('active');
+            headerSearchToggle.setAttribute('aria-expanded', 'false');
+            headerSearchToggle.focus();
+        }
+    });
+
+    document.addEventListener('click', function (event) {
+        if (!headerSearch.contains(event.target)) {
+            headerSearch.classList.remove('active');
+            headerSearchToggle.setAttribute('aria-expanded', 'false');
+        }
+    });
+});
+</script>
+</body>
+</html>
