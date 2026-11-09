@@ -6,10 +6,10 @@ services:
     container_name: mimic-haven-app
     working_dir: /var/www/html
     volumes:
-    - ./symfony-app:/var/www/html
-    - ./assets:/var/www/html/public/assets:ro
-    - ./style.css:/var/www/html/public/style.css:ro
-    - ./script.js:/var/www/html/public/script.js:ro
+          - ./symfony-app:/var/www/html
+          - ./assets:/var/www/html/public/assets:ro
+          - ./style.css:/var/www/html/public/style.css:ro
+          - ./script.js:/var/www/html/public/script.js:ro
     ports:
       - "8081:80"
     environment:
