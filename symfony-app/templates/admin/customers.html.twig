@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Customers | Mimic Haven Collectibles</title>
+    <link rel="stylesheet" href="{{ asset('style.css') }}">
+    <link rel="stylesheet" href="{{ asset('admin-customers.css') }}">
+</head>
+<body>
+<div class="admin-container">
+    <header class="admin-header">
+        <div class="admin-header-title">
+            <h1>Manage Customers</h1>
+            <p>Monitor customer activity and reliability.</p>
+        </div>
+
+        <nav class="admin-nav" aria-label="Admin navigation">
+            <a href="/admin">Dashboard</a>
+            <a href="/admin/orders">Orders</a>
+            <a href="/admin/preorders">Pre-Orders</a>
+            <a href="/admin/customers" class="active">Customers</a>
+            <a href="/admin/products">Products</a>
+            <a href="{{ path('app_logout') }}">Logout</a>
+        </nav>
+    </header>
+
+    <section class="admin-page-header">
+        <span class="admin-page-eyebrow">MIMIC HAVEN MANAGEMENT SYSTEM</span>
+        <h2>Customer <span>Reliability</span></h2>
+        <p>Monitor customer activity, completed pre-orders, cancellations, and reliability scores.</p>
+    </section>
+
+    <section class="reliability-guide">
+        <div class="guide-card">
+            <strong class="excellent">90–100</strong>
+            <span>Excellent</span>
+        </div>
+        <div class="guide-card">
+            <strong class="good">70–89</strong>
+            <span>Good</span>
+        </div>
+        <div class="guide-card">
+            <strong class="fair">50–69</strong>
+            <span>Fair</span>
+        </div>
+        <div class="guide-card">
+            <strong class="low">0–49</strong>
+            <span>Low</span>
+        </div>
+    </section>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+            <tr>
+                <th>Customer</th>
+                <th>Email</th>
+                <th>Completed</th>
+                <th>Cancelled</th>
+                <th>Reliability Score</th>
+                <th>Rating</th>
+                <th>Member Since</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for customer in customers %}
+                <tr>
+                    <td>
+                        <div class="customer-name">{{ customer.first_name }} {{ customer.last_name }}</div>
+                        <div class="muted">Account #{{ customer.id }}</div>
+                    </td>
+                    <td>{{ customer.email }}</td>
+                    <td><span class="activity-number">{{ customer.completed_preorders }}</span></td>
+                    <td>
+                        <span class="activity-number {{ customer.cancelled_preorders > 0 ? 'low' : '' }}">
+                            {{ customer.cancelled_preorders }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="score-number {{ customer.reliability_class }}">
+                            {{ customer.reliability_score|number_format(2, '.', ',') }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="rating-badge {{ customer.reliability_class }}">{{ customer.reliability_label }}</span>
+                    </td>
+                    <td>{{ customer.created_at|date('M d, Y') }}</td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="7" class="empty">No customers found.</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="legend">
+        Reliability is calculated from completed and cancelled pre-orders. Each cancellation reduces the score by 20 points.
+    </div>
+
+    <a href="/admin" class="admin-back">← Back to Admin Dashboard</a>
+</div>
+</body>
+</html>
