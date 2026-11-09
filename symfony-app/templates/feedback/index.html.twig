@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Feedback | Mimic Haven Collectibles</title>
+    <meta name="description" content="Share your experience with Mimic Haven Collectibles.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('style.css') }}">
+    <link rel="stylesheet" href="{{ asset('feedback.css') }}">
+</head>
+<body>
+<header class="site-header" id="home">
+    <div class="header-inner">
+        <a class="brand" href="{{ path('app_home') }}" aria-label="Mimic Haven Collectibles">
+            <img class="brand-logo" src="{{ asset('assets/logo.svg') }}" alt="Mimic Haven Collectibles">
+        </a>
+        <nav class="nav" id="main-nav" aria-label="Primary navigation">
+            <a href="{{ path('app_home') }}">Home</a>
+            <a href="{{ path('app_collection') }}">Collection</a>
+            <a href="/preorder">Pre-Orders</a>
+            <a href="/about">About</a>
+            <a href="/contact">Contact</a>
+            <a class="nav-icon cart-button" href="{{ path('app_cart') }}" aria-label="Shopping cart">
+                <img src="{{ asset('assets/icons/pre-order.png') }}" alt="Cart">
+                <span id="cart-count">0</span>
+            </a>
+            <a class="nav-user" href="{{ path('app_account') }}">Hi, {{ app.user.firstName|e }}</a>
+            <a class="nav-account" href="{{ path('app_logout') }}">Logout</a>
+        </nav>
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-nav">☰</button>
+    </div>
+</header>
+
+<main>
+    <section class="feedback-page">
+        <div class="feedback-heading">
+            <span>YOUR EXPERIENCE MATTERS</span>
+            <h1>Customer Feedback</h1>
+            <p>Share your experience with your purchased figures. Your feedback helps other collectors make informed decisions.</p>
+        </div>
+
+        {% for message in app.flashes('success') %}
+            <div class="feedback-message success">{{ message|e }}</div>
+        {% endfor %}
+        {% for message in app.flashes('error') %}
+            <div class="feedback-message error">{{ message|e }}</div>
+        {% endfor %}
+
+        {% if completedItems is empty %}
+            <div class="feedback-empty">
+                <h2>No Completed Purchases Yet</h2>
+                <p>You can submit feedback after one of your orders has been completed.</p>
+            </div>
+        {% else %}
+            {% for item in completedItems %}
+                <article class="feedback-card">
+                    <div class="feedback-product">
+                        <div class="feedback-product-image">
+                            {% if item.image_path %}
+                                <img src="{{ item.image_path }}" alt="{{ item.product_name|e }}">
+                            {% endif %}
+                        </div>
+                        <div class="feedback-product-info">
+                            <h2>{{ item.product_name|e }}</h2>
+                            <p>{{ item.series|e }}</p>
+                            <p class="feedback-order">Order #{{ item.order_id }} · Completed</p>
+                        </div>
+                    </div>
+
+                    {% if item.existing_review %}
+                        <div class="feedback-reviewed">
+                            <div class="feedback-reviewed-rating" aria-label="{{ item.existing_review.rating }} out of 5 stars">
+                                {% for star in 1..5 %}
+                                    {{ star <= item.existing_review.rating ? '★' : '☆' }}
+                                {% endfor %}
+                            </div>
+                            <p>{{ item.existing_review.review_text|e }}</p>
+                            <span class="feedback-status">Status: {{ item.existing_review.status|e }}</span>
+                        </div>
+                    {% else %}
+                        <form method="post" action="{{ path('app_feedback') }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('submit_feedback') }}">
+                            <input type="hidden" name="order_id" value="{{ item.order_id }}">
+                            <input type="hidden" name="product_id" value="{{ item.product_id }}">
+
+                            <label class="feedback-label">Your Rating</label>
+                            <div class="star-rating" aria-label="Choose a rating">
+                                {% for star in 5..1 %}
+                                    <input type="radio" id="star{{ star }}-{{ item.order_id }}-{{ item.product_id }}" name="rating" value="{{ star }}" required>
+                                    <label for="star{{ star }}-{{ item.order_id }}-{{ item.product_id }}" title="{{ star }} stars">★</label>
+                                {% endfor %}
+                            </div>
+
+                            <label class="feedback-label" for="review-text-{{ item.order_id }}-{{ item.product_id }}">Your Feedback</label>
+                            <textarea class="feedback-textarea" id="review-text-{{ item.order_id }}-{{ item.product_id }}" name="review_text" maxlength="2000" placeholder="Tell us about your experience with this figure..." required></textarea>
+                            <button type="submit" class="feedback-submit">Submit Feedback</button>
+                        </form>
+                    {% endif %}
+                </article>
+            {% endfor %}
+        {% endif %}
+
+        <a class="feedback-back" href="{{ path('app_account') }}">← Back to My Account</a>
+    </section>
+</main>
+<script src="{{ asset('script.js') }}"></script>
+</body>
+</html>
