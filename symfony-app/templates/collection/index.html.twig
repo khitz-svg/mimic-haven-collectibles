@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collection | Mimic Haven Collectibles</title>
+    <meta name="description" content="Explore the Mimic Haven anime figure collection.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('style.css') }}">
+
+    <style>
+        .header-search {
+            position: relative;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .header-search-toggle {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .header-search-toggle img {
+            width: 18px;
+            height: 18px;
+            object-fit: contain;
+            display: block;
+        }
+        .header-search-input {
+            width: 0;
+            height: 38px;
+            padding: 0;
+            opacity: 0;
+            border: 0;
+            border-radius: 6px;
+            outline: none;
+            background: #101318;
+            color: #fff;
+            font-family: Inter, sans-serif;
+            font-size: 12px;
+            box-sizing: border-box;
+            transition: width 0.3s ease, opacity 0.2s ease, padding 0.3s ease;
+        }
+        .header-search-input::placeholder { color: #777f89; }
+        .header-search.active .header-search-input {
+            width: 180px;
+            opacity: 1;
+            padding: 0 12px;
+            border: 1px solid rgba(255,255,255,0.10);
+        }
+        .header-search-input:focus {
+            border-color: rgba(63,169,245,0.45);
+            box-shadow: 0 0 0 1px rgba(63,169,245,0.10);
+        }
+    </style>
+</head>
+<body>
+<header class="site-header" id="home">
+    <div class="header-inner">
+        <a class="brand" href="{{ path('app_home') }}" aria-label="Mimic Haven Collectibles">
+            <img class="brand-logo" src="{{ asset('assets/logo.svg') }}" alt="Mimic Haven Collectibles">
+        </a>
+
+        <nav class="nav" id="main-nav" aria-label="Primary navigation">
+            <a href="{{ path('app_home') }}">Home</a>
+            <a class="active" href="{{ path('app_collection') }}">Collection</a>
+            <a href="/preorders">Pre-Orders</a>
+            <a href="/about">About</a>
+            <a href="/contact">Contact</a>
+
+            <div class="header-search" id="headerSearch">
+                <button type="button" class="header-search-toggle" id="headerSearchToggle" aria-label="Search" aria-expanded="false">
+                    <img src="{{ asset('assets/icons/search.svg') }}" alt="Search">
+                </button>
+                <input type="search" id="headerSearchInput" class="header-search-input" placeholder="Search figures..." autocomplete="off" value="{{ searchQuery }}">
+            </div>
+
+            <a class="nav-icon cart-button" href="/cart" aria-label="Cart">
+                <img src="{{ asset('assets/icons/pre-order.png') }}" alt="Cart">
+                <span id="cart-count">0</span>
+            </a>
+
+            {% if app.user %}
+                <a class="nav-user" href="/account">Hi, {{ app.user.firstName }}</a>
+                <a class="nav-account" href="/logout">Logout</a>
+            {% else %}
+                <a class="nav-account" href="/login">Login</a>
+            {% endif %}
+        </nav>
+
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-nav">☰</button>
+    </div>
+</header>
+
+<main id="collection">
+    <section class="collection-page-hero">
+        <div class="collection-page-hero-inner">
+            <div class="collection-page-copy">
+                <span class="collection-eyebrow">MIMIC HAVEN COLLECTIBLES</span>
+                <h1>Our <span>Collection</span></h1>
+                <p>Discover authentic anime figures, collector pieces, and carefully selected treasures for every collection.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="collection-catalog">
+        <div class="collection-catalog-inner">
+            <aside class="collection-sidebar">
+                <div class="filter-heading"><h2>Filter Collection</h2></div>
+
+                <div class="filter-group">
+                    <h3>Category</h3>
+                    {% for category in categories %}
+                        <label class="filter-option">
+                            <input type="checkbox" class="category-filter" value="{{ category }}">
+                            <span>{{ category }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+
+                <div class="filter-group">
+                    <h3>Franchise</h3>
+                    {% for franchise in franchises %}
+                        <label class="filter-option">
+                            <input type="checkbox" class="franchise-filter" value="{{ franchise }}" {% if selectedSeries == franchise %}checked{% endif %}>
+                            <span>{{ franchise }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+
+                <div class="filter-group">
+                    <h3>Condition</h3>
+                    {% for condition in conditions %}
+                        <label class="filter-option">
+                            <input type="checkbox" class="condition-filter" value="{{ condition }}">
+                            <span>{{ condition }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+
+                <div class="filter-group">
+                    <h3>Availability</h3>
+                    <label class="filter-option">
+                        <input type="checkbox" class="availability-filter" value="In Stock">
+                        <span>In Stock</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="checkbox" class="availability-filter" value="Pre-Order">
+                        <span>Pre-Order</span>
+                    </label>
+                </div>
+
+                <button type="button" class="clear-filters" id="clearFilters">Clear All Filters</button>
+            </aside>
+
+            <div class="collection-products">
+                <div class="collection-toolbar">
+                    <div class="collection-results-count">
+                        Showing <strong id="collectionResultStart">{{ products|length > 0 ? 1 : 0 }}</strong> –
+                        <strong id="collectionResultEnd">{{ min(12, products|length) }}</strong> of
+                        <strong id="collectionResultTotal">{{ products|length }}</strong> results
+                    </div>
+
+                    <div class="collection-toolbar-actions">
+                        <select id="collectionSort" class="collection-sort">
+                            <option value="newest">Sort by Newest</option>
+                            <option value="name">Name A–Z</option>
+                            <option value="price-low">Price: Low to High</option>
+                            <option value="price-high">Price: High to Low</option>
+                        </select>
+                        <button type="button" class="collection-view-button active" id="collectionGridView" aria-label="Grid view">▦</button>
+                        <button type="button" class="collection-view-button" id="collectionListView" aria-label="List view">☰</button>
+                    </div>
+                </div>
+
+                <div class="collection-search" id="collection-search">
+                    <input type="search" id="collectionSearchInput" placeholder="Search figures, characters, or anime..." autocomplete="off" value="{{ searchQuery }}">
+                </div>
+
+                <div class="collection-product-grid" id="collectionProductGrid">
+                    {% for product in products %}
+                        <article class="collection-product-card"
+                            data-index="{{ loop.index0 }}"
+                            data-product-id="{{ product.id }}"
+                            data-name="{{ product.name|lower }}"
+                            data-series="{{ product.series }}"
+                            data-category="{{ product.category }}"
+                            data-price="{{ product.price }}"
+                            data-condition="{{ product.condition }}"
+                            data-availability="{{ product.availability }}"
+                            data-stock="{{ product.stock }}"
+                            role="link" tabindex="0" aria-label="View {{ product.name }}">
+                            <div class="collection-product-image">
+                                <img src="{{ asset(product.imagePath) }}" alt="{{ product.name }}" loading="lazy">
+                                <span class="collection-condition">{{ product.condition }}</span>
+                                <button type="button" class="collection-favorite" aria-label="Add to favorites">♡</button>
+                            </div>
+                            <div class="collection-product-info">
+                                <div class="collection-product-series">{{ product.series }}</div>
+                                <h3 class="collection-product-name">{{ product.name }}</h3>
+                                <div class="collection-product-bottom">
+                                    <strong class="collection-product-price">₱{{ product.priceDisplay }}</strong>
+                                    <span class="collection-product-status {{ product.availability == 'Pre-Order' ? 'preorder' : '' }}">{{ product.availability }}</span>
+                                </div>
+                            </div>
+                        </article>
+                    {% else %}
+                        <div class="collection-no-results" style="display:block">
+                            <h2>No Figures Found</h2>
+                            <p>There are no available figures in the collection right now.</p>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="collection-no-results" id="collectionNoResults">
+                    <h2>No Figures Found</h2>
+                    <p>Try changing your search or filters.</p>
+                </div>
+                <div class="collection-pagination" id="collectionPagination"></div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer id="contact">
+    <div class="footer-grid">
+        <div>
+            <img class="footer-logo" src="{{ asset('assets/logo.svg') }}" alt="Mimic Haven Collectibles">
+            <p>A sanctuary for anime collectors, offering authentic figures, trusted pre-orders, and a premium collecting experience inspired by the journey behind every masterpiece.</p>
+        </div>
+
+        <div class="footer-links">
+            <h4>NAVIGATE</h4>
+            <a href="{{ path('app_home') }}">Home</a>
+            <a href="{{ path('app_collection') }}">Collection</a>
+            <a href="/preorders">Pre-Orders</a>
+            <a href="/about">About</a>
+            <a href="/contact">Contact</a>
+        </div>
+
+        <div class="footer-links">
+            <h4>CONNECT</h4>
+            <a href="mailto:mimichvn.collectibles@gmail.com">mimichvn.collectibles@gmail.com</a>
+            <a href="tel:+639657457775">+63 965 745 7775</a>
+            <div class="socials">
+                <a href="#" aria-label="Facebook"><img src="{{ asset('assets/icons/facebook.png') }}" alt="Facebook"></a>
+                <a href="#" aria-label="Instagram"><img src="{{ asset('assets/icons/instagram.png') }}" alt="Instagram"></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-bottom">
+        <span>© 2026 Mimic Haven Collectibles. All Rights Reserved.</span>
+        <span>Crafted with precision &amp; passion.</span>
+    </div>
+</footer>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="{{ asset('script.js') }}" defer></script>
+<script src="{{ asset('collection.js') }}" defer></script>
+</body>
+</html>
