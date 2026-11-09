@@ -1,16 +1,20 @@
-.env
-db.php
-*.log
+# Root environment files
+/.env
+/.env.docker
 
-# Private database backups
-/database/backup/
-
-# Local environment credentials
+# Local environment secrets
 .env.local
 .env.*.local
 
 # Local database configuration
 db.php
 
-# Docker local credentials
-/.env.docker
+# Logs
+*.log
+
+# Private database backups
+/database/backup/
+
+# Generated Symfony files
+/symfony-app/vendor/
+/symfony-app/var/

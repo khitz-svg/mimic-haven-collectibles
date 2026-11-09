@@ -1,0 +1,10 @@
+.git
+.git/**
+**/vendor
+**/var
+**/node_modules
+/database/backup
+.env
+.env.*
+**/.env.local
+**/.env.*.local
