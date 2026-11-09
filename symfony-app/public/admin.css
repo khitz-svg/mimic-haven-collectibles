@@ -1,0 +1,480 @@
+/* =========================================================
+   ADMIN PAGE
+========================================================= */
+
+body {
+    margin: 0;
+
+    background: #182637;
+
+    color: #ffffff;
+
+    font-family:
+        Arial,
+        sans-serif;
+}
+
+
+.admin-container {
+    width:
+        min(
+            1550px,
+            calc(100% - 60px)
+        );
+
+    margin: 0 auto;
+
+    padding:
+        30px 0 80px;
+}
+
+
+/* =========================================================
+   ADMIN HEADER
+========================================================= */
+
+.admin-header {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1fr)
+        auto;
+
+    align-items: center;
+
+    gap: 30px;
+
+    margin-bottom: 30px;
+}
+
+
+.admin-header-title {
+    min-width: 0;
+}
+
+
+.admin-header-title h1 {
+    margin: 0 0 8px;
+
+    color: #ffffff;
+
+    font-size: 30px;
+
+    line-height: 1.15;
+}
+
+
+.admin-header-title p {
+    margin: 0;
+
+    color: #aab2ba;
+
+    font-size: 13px;
+
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   ADMIN NAVIGATION
+========================================================= */
+
+.admin-nav {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: flex-end;
+
+    gap: 10px;
+
+    flex-wrap: nowrap;
+}
+
+
+.admin-nav a {
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    min-height: 38px;
+
+    padding:
+        10px 16px;
+
+    border-radius: 8px;
+
+    background: #9ADCF7;
+
+    color: #182637;
+
+    font-family:
+        Arial,
+        sans-serif;
+
+    font-size: 13px;
+
+    font-weight: bold;
+
+    text-decoration: none;
+
+    white-space: nowrap;
+
+    transition:
+        opacity .2s ease,
+        transform .2s ease;
+}
+
+
+.admin-nav a:hover {
+    opacity: .85;
+
+    transform:
+        translateY(-1px);
+}
+
+
+.admin-nav a.active {
+    background: #ffffff;
+
+    color: #182637;
+}
+
+
+/* =========================================================
+   STATISTICS
+========================================================= */
+
+.admin-stat-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            4,
+            minmax(0, 1fr)
+        );
+
+    gap: 18px;
+
+    margin-bottom: 30px;
+}
+
+
+.admin-stat {
+    background: #ffffff;
+
+    border-radius: 10px;
+
+    padding: 22px;
+}
+
+
+.admin-stat-label {
+    display: block;
+
+    color: #697681;
+
+    font-size: 10px;
+
+    font-weight: bold;
+
+    letter-spacing: 1px;
+
+    text-transform: uppercase;
+}
+
+
+.admin-stat-number {
+    display: block;
+
+    margin-top: 9px;
+
+    color: #182637;
+
+    font-size: 32px;
+
+    font-weight: bold;
+}
+
+
+/* =========================================================
+   MANAGEMENT MENU
+========================================================= */
+
+.admin-menu {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            4,
+            minmax(0, 1fr)
+        );
+
+    gap: 18px;
+
+    margin-bottom: 30px;
+}
+
+
+.admin-menu-card {
+    display: block;
+
+    background: #ffffff;
+
+    border-radius: 10px;
+
+    padding: 22px;
+
+    text-decoration: none;
+
+    transition:
+        transform .2s ease,
+        box-shadow .2s ease;
+}
+
+
+.admin-menu-card:hover {
+    transform:
+        translateY(-3px);
+
+    box-shadow:
+        0 10px 25px
+        rgba(0,0,0,.18);
+}
+
+
+.admin-menu-icon {
+    width: 46px;
+    height: 46px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    margin-bottom: 14px;
+
+    border-radius: 8px;
+
+    background: #e8f8fd;
+
+    font-size: 20px;
+}
+
+
+.admin-menu-card h3 {
+    margin: 0 0 8px;
+
+    color: #182637;
+
+    font-size: 14px;
+}
+
+
+.admin-menu-card p {
+    margin: 0;
+
+    color: #697681;
+
+    font-size: 11px;
+
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   RECENT ORDERS
+========================================================= */
+
+.admin-recent {
+    background: #ffffff;
+
+    border-radius: 10px;
+
+    padding: 25px;
+}
+
+
+.admin-recent-header {
+    margin-bottom: 18px;
+}
+
+
+.admin-recent-header span {
+    display: block;
+
+    margin-bottom: 6px;
+
+    color: #6c7882;
+
+    font-size: 9px;
+
+    font-weight: bold;
+
+    letter-spacing: 1.5px;
+}
+
+
+.admin-recent-header h2 {
+    margin: 0;
+
+    color: #182637;
+
+    font-size: 20px;
+}
+
+
+.admin-recent-order {
+    padding:
+        16px 0;
+
+    border-top:
+        1px solid #e1e5e8;
+}
+
+
+.admin-recent-order:first-child {
+    border-top: none;
+}
+
+
+.admin-recent-order-top {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+}
+
+
+.admin-recent-order strong {
+    color: #182637;
+
+    font-size: 12px;
+}
+
+
+.admin-recent-order p {
+    margin: 6px 0 0;
+
+    color: #697681;
+
+    font-size: 10px;
+
+    line-height: 1.5;
+}
+
+
+.admin-recent-status {
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding:
+        5px 9px;
+
+    border-radius: 20px;
+
+    background: #e8f8fd;
+
+    color: #365d6c;
+
+    font-size: 9px;
+
+    font-weight: bold;
+
+    white-space: nowrap;
+}
+
+
+.admin-empty {
+    padding:
+        20px 0;
+
+    color: #697681;
+
+    font-size: 11px;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1100px) {
+
+    .admin-header {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-nav {
+        justify-content: flex-start;
+
+        flex-wrap: wrap;
+    }
+
+}
+
+
+@media (max-width: 900px) {
+
+    .admin-stat-grid,
+    .admin-menu {
+
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0, 1fr)
+            );
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    .admin-container {
+        width:
+            calc(100% - 30px);
+
+        padding:
+            20px 0 60px;
+    }
+
+
+    .admin-stat-grid,
+    .admin-menu {
+
+        grid-template-columns: 1fr;
+    }
+
+
+    .admin-nav {
+        gap: 7px;
+    }
+
+
+    .admin-nav a {
+        min-height: 36px;
+
+        padding:
+            9px 12px;
+
+        font-size: 11px;
+    }
+
+
+    .admin-recent-order-top {
+        align-items: flex-start;
+
+        flex-direction: column;
+    }
+
+}

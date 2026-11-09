@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Mimic Haven Collectibles</title>
+    <link rel="stylesheet" href="{{ asset('style.css') }}">
+    <link rel="stylesheet" href="{{ asset('admin.css') }}">
+</head>
+<body>
+<div class="admin-container">
+    <header class="admin-header">
+        <div class="admin-header-title">
+            <h1>Admin Dashboard</h1>
+            <p>Welcome, {{ firstName }}. Manage your store from one place.</p>
+        </div>
+
+        <nav class="admin-nav" aria-label="Admin navigation">
+            <a href="{{ path('app_admin_dashboard') }}" class="active">Dashboard</a>
+            <a href="/admin/orders">Orders</a>
+            <a href="/admin/preorders">Pre-Orders</a>
+            <a href="/admin/customers">Customers</a>
+            <a href="/admin/products">Products</a>
+            <a href="{{ path('app_logout') }}">Logout</a>
+        </nav>
+    </header>
+
+    <section class="admin-stat-grid">
+        <div class="admin-stat">
+            <span class="admin-stat-label">Products</span>
+            <strong class="admin-stat-number">{{ productCount }}</strong>
+        </div>
+        <div class="admin-stat">
+            <span class="admin-stat-label">Customers</span>
+            <strong class="admin-stat-number">{{ customerCount }}</strong>
+        </div>
+        <div class="admin-stat">
+            <span class="admin-stat-label">Orders</span>
+            <strong class="admin-stat-number">{{ orderCount }}</strong>
+        </div>
+        <div class="admin-stat">
+            <span class="admin-stat-label">Pre-Orders</span>
+            <strong class="admin-stat-number">{{ preorderCount }}</strong>
+        </div>
+    </section>
+
+    <section class="admin-menu">
+        <a href="/admin/orders" class="admin-menu-card">
+            <div class="admin-menu-icon">📦</div>
+            <h3>Manage Orders</h3>
+            <p>Review customer orders and update their order status.</p>
+        </a>
+        <a href="/admin/products" class="admin-menu-card">
+            <div class="admin-menu-icon">🛍️</div>
+            <h3>Manage Products</h3>
+            <p>Add, edit, classify, and manage collectible products and inventory.</p>
+        </a>
+        <a href="/admin/customers" class="admin-menu-card">
+            <div class="admin-menu-icon">👥</div>
+            <h3>Manage Customers</h3>
+            <p>View customer profiles, pre-order history, and reliability information.</p>
+        </a>
+        <a href="/admin/preorders" class="admin-menu-card">
+            <div class="admin-menu-icon">✦</div>
+            <h3>Pre-Orders</h3>
+            <p>Manage reservations, deposits, balances, payments, and release progress.</p>
+        </a>
+    </section>
+
+    <section class="admin-recent">
+        <div class="admin-recent-header">
+            <span>RECENT ACTIVITY</span>
+            <h2>Recent Orders</h2>
+        </div>
+
+        {% for order in recentOrders %}
+            <div class="admin-recent-order">
+                <div class="admin-recent-order-top">
+                    <strong>Order #{{ order.id }}</strong>
+                    <span class="admin-recent-status">{{ order.status }}</span>
+                </div>
+                <p>
+                    {{ order.first_name }} {{ order.last_name }}
+                    &nbsp;•&nbsp;
+                    ₱{{ order.total_amount|number_format(2, '.', ',') }}
+                    &nbsp;•&nbsp;
+                    {{ order.created_at|date('M j, Y') }}
+                </p>
+            </div>
+        {% else %}
+            <div class="admin-empty">No orders have been placed yet.</div>
+        {% endfor %}
+    </section>
+</div>
+</body>
+</html>
