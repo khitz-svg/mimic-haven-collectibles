@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Orders | Mimic Haven Collectibles</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/admin-orders.css">
+</head>
+<body>
+<div class="admin-container">
+    <header class="admin-header">
+        <div class="admin-header-title">
+            <h1>Manage Orders</h1>
+            <p>Review customer orders and update their status.</p>
+        </div>
+
+        <nav class="admin-nav" aria-label="Admin navigation">
+            <a href="/admin">Dashboard</a>
+            <a href="/admin/orders" class="active">Orders</a>
+            <a href="/admin/preorders">Pre-Orders</a>
+            <a href="/admin/customers">Customers</a>
+            <a href="/admin/products">Products</a>
+            <a href="{{ path('app_logout') }}">Logout</a>
+        </nav>
+    </header>
+
+    <div class="admin-back">
+        <a href="/admin">← Back to Admin Dashboard</a>
+    </div>
+
+    <section class="admin-page-header">
+        <span class="admin-page-eyebrow">MIMIC HAVEN MANAGEMENT SYSTEM</span>
+        <h2>Order <span>Management</span></h2>
+        <p>View customer orders, payment details, delivery addresses, and order status.</p>
+    </section>
+
+    {% for message in app.flashes('success') %}
+        <div class="admin-message success">{{ message }}</div>
+    {% endfor %}
+    {% for message in app.flashes('error') %}
+        <div class="admin-message error">{{ message }}</div>
+    {% endfor %}
+
+    {% if orders is empty %}
+        <section class="admin-empty">
+            <div class="admin-empty-icon">✦</div>
+            <h3>No Orders Yet</h3>
+            <p>Customer orders will appear here once they place an order.</p>
+        </section>
+    {% else %}
+        {% for order in orders %}
+            {% set currentStatus = order.status|default('Pending') %}
+            {% set statusClass = currentStatus|lower %}
+            <article class="admin-order-card">
+                <div class="admin-order-top">
+                    <div>
+                        <div class="admin-order-number">ORDER #{{ order.id }}</div>
+                        <div class="admin-order-name">{{ order.first_name }} {{ order.last_name }}</div>
+                        <div class="admin-order-email">{{ order.email }}</div>
+                    </div>
+                    <span class="admin-order-status {{ statusClass }}">{{ currentStatus }}</span>
+                </div>
+
+                <div class="admin-order-info">
+                    <div>
+                        <span>Order Date</span>
+                        <strong>{{ order.created_at|date('F j, Y g:i A') }}</strong>
+                    </div>
+                    <div>
+                        <span>Payment</span>
+                        <strong>{{ order.payment_method }}</strong>
+                    </div>
+                    <div>
+                        <span>Total</span>
+                        <strong>₱{{ order.total_amount|number_format(2, '.', ',') }}</strong>
+                    </div>
+                </div>
+
+                <div class="admin-order-address">
+                    <span>Delivery Address</span>
+                    <p>{{ order.delivery_address|nl2br }}</p>
+                </div>
+
+                <form method="post" action="{{ path('app_admin_orders') }}" class="admin-status-form">
+                    <input type="hidden" name="_token" value="{{ csrf_token('admin_order_status_' ~ order.id) }}">
+                    <input type="hidden" name="order_id" value="{{ order.id }}">
+                    <label for="status_{{ order.id }}">Status</label>
+                    <select id="status_{{ order.id }}" name="status" required>
+                        {% for status in allowedStatuses %}
+                            <option value="{{ status }}"{% if currentStatus == status %} selected{% endif %}>{{ status }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="admin-update-button">Update Status</button>
+                </form>
+            </article>
+        {% endfor %}
+    {% endif %}
+</div>
+</body>
+</html>

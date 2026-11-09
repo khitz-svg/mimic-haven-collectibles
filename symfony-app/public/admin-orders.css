@@ -1,0 +1,51 @@
+* {
+                    box-sizing: border-box;
+                }
+
+                body {
+                    margin: 0;
+                    min-height: 100vh;
+                    background: #182637;
+                    color: #ffffff;
+                    font-family: Arial, sans-serif;
+
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    text-align: center;
+                    padding: 30px;
+                }
+
+                .access-denied {
+                    width: 100%;
+                    max-width: 600px;
+                }
+
+                .access-denied h1 {
+                    margin: 0 0 10px;
+                    font-size: 64px;
+                }
+
+                .access-denied h2 {
+                    margin: 0 0 18px;
+                    font-size: 28px;
+                }
+
+                .access-denied p {
+                    margin: 0 0 25px;
+                    color: #aab2ba;
+                    font-size: 15px;
+                    line-height: 1.6;
+                }
+
+                .access-denied a {
+                    color: #97DCF7;
+                    text-decoration: none;
+                    font-weight: 600;
+                    font-size: 14px;
+                }
+
+                .access-denied a:hover {
+                    text-decoration: underline;
+                }
