@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Mimic Haven Collectibles</title>
+    <meta name="description" content="Login to your Mimic Haven Collectibles account.">
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main class="auth-page">
+    <div class="auth-card">
+        <a href="{{ path('app_home') }}" class="auth-logo">
+            <img src="/assets/logo.svg" alt="Mimic Haven Collectibles">
+        </a>
+
+        <div class="auth-header">
+            <span>WELCOME BACK</span>
+            <h1>Log <strong>In.</strong></h1>
+            <p>Sign in to manage your collection, orders, and pre-orders.</p>
+        </div>
+
+        {% if error %}
+            <div class="auth-message error">Invalid email or password.</div>
+        {% endif %}
+
+        {% for message in app.flashes('success') %}
+            <div class="auth-message">{{ message }}</div>
+        {% endfor %}
+
+        <form method="POST" action="{{ path('app_login') }}" class="auth-form">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+            <div class="auth-field">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" value="{{ last_username }}" placeholder="your@email.com" autocomplete="email" required autofocus>
+            </div>
+
+            <div class="auth-field">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
+            </div>
+
+            <button type="submit" class="auth-submit">Log In →</button>
+        </form>
+
+        <p class="auth-switch">Don't have an account? <a href="{{ path('app_register') }}">Create one</a></p>
+        <a href="{{ path('app_home') }}" class="auth-back">← Back to Mimic Haven</a>
+    </div>
+</main>
+</body>
+</html>
