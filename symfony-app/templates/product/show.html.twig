@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ product.name }} | Mimic Haven Collectibles</title>
+    <meta name="description" content="{{ product.name }} — {{ product.series }} available from Mimic Haven Collectibles.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('style.css') }}">
+</head>
+<body>
+
+<header class="site-header" id="home">
+    <div class="header-inner">
+        <a class="brand" href="{{ path('app_home') }}" aria-label="Mimic Haven Collectibles">
+            <img class="brand-logo" src="{{ asset('assets/logo.svg') }}" alt="Mimic Haven Collectibles">
+        </a>
+
+        <nav class="nav" id="main-nav" aria-label="Primary navigation">
+            <a href="{{ path('app_home') }}">Home</a>
+            <a href="{{ path('app_collection') }}">Collection</a>
+            <a href="/preorders">Pre-Orders</a>
+            <a href="/about">About</a>
+            <a href="/contact">Contact</a>
+            <a class="nav-icon" href="{{ path('app_collection') }}#collection-search" aria-label="Search">
+                <img src="{{ asset('assets/icons/search.svg') }}" alt="Search">
+            </a>
+            <a class="nav-icon cart-button" href="/cart" aria-label="Cart">
+                <img src="{{ asset('assets/icons/pre-order.png') }}" alt="Cart">
+                <span id="cart-count">0</span>
+            </a>
+            <a class="browse-btn" href="{{ path('app_collection') }}">Browse Figures</a>
+        </nav>
+
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-nav">☰</button>
+    </div>
+</header>
+
+<main class="product-page">
+    <div class="product-breadcrumb">
+        <a href="{{ path('app_home') }}">Home</a>
+        <span>›</span>
+        <a href="{{ path('app_collection') }}">Collection</a>
+        <span>›</span>
+        <strong>{{ product.name }}</strong>
+    </div>
+
+    <section class="product-detail">
+        <div class="product-gallery">
+            {% if product.image %}
+                {% set imagePath = 'assets/collections/' ~ (product.image|url_encode) %}
+            {% else %}
+                {% set imagePath = 'assets/collections/images.jpg' %}
+            {% endif %}
+
+            <div class="product-main-image">
+                <img src="{{ asset(imagePath) }}" alt="{{ product.name }}">
+                <span class="product-condition-badge">{{ product.conditionStatus }}</span>
+            </div>
+            <div class="product-thumbnail">
+                <img src="{{ asset(imagePath) }}" alt="{{ product.name }} thumbnail">
+            </div>
+        </div>
+
+        <div class="product-detail-info">
+            <span class="product-detail-series">{{ product.series }}</span>
+            <h1>{{ product.name }}</h1>
+            <div class="product-detail-price">₱{{ product.price|number_format(0, '.', ',') }}</div>
+
+            <div class="product-detail-status">
+                {% if isInStock %}
+                    <span class="instock">{{ stock }} Available</span>
+                {% elseif isOutOfStock %}
+                    <span class="out-of-stock">Out of Stock</span>
+                {% else %}
+                    <span class="preorder">Pre-Order</span>
+                {% endif %}
+            </div>
+
+            <div class="product-detail-divider"></div>
+            <p class="product-description">{{ product.description|default('') }}</p>
+
+            <div class="product-specs">
+                <div class="product-spec">
+                    <span>Category</span>
+                    <strong>{{ product.category }}</strong>
+                </div>
+                <div class="product-spec">
+                    <span>Condition</span>
+                    <strong>{{ product.conditionStatus }}</strong>
+                </div>
+                <div class="product-spec">
+                    <span>Availability</span>
+                    <strong>{{ product.availability }}</strong>
+                </div>
+                {% if product.availability == 'In Stock' %}
+                    <div class="product-spec">
+                        <span>Stock Available</span>
+                        <strong>{{ stock }} {{ stock == 1 ? 'piece' : 'pieces' }}</strong>
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if isInStock %}
+                <div class="product-purchase-row">
+                    <div class="quantity-control">
+                        <button type="button" id="quantityMinus" aria-label="Decrease quantity">−</button>
+                        <input type="number" id="productQuantity" value="1" min="1" max="{{ maxQuantity }}" inputmode="numeric">
+                        <button type="button" id="quantityPlus" aria-label="Increase quantity">+</button>
+                    </div>
+                    <button
+                        type="button"
+                        class="product-add-cart"
+                        id="addToCart"
+                        data-product-id="{{ product.id }}"
+                        data-product-name="{{ product.name }}"
+                        data-product-price="{{ product.price }}"
+                        data-product-stock="{{ stock }}"
+                        data-product-series="{{ product.series }}"
+                        data-product-condition="{{ product.conditionStatus }}"
+                        data-product-image="{{ product.image|default('') }}"
+                    >Add to Cart</button>
+                </div>
+                <small style="display:block;margin-top:10px;color:#aab2ba;">
+                    {{ stock }} {{ stock == 1 ? 'piece' : 'pieces' }} currently available.
+                </small>
+            {% elseif isOutOfStock %}
+                <div class="product-purchase-row">
+                    <div class="quantity-control">
+                        <button type="button" disabled>−</button>
+                        <input type="number" value="0" disabled>
+                        <button type="button" disabled>+</button>
+                    </div>
+                    <button type="button" class="product-add-cart" disabled style="opacity:.5;cursor:not-allowed;">Out of Stock</button>
+                </div>
+                <small style="display:block;margin-top:10px;color:#aab2ba;">This figure is currently unavailable.</small>
+            {% endif %}
+
+            {% if isPreOrder %}
+                <a class="product-preorder-button" href="/preorders">Reserve as Pre-Order →</a>
+                <small style="display:block;margin-top:10px;color:#aab2ba;">This item is available through pre-order reservation.</small>
+            {% endif %}
+
+            <div class="product-trust">
+                <div>
+                    <strong>100% Authentic</strong>
+                    <span>Original &amp; official products</span>
+                </div>
+                <div>
+                    <strong>Packed with Care</strong>
+                    <span>Secure packaging guaranteed</span>
+                </div>
+                <div>
+                    <strong>Collector Focused</strong>
+                    <span>Made for collectors</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="product-information">
+        <div class="product-information-tabs" role="tablist" aria-label="Product information">
+            <button class="product-tab active" type="button" role="tab" aria-selected="true">Product Details</button>
+            <button class="product-tab" type="button" role="tab" aria-selected="false">Condition Guide</button>
+            <button class="product-tab" type="button" role="tab" aria-selected="false">Ordering Information</button>
+        </div>
+
+        <div class="product-information-content">
+            <div class="product-info-block active">
+                <h2>Product Details</h2>
+                <p>This collectible is part of the Mimic Haven curated collection. Product information shown on this page is intended to help collectors review the item before adding it to their order.</p>
+                <div class="product-detail-list">
+                    <div><span>Figure</span><strong>{{ product.name }}</strong></div>
+                    <div><span>Series</span><strong>{{ product.series }}</strong></div>
+                    <div><span>Category</span><strong>{{ product.category }}</strong></div>
+                    <div><span>Condition</span><strong>{{ product.conditionStatus }}</strong></div>
+                    <div><span>Availability</span><strong>{{ product.availability }}</strong></div>
+                    {% if product.availability == 'In Stock' %}
+                        <div><span>Stock Available</span><strong>{{ stock }} {{ stock == 1 ? 'piece' : 'pieces' }}</strong></div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="product-info-block">
+                <h2>Condition Guide</h2>
+                <p>Mimic Haven uses standardized condition labels to make the state of each collectible easier to understand.</p>
+                <div class="product-condition-list">
+                    <div><strong>MISB</strong><span>Mint in Sealed Box</span></div>
+                    <div><strong>MIB</strong><span>Mint in Box</span></div>
+                    <div><strong>BIB</strong><span>Box Opened</span></div>
+                    <div><strong>LOOSE</strong><span>No Original Packaging</span></div>
+                </div>
+            </div>
+
+            <div class="product-info-block">
+                <h2>Ordering Information</h2>
+                <p>Please review the product condition, availability, and applicable Mimic Haven terms before completing your order.</p>
+                {% if isInStock %}
+                    <p>This figure currently has <strong>{{ stock }}</strong> {{ stock == 1 ? 'piece' : 'pieces' }} available for purchase.</p>
+                {% elseif isOutOfStock %}
+                    <p>This figure is currently <strong>out of stock</strong>.</p>
+                {% else %}
+                    <p>This figure is currently available through the Mimic Haven pre-order system.</p>
+                {% endif %}
+                <a href="/preorders" class="product-information-link">View Pre-Order Information →</a>
+            </div>
+        </div>
+    </section>
+
+    <div class="back-to-collection">
+        <a class="btn outline" href="{{ path('app_collection') }}">← Back to Collection</a>
+    </div>
+</main>
+
+<footer id="contact">
+    <div class="footer-grid">
+        <div>
+            <img class="footer-logo" src="{{ asset('assets/logo.svg') }}" alt="Mimic Haven Collectibles">
+            <p>A sanctuary for anime collectors, offering authentic figures, trusted pre-orders, and a premium collecting experience inspired by the journey behind every masterpiece.</p>
+        </div>
+        <div class="footer-links">
+            <h4>NAVIGATE</h4>
+            <a href="{{ path('app_home') }}">Home</a>
+            <a href="{{ path('app_collection') }}">Collection</a>
+            <a href="/preorders">Pre-Orders</a>
+            <a href="/about">About</a>
+            <a href="/contact">Contact</a>
+        </div>
+        <div class="footer-links">
+            <h4>CONNECT</h4>
+            <a href="mailto:mimichvn.collectibles@gmail.com">mimichvn.collectibles@gmail.com</a>
+            <a href="tel:+639657457775">+63 965 745 7775</a>
+            <div class="socials">
+                <a href="#" aria-label="Facebook"><img src="{{ asset('assets/icons/facebook.png') }}" alt="Facebook"></a>
+                <a href="#" aria-label="Instagram"><img src="{{ asset('assets/icons/instagram.png') }}" alt="Instagram"></a>
+            </div>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <span>© 2026 Mimic Haven Collectibles. All Rights Reserved.</span>
+        <span>Crafted with precision &amp; passion.</span>
+    </div>
+</footer>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+    document.cookie = 'mimicHavenCartStorageKey={{ cartStorageKey|url_encode }}; path=/; max-age=2592000; samesite=lax';
+</script>
+<script src="{{ asset('script.js') }}"></script>
+<script src="{{ asset('product.js') }}"></script>
+</body>
+</html>
