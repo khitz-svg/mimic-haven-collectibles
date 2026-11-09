@@ -1,0 +1,528 @@
+/* =========================================================
+   ADMIN PAGE
+========================================================= */
+
+body {
+    margin: 0;
+
+    background: #182637;
+
+    color: #ffffff;
+
+    font-family:
+        Arial,
+        sans-serif;
+}
+
+
+.admin-container {
+    width:
+        min(
+            1550px,
+            calc(100% - 60px)
+        );
+
+    margin: 0 auto;
+
+    padding:
+        30px 0 80px;
+}
+
+
+/* =========================================================
+   ADMIN HEADER
+========================================================= */
+
+.admin-header {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1fr)
+        auto;
+
+    align-items: center;
+
+    gap: 30px;
+
+    margin-bottom: 30px;
+}
+
+
+.admin-header-title {
+    min-width: 0;
+}
+
+
+.admin-header-title h1 {
+    margin: 0 0 8px;
+
+    color: #ffffff;
+
+    font-size: 30px;
+
+    line-height: 1.15;
+}
+
+
+.admin-header-title p {
+    margin: 0;
+
+    color: #aab2ba;
+
+    font-size: 13px;
+
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   ADMIN NAVIGATION
+========================================================= */
+
+.admin-nav {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: flex-end;
+
+    gap: 10px;
+
+    flex-wrap: nowrap;
+}
+
+
+.admin-nav a {
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    min-height: 38px;
+
+    padding:
+        10px 16px;
+
+    border-radius: 8px;
+
+    background: #9ADCF7;
+
+    color: #182637;
+
+    font-family:
+        Arial,
+        sans-serif;
+
+    font-size: 13px;
+
+    font-weight: bold;
+
+    text-decoration: none;
+
+    white-space: nowrap;
+
+    transition:
+        opacity .2s ease,
+        transform .2s ease;
+}
+
+
+.admin-nav a:hover {
+    opacity: .85;
+
+    transform:
+        translateY(-1px);
+}
+
+
+.admin-nav a.active {
+    background: #ffffff;
+
+    color: #182637;
+}
+
+
+/* =========================================================
+   MESSAGES
+========================================================= */
+
+.message {
+    background: #d9f7df;
+
+    color: #1f5d2c;
+
+    padding:
+        14px 18px;
+
+    border-radius: 8px;
+
+    margin-bottom: 20px;
+
+    font-size: 13px;
+}
+
+
+.error {
+    background: #ffdede;
+
+    color: #8a1f1f;
+
+    padding:
+        14px 18px;
+
+    border-radius: 8px;
+
+    margin-bottom: 20px;
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.table-wrapper {
+    overflow-x: auto;
+
+    background: #ffffff;
+
+    border-radius: 12px;
+}
+
+
+.table-wrapper table {
+    width: 100%;
+
+    min-width: 1650px;
+
+    border-collapse: collapse;
+
+    color: #182637;
+}
+
+
+.table-wrapper th {
+    background: #9ADCF7;
+
+    padding: 14px;
+
+    text-align: left;
+
+    font-size: 13px;
+
+    white-space: nowrap;
+}
+
+
+.table-wrapper td {
+    padding: 14px;
+
+    border-bottom:
+        1px solid #dddddd;
+
+    vertical-align: top;
+
+    font-size: 13px;
+}
+
+
+.table-wrapper tr:last-child td {
+    border-bottom: none;
+}
+
+
+/* =========================================================
+   PRODUCT
+========================================================= */
+
+.product-cell {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+}
+
+
+.product-cell img {
+    width: 65px;
+    height: 65px;
+
+    object-fit: cover;
+
+    border-radius: 8px;
+
+    background: #eef4f7;
+
+    flex-shrink: 0;
+}
+
+
+.product-name {
+    font-weight: bold;
+
+    line-height: 1.4;
+}
+
+
+.muted {
+    margin-top: 4px;
+
+    color: #666666;
+
+    font-size: 12px;
+
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+.status {
+    display: inline-block;
+
+    padding:
+        5px 9px;
+
+    border-radius: 20px;
+
+    font-size: 11px;
+
+    font-weight: bold;
+
+    white-space: nowrap;
+}
+
+
+.paid {
+    background: #d9f7df;
+
+    color: #1f5d2c;
+}
+
+
+.unpaid {
+    background: #ffe5c2;
+
+    color: #8a4b00;
+}
+
+
+.pending {
+    background: #e8edf2;
+
+    color: #364552;
+}
+
+
+.completed {
+    background: #d9f7df;
+
+    color: #1f5d2c;
+}
+
+
+.cancelled {
+    background: #ffdede;
+
+    color: #8a1f1f;
+}
+
+
+/* =========================================================
+   PAYMENT / STATUS / RELEASE
+========================================================= */
+
+.payment-box,
+.release-box,
+.status-box {
+    margin-top: 8px;
+}
+
+
+.payment-box form,
+.release-box form,
+.status-box form {
+    display: flex;
+
+    gap: 6px;
+
+    flex-wrap: wrap;
+}
+
+
+.payment-box input {
+    width: 95px;
+
+    padding: 8px;
+
+    border:
+        1px solid #cccccc;
+
+    border-radius: 6px;
+
+    font-family: Arial, sans-serif;
+
+    box-sizing: border-box;
+}
+
+
+.release-box input[type="date"] {
+    width: 145px;
+
+    padding: 8px;
+
+    border:
+        1px solid #cccccc;
+
+    border-radius: 6px;
+
+    font-family: Arial, sans-serif;
+
+    box-sizing: border-box;
+}
+
+
+.payment-box button,
+.release-box button,
+.status-box button {
+    background: #182637;
+
+    color: #ffffff;
+
+    border: none;
+
+    padding:
+        8px 12px;
+
+    border-radius: 6px;
+
+    cursor: pointer;
+
+    font-weight: 600;
+}
+
+
+.payment-box button:hover,
+.release-box button:hover,
+.status-box button:hover {
+    opacity: .85;
+}
+
+
+.status-box select,
+.release-box select {
+    padding: 8px;
+
+    border:
+        1px solid #cccccc;
+
+    border-radius: 6px;
+
+    background: #ffffff;
+
+    color: #182637;
+
+    width: 180px;
+
+    font-family: Arial, sans-serif;
+}
+
+
+.release-box select {
+    width: 210px;
+}
+
+
+.payment-date {
+    display: block;
+
+    margin-top: 5px;
+
+    font-size: 11px;
+
+    color: #666666;
+}
+
+
+.release-current {
+    margin-bottom: 8px;
+}
+
+
+/* =========================================================
+   BACK LINK
+========================================================= */
+
+.back-link {
+    display: inline-block;
+
+    margin-top: 20px;
+
+    color: #9ADCF7;
+
+    text-decoration: none;
+
+    font-size: 13px;
+}
+
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1100px) {
+
+    .admin-header {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-nav {
+        justify-content: flex-start;
+
+        flex-wrap: wrap;
+    }
+
+}
+
+
+@media (max-width: 700px) {
+
+    .admin-container {
+        width:
+            calc(100% - 30px);
+
+        padding:
+            20px 0 60px;
+    }
+
+
+    .admin-nav {
+        gap: 7px;
+    }
+
+
+    .admin-nav a {
+        min-height: 36px;
+
+        padding:
+            9px 12px;
+
+        font-size: 11px;
+    }
+
+
+    .product-cell {
+        align-items: flex-start;
+    }
+
+}
