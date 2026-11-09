@@ -1,3 +1,16 @@
 .env
 db.php
 *.log
+
+# Private database backups
+/database/backup/
+
+# Local environment credentials
+.env.local
+.env.*.local
+
+# Local database configuration
+db.php
+
+# Docker local credentials
+/.env.docker
