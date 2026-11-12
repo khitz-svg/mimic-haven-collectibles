@@ -1,0 +1,45 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mimic-haven-app
+    working_dir: /var/www/html
+    volumes:
+          - ./symfony-app:/var/www/html
+          - ./assets:/var/www/html/public/assets:ro
+          - ./style.css:/var/www/html/public/style.css:ro
+          - ./script.js:/var/www/html/public/script.js:ro
+    ports:
+      - "8081:80"
+    environment:
+      APP_ENV: dev
+      DATABASE_URL: "mysql://${MARIADB_USER}:${MARIADB_PASSWORD}@database:3306/${MARIADB_DATABASE}?charset=utf8mb4"
+    depends_on:
+      database:
+        condition: service_healthy
+    restart: unless-stopped
+
+  database:
+    image: mariadb:10.11
+    container_name: mimic-haven-db
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:?Set MARIADB_ROOT_PASSWORD in the root .env file}
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-mimic_haven}
+      MARIADB_USER: ${MARIADB_USER:-mimic_app}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:?Set MARIADB_PASSWORD in the root .env file}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mimic_haven_db_data:/var/lib/mysql
+      - ./database/backup/mimic_haven_full.sql:/docker-entrypoint-initdb.d/001-mimic_haven.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 15s
+    restart: unless-stopped
+
+volumes:
+  mimic_haven_db_data:

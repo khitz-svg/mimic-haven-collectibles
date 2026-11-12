@@ -1,180 +1,516 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Manage Pre-Orders | Mimic Haven Collectibles</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
     <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="/admin-preorders.css">
+    <link rel="stylesheet" href="/admin-layout.css?v=1">
+    <link rel="stylesheet" href="/admin-preorders.css?v=1">
 </head>
+
 <body>
-<div class="admin-container">
-    <div class="admin-header">
-        <div class="admin-header-title">
-            <h1>Manage Pre-Orders</h1>
-            <p>View reservations, payments, release status, and expected release dates.</p>
-        </div>
-        <nav class="admin-nav" aria-label="Admin navigation">
-            <a href="/admin">Dashboard</a>
-            <a href="/admin/orders">Orders</a>
-            <a href="/admin/preorders" class="active">Pre-Orders</a>
-            <a href="/admin/customers">Customers</a>
-            <a href="/admin/products">Products</a>
-            <a href="/logout">Logout</a>
-        </nav>
-    </div>
 
-    {% for message in app.flashes('success') %}
-        <div class="message">{{ message }}</div>
-    {% endfor %}
-    {% for message in app.flashes('error') %}
-        <div class="error">{{ message }}</div>
-    {% endfor %}
+<div class="admin-layout">
 
-    <div class="table-wrapper">
-        <table>
-            <thead>
-            <tr>
-                <th>Pre-Order</th>
-                <th>Customer</th>
-                <th>Product</th>
-                <th>Total</th>
-                <th>Deposit</th>
-                <th>Balance</th>
-                <th>Pre-Order Status</th>
-                <th>Release Management</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for preorder in preorders %}
-                <tr>
-                    <td>
-                        <strong>#{{ preorder.id }}</strong>
-                        <div class="muted">{{ preorder.created_at|date('M d, Y') }}</div>
-                        <div class="muted">Qty: {{ preorder.quantity }}</div>
-                    </td>
-                    <td>
-                        <strong>{{ preorder.first_name }} {{ preorder.last_name }}</strong>
-                        <div class="muted">{{ preorder.email }}</div>
-                    </td>
-                    <td>
-                        <div class="product-cell">
-                            {% if preorder.image_url %}
-                                <img src="{{ preorder.image_url }}" alt="{{ preorder.product_name }}">
-                            {% endif %}
-                            <div>
-                                <div class="product-name">{{ preorder.product_name }}</div>
-                                <div class="muted">{{ preorder.series }}</div>
-                                <div class="muted">Unit Price: ₱{{ preorder.unit_price|number_format(2, '.', ',') }}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>
-                        <strong>₱{{ preorder.total_amount|number_format(2, '.', ',') }}</strong>
-                        <div class="muted">Deposit: ₱{{ preorder.deposit_amount|number_format(2, '.', ',') }}</div>
-                        <div class="muted">Remaining: ₱{{ preorder.remaining_balance|number_format(2, '.', ',') }}</div>
-                    </td>
-                    <td>
-                        {% if preorder.deposit_status == 'Paid' %}
-                            <span class="status paid">Paid</span>
-                            <div>₱{{ preorder.deposit_paid_amount|number_format(2, '.', ',') }}</div>
-                            {% if preorder.deposit_paid_at %}
-                                <span class="payment-date">{{ preorder.deposit_paid_at|date('M d, Y h:i A') }}</span>
-                            {% endif %}
-                        {% else %}
-                            <span class="status unpaid">Unpaid</span>
-                            <div class="muted">Paid: ₱{{ preorder.deposit_paid_amount|number_format(2, '.', ',') }}</div>
-                            <div class="payment-box">
-                                <form method="POST">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('admin_preorder_payment_' ~ preorder.id) }}">
-                                    <input type="hidden" name="action" value="payment">
-                                    <input type="hidden" name="preorder_id" value="{{ preorder.id }}">
-                                    <input type="hidden" name="payment_type" value="deposit">
-                                    <input type="number" name="paid_amount" min="0" max="{{ preorder.deposit_amount }}" step="0.01" value="{{ preorder.deposit_amount }}" required>
-                                    <button type="submit">Record</button>
-                                </form>
-                            </div>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if preorder.balance_status == 'Paid' %}
-                            <span class="status paid">Paid</span>
-                            <div>₱{{ preorder.balance_paid_amount|number_format(2, '.', ',') }}</div>
-                            {% if preorder.balance_paid_at %}
-                                <span class="payment-date">{{ preorder.balance_paid_at|date('M d, Y h:i A') }}</span>
-                            {% endif %}
-                        {% else %}
-                            <span class="status unpaid">Unpaid</span>
-                            <div class="muted">Paid: ₱{{ preorder.balance_paid_amount|number_format(2, '.', ',') }}</div>
-                            <div class="payment-box">
-                                <form method="POST">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('admin_preorder_payment_' ~ preorder.id) }}">
-                                    <input type="hidden" name="action" value="payment">
-                                    <input type="hidden" name="preorder_id" value="{{ preorder.id }}">
-                                    <input type="hidden" name="payment_type" value="balance">
-                                    <input type="number" name="paid_amount" min="0.01" max="{{ preorder.remaining_balance }}" step="0.01" value="{{ preorder.remaining_balance }}" required>
-                                    <button type="submit">Record</button>
-                                </form>
-                            </div>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if preorder.status == 'Cancelled' %}
-                            <span class="status cancelled">Cancelled</span>
-                        {% elseif preorder.status == 'Completed' %}
-                            <span class="status completed">Completed</span>
-                        {% else %}
-                            <span class="status pending">{{ preorder.status }}</span>
-                        {% endif %}
-                        <div class="status-box">
-                            <form method="POST">
-                                <input type="hidden" name="_token" value="{{ csrf_token('admin_preorder_status_' ~ preorder.id) }}">
-                                <input type="hidden" name="action" value="update_status">
-                                <input type="hidden" name="preorder_id" value="{{ preorder.id }}">
-                                <select name="status" required>
-                                    {% for status in preorder_statuses %}
-                                        <option value="{{ status }}" {% if preorder.status == status %}selected{% endif %}>{{ status }}</option>
-                                    {% endfor %}
-                                </select>
-                                <button type="submit">Update</button>
-                            </form>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="release-current">
-                            <span class="status pending">{{ preorder.release_status }}</span>
-                            {% if preorder.expected_release_date %}
-                                <div class="muted">Expected: {{ preorder.expected_release_date|date('M d, Y') }}</div>
-                            {% else %}
-                                <div class="muted">Release date TBA</div>
-                            {% endif %}
-                        </div>
-                        <div class="release-box">
-                            <form method="POST">
-                                <input type="hidden" name="_token" value="{{ csrf_token('admin_preorder_release_' ~ preorder.id) }}">
-                                <input type="hidden" name="action" value="update_release">
-                                <input type="hidden" name="preorder_id" value="{{ preorder.id }}">
-                                <select name="release_status" required>
-                                    {% for release_status in release_statuses %}
-                                        <option value="{{ release_status }}" {% if preorder.release_status == release_status %}selected{% endif %}>{{ release_status }}</option>
-                                    {% endfor %}
-                                </select>
-                                <input type="date" name="expected_release_date" value="{{ preorder.expected_release_date ? preorder.expected_release_date|date('Y-m-d') : '' }}">
-                                <button type="submit">Update Release</button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-            {% else %}
-                <tr>
-                    <td colspan="8">No pre-orders found.</td>
-                </tr>
+    {# SHARED ADMIN SIDEBAR #}
+    {% include 'admin/_sidebar.html.twig' with { activePage: 'preorders' } %}
+
+    <!-- MAIN CONTENT -->
+    <main class="admin-main">
+
+        <div class="admin-content preorders-content">
+
+            <!-- PAGE HEADER -->
+            <header class="preorders-page-header">
+                <h1>Manage Pre-Orders</h1>
+                <p>View reservations, payments, release status, and expected release dates.</p>
+            </header>
+
+            <!-- SUCCESS MESSAGES -->
+            {% for message in app.flashes('success') %}
+                <div class="alert alert-success preorders-alert" role="alert">
+                    {{ message }}
+                </div>
             {% endfor %}
-            </tbody>
-        </table>
-    </div>
 
-    <a href="/admin" class="back-link">← Back to Admin Dashboard</a>
+            <!-- ERROR MESSAGES -->
+            {% for message in app.flashes('error') %}
+                <div class="alert alert-danger preorders-alert" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+
+            <!-- PRE-ORDERS TABLE -->
+            <section class="preorders-table-section">
+
+                <div class="preorders-table-header">
+                    <div>
+                        <h2>Pre-Order Records</h2>
+                        <p>Manage customer reservations, payments, and release progress.</p>
+                    </div>
+
+                    <span class="preorders-count">
+                        {{ preorders|length }} Pre-Orders
+                    </span>
+                </div>
+
+                <div class="table-wrapper">
+
+                    <table class="table preorders-table mb-0">
+
+                        <thead>
+                            <tr>
+                                <th>Pre-Order</th>
+                                <th>Customer</th>
+                                <th>Product</th>
+                                <th>Total</th>
+                                <th>Deposit</th>
+                                <th>Balance</th>
+                                <th>Pre-Order Status</th>
+                                <th>Release Management</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                        {% for preorder in preorders %}
+
+                            <tr>
+
+                                <!-- PRE-ORDER INFORMATION -->
+                                <td>
+                                    <strong class="preorder-number">
+                                        #{{ preorder.id }}
+                                    </strong>
+
+                                    <div class="muted">
+                                        {{ preorder.created_at|date('M d, Y') }}
+                                    </div>
+
+                                    <div class="muted">
+                                        Qty: {{ preorder.quantity }}
+                                    </div>
+                                </td>
+
+                                <!-- CUSTOMER -->
+                                <td>
+                                    <strong class="preorder-customer">
+                                        {{ preorder.first_name }} {{ preorder.last_name }}
+                                    </strong>
+
+                                    <div class="muted">
+                                        {{ preorder.email }}
+                                    </div>
+                                </td>
+
+                                <!-- PRODUCT -->
+                                <td>
+                                    <div class="product-cell">
+
+                                        {% if preorder.image_url %}
+                                            <img
+                                                src="{{ preorder.image_url }}"
+                                                alt="{{ preorder.product_name }}"
+                                                loading="lazy"
+                                            >
+                                        {% endif %}
+
+                                        <div class="product-information">
+
+                                            <div class="product-name">
+                                                {{ preorder.product_name }}
+                                            </div>
+
+                                            <div class="muted">
+                                                {{ preorder.series }}
+                                            </div>
+
+                                            <div class="muted">
+                                                Unit Price:
+                                                ₱{{ preorder.unit_price|number_format(2, '.', ',') }}
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+                                </td>
+
+                                <!-- TOTAL -->
+                                <td>
+                                    <strong class="preorder-total">
+                                        ₱{{ preorder.total_amount|number_format(2, '.', ',') }}
+                                    </strong>
+
+                                    <div class="muted">
+                                        Deposit:
+                                        ₱{{ preorder.deposit_amount|number_format(2, '.', ',') }}
+                                    </div>
+
+                                    <div class="muted">
+                                        Remaining:
+                                        ₱{{ preorder.remaining_balance|number_format(2, '.', ',') }}
+                                    </div>
+                                </td>
+
+                                <!-- DEPOSIT PAYMENT -->
+                                <td>
+
+                                    {% if preorder.deposit_status == 'Paid' %}
+
+                                        <span class="status paid">
+                                            Paid
+                                        </span>
+
+                                        <div class="payment-amount">
+                                            ₱{{ preorder.deposit_paid_amount|number_format(2, '.', ',') }}
+                                        </div>
+
+                                        {% if preorder.deposit_paid_at %}
+                                            <span class="payment-date">
+                                                {{ preorder.deposit_paid_at|date('M d, Y h:i A') }}
+                                            </span>
+                                        {% endif %}
+
+                                    {% else %}
+
+                                        <span class="status unpaid">
+                                            Unpaid
+                                        </span>
+
+                                        <div class="muted">
+                                            Paid:
+                                            ₱{{ preorder.deposit_paid_amount|number_format(2, '.', ',') }}
+                                        </div>
+
+                                        <div class="payment-box">
+
+                                            <form method="POST">
+
+                                                <input
+                                                    type="hidden"
+                                                    name="_token"
+                                                    value="{{ csrf_token('admin_preorder_payment_' ~ preorder.id) }}"
+                                                >
+
+                                                <input
+                                                    type="hidden"
+                                                    name="action"
+                                                    value="payment"
+                                                >
+
+                                                <input
+                                                    type="hidden"
+                                                    name="preorder_id"
+                                                    value="{{ preorder.id }}"
+                                                >
+
+                                                <input
+                                                    type="hidden"
+                                                    name="payment_type"
+                                                    value="deposit"
+                                                >
+
+                                                <input
+                                                    class="form-control"
+                                                    type="number"
+                                                    name="paid_amount"
+                                                    min="0"
+                                                    max="{{ preorder.deposit_amount }}"
+                                                    step="0.01"
+                                                    value="{{ preorder.deposit_amount }}"
+                                                    required
+                                                    aria-label="Deposit payment amount"
+                                                >
+
+                                                <button type="submit" class="btn payment-button">
+                                                    Record
+                                                </button>
+
+                                            </form>
+
+                                        </div>
+
+                                    {% endif %}
+
+                                </td>
+
+                                <!-- BALANCE PAYMENT -->
+                                <td>
+
+                                    {% if preorder.balance_status == 'Paid' %}
+
+                                        <span class="status paid">
+                                            Paid
+                                        </span>
+
+                                        <div class="payment-amount">
+                                            ₱{{ preorder.balance_paid_amount|number_format(2, '.', ',') }}
+                                        </div>
+
+                                        {% if preorder.balance_paid_at %}
+                                            <span class="payment-date">
+                                                {{ preorder.balance_paid_at|date('M d, Y h:i A') }}
+                                            </span>
+                                        {% endif %}
+
+                                    {% else %}
+
+                                        <span class="status unpaid">
+                                            Unpaid
+                                        </span>
+
+                                        <div class="muted">
+                                            Paid:
+                                            ₱{{ preorder.balance_paid_amount|number_format(2, '.', ',') }}
+                                        </div>
+
+                                        <div class="payment-box">
+
+                                            <form method="POST">
+
+                                                <input
+                                                    type="hidden"
+                                                    name="_token"
+                                                    value="{{ csrf_token('admin_preorder_payment_' ~ preorder.id) }}"
+                                                >
+
+                                                <input
+                                                    type="hidden"
+                                                    name="action"
+                                                    value="payment"
+                                                >
+
+                                                <input
+                                                    type="hidden"
+                                                    name="preorder_id"
+                                                    value="{{ preorder.id }}"
+                                                >
+
+                                                <input
+                                                    type="hidden"
+                                                    name="payment_type"
+                                                    value="balance"
+                                                >
+
+                                                <input
+                                                    class="form-control"
+                                                    type="number"
+                                                    name="paid_amount"
+                                                    min="0.01"
+                                                    max="{{ preorder.remaining_balance }}"
+                                                    step="0.01"
+                                                    value="{{ preorder.remaining_balance }}"
+                                                    required
+                                                    aria-label="Balance payment amount"
+                                                >
+
+                                                <button type="submit" class="btn payment-button">
+                                                    Record
+                                                </button>
+
+                                            </form>
+
+                                        </div>
+
+                                    {% endif %}
+
+                                </td>
+
+                                <!-- PRE-ORDER STATUS -->
+                                <td>
+
+                                    {% if preorder.status == 'Cancelled' %}
+
+                                        <span class="status cancelled">
+                                            Cancelled
+                                        </span>
+
+                                    {% elseif preorder.status == 'Completed' %}
+
+                                        <span class="status completed">
+                                            Completed
+                                        </span>
+
+                                    {% else %}
+
+                                        <span class="status pending">
+                                            {{ preorder.status }}
+                                        </span>
+
+                                    {% endif %}
+
+                                    <div class="status-box">
+
+                                        <form method="POST">
+
+                                            <input
+                                                type="hidden"
+                                                name="_token"
+                                                value="{{ csrf_token('admin_preorder_status_' ~ preorder.id) }}"
+                                            >
+
+                                            <input
+                                                type="hidden"
+                                                name="action"
+                                                value="update_status"
+                                            >
+
+                                            <input
+                                                type="hidden"
+                                                name="preorder_id"
+                                                value="{{ preorder.id }}"
+                                            >
+
+                                            <select
+                                                class="form-select"
+                                                name="status"
+                                                required
+                                                aria-label="Update pre-order status"
+                                            >
+                                                {% for status in preorder_statuses %}
+                                                    <option
+                                                        value="{{ status }}"
+                                                        {% if preorder.status == status %}selected{% endif %}
+                                                    >
+                                                        {{ status }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+
+                                            <button type="submit" class="btn status-button">
+                                                Update
+                                            </button>
+
+                                        </form>
+
+                                    </div>
+
+                                </td>
+
+                                <!-- RELEASE MANAGEMENT -->
+                                <td>
+
+                                    <div class="release-current">
+
+                                        <span class="status release-status">
+                                            {{ preorder.release_status }}
+                                        </span>
+
+                                        {% if preorder.expected_release_date %}
+
+                                            <div class="muted">
+                                                Expected:
+                                                {{ preorder.expected_release_date|date('M d, Y') }}
+                                            </div>
+
+                                        {% else %}
+
+                                            <div class="muted">
+                                                Release date TBA
+                                            </div>
+
+                                        {% endif %}
+
+                                    </div>
+
+                                    <div class="release-box">
+
+                                        <form method="POST">
+
+                                            <input
+                                                type="hidden"
+                                                name="_token"
+                                                value="{{ csrf_token('admin_preorder_release_' ~ preorder.id) }}"
+                                            >
+
+                                            <input
+                                                type="hidden"
+                                                name="action"
+                                                value="update_release"
+                                            >
+
+                                            <input
+                                                type="hidden"
+                                                name="preorder_id"
+                                                value="{{ preorder.id }}"
+                                            >
+
+                                            <select
+                                                class="form-select"
+                                                name="release_status"
+                                                required
+                                                aria-label="Update release status"
+                                            >
+                                                {% for release_status in release_statuses %}
+                                                    <option
+                                                        value="{{ release_status }}"
+                                                        {% if preorder.release_status == release_status %}selected{% endif %}
+                                                    >
+                                                        {{ release_status }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+
+                                            <input
+                                                class="form-control"
+                                                type="date"
+                                                name="expected_release_date"
+                                                value="{{ preorder.expected_release_date ? preorder.expected_release_date|date('Y-m-d') : '' }}"
+                                                aria-label="Expected release date"
+                                            >
+
+                                            <button type="submit" class="btn release-button">
+                                                Update Release
+                                            </button>
+
+                                        </form>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+
+                        {% else %}
+
+                            <tr>
+                                <td colspan="8" class="empty">
+                                    No pre-orders found.
+                                </td>
+                            </tr>
+
+                        {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+            <!-- BACK TO DASHBOARD -->
+            <a href="/admin" class="preorders-back">
+                ← Back to Admin Dashboard
+            </a>
+
+        </div>
+
+    </main>
+
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>

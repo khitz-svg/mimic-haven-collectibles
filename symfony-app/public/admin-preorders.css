@@ -1,528 +1,549 @@
-/* =========================================================
-   ADMIN PAGE
-========================================================= */
 
-body {
-    margin: 0;
+/* =========================================
+   MIMIC HAVEN - ADMIN PRE-ORDERS
+   Bootstrap 5.3.8
+   Page-specific styles
+   ========================================= */
 
-    background: #182637;
+/* =========================================
+   PAGE HEADER
+   ========================================= */
 
-    color: #ffffff;
-
-    font-family:
-        Arial,
-        sans-serif;
+.preorders-page-header {
+    margin-bottom: 27px;
 }
 
-
-.admin-container {
-    width:
-        min(
-            1550px,
-            calc(100% - 60px)
-        );
-
-    margin: 0 auto;
-
-    padding:
-        30px 0 80px;
-}
-
-
-/* =========================================================
-   ADMIN HEADER
-========================================================= */
-
-.admin-header {
-    display: grid;
-
-    grid-template-columns:
-        minmax(0, 1fr)
-        auto;
-
-    align-items: center;
-
-    gap: 30px;
-
-    margin-bottom: 30px;
-}
-
-
-.admin-header-title {
-    min-width: 0;
-}
-
-
-.admin-header-title h1 {
+.preorders-page-header h1 {
     margin: 0 0 8px;
-
-    color: #ffffff;
-
-    font-size: 30px;
-
-    line-height: 1.15;
+    color: var(--admin-text);
+    font-size: 29px;
+    font-weight: 750;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
 }
 
-
-.admin-header-title p {
+.preorders-page-header p {
     margin: 0;
-
-    color: #aab2ba;
-
+    color: var(--admin-muted);
     font-size: 13px;
-
     line-height: 1.6;
 }
 
+/* =========================================
+   ALERTS
+   ========================================= */
 
-/* =========================================================
-   ADMIN NAVIGATION
-========================================================= */
-
-.admin-nav {
-    display: flex;
-
-    align-items: center;
-
-    justify-content: flex-end;
-
-    gap: 10px;
-
-    flex-wrap: nowrap;
+.preorders-alert {
+    margin-bottom: 18px;
+    padding: 13px 16px;
+    border-radius: 8px;
+    font-size: 13px;
 }
 
+/* =========================================
+   TABLE SECTION HEADER
+   ========================================= */
 
-.admin-nav a {
-    display: inline-flex;
+.preorders-table-section {
+    width: 100%;
+    min-width: 0;
+}
 
+.preorders-table-header {
+    display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 16px;
+}
 
+.preorders-table-header h2 {
+    margin: 0 0 6px;
+    color: var(--admin-text);
+    font-size: 19px;
+    font-weight: 700;
+}
+
+.preorders-table-header p {
+    margin: 0;
+    color: var(--admin-muted);
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+.preorders-count {
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
 
-    min-height: 38px;
+    padding: 7px 12px;
 
-    padding:
-        10px 16px;
+    color: var(--admin-blue);
+    background: rgba(22, 191, 244, 0.10);
 
-    border-radius: 8px;
+    border: 1px solid rgba(22, 191, 244, 0.17);
+    border-radius: 20px;
 
-    background: #9ADCF7;
-
-    color: #182637;
-
-    font-family:
-        Arial,
-        sans-serif;
-
-    font-size: 13px;
-
-    font-weight: bold;
-
-    text-decoration: none;
-
+    font-size: 11px;
+    font-weight: 800;
     white-space: nowrap;
-
-    transition:
-        opacity .2s ease,
-        transform .2s ease;
 }
 
-
-.admin-nav a:hover {
-    opacity: .85;
-
-    transform:
-        translateY(-1px);
-}
-
-
-.admin-nav a.active {
-    background: #ffffff;
-
-    color: #182637;
-}
-
-
-/* =========================================================
-   MESSAGES
-========================================================= */
-
-.message {
-    background: #d9f7df;
-
-    color: #1f5d2c;
-
-    padding:
-        14px 18px;
-
-    border-radius: 8px;
-
-    margin-bottom: 20px;
-
-    font-size: 13px;
-}
-
-
-.error {
-    background: #ffdede;
-
-    color: #8a1f1f;
-
-    padding:
-        14px 18px;
-
-    border-radius: 8px;
-
-    margin-bottom: 20px;
-
-    font-size: 13px;
-}
-
-
-/* =========================================================
-   TABLE
-========================================================= */
+/* =========================================
+   PRE-ORDERS TABLE
+   ========================================= */
 
 .table-wrapper {
+    width: 100%;
+    max-width: 100%;
+
     overflow-x: auto;
+    overflow-y: visible;
 
-    background: #ffffff;
+    background: var(--admin-panel);
+    border: 1px solid var(--admin-border);
+    border-radius: 11px;
 
-    border-radius: 12px;
+    overscroll-behavior-x: contain;
 }
 
-
-.table-wrapper table {
+.preorders-table {
     width: 100%;
-
     min-width: 1650px;
+    margin: 0;
+
+    color: var(--admin-text);
+    background: var(--admin-panel);
 
     border-collapse: collapse;
-
-    color: #182637;
+    vertical-align: middle;
 }
 
+.preorders-table thead th {
+    padding: 15px 14px;
 
-.table-wrapper th {
-    background: #9ADCF7;
+    color: var(--admin-blue);
+    background: var(--admin-panel-light);
 
-    padding: 14px;
+    border-bottom: 1px solid var(--admin-border);
+
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
 
     text-align: left;
-
-    font-size: 13px;
-
+    text-transform: uppercase;
     white-space: nowrap;
 }
 
+.preorders-table tbody td {
+    padding: 15px 14px;
 
-.table-wrapper td {
-    padding: 14px;
+    color: var(--admin-text);
+    background: var(--admin-panel);
 
-    border-bottom:
-        1px solid #dddddd;
+    border-bottom: 1px solid var(--admin-border);
 
+    font-size: 12px;
     vertical-align: top;
-
-    font-size: 13px;
 }
 
-
-.table-wrapper tr:last-child td {
+.preorders-table tbody tr:last-child td {
     border-bottom: none;
 }
 
+.preorders-table tbody tr:hover td {
+    background: #353236;
+}
 
-/* =========================================================
-   PRODUCT
-========================================================= */
+/* =========================================
+   PRE-ORDER AND CUSTOMER INFORMATION
+   ========================================= */
+
+.preorder-number {
+    display: inline-block;
+    margin-bottom: 3px;
+    color: var(--admin-blue);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.preorder-customer {
+    display: block;
+    color: var(--admin-text);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.muted {
+    margin-top: 5px;
+    color: var(--admin-muted);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.preorder-total {
+    color: var(--admin-blue);
+    font-size: 13px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+/* =========================================
+   PRODUCT INFORMATION
+   ========================================= */
 
 .product-cell {
     display: flex;
-
-    align-items: center;
-
+    align-items: flex-start;
     gap: 12px;
+
+    min-width: 225px;
 }
 
-
 .product-cell img {
+    flex: 0 0 65px;
+
     width: 65px;
     height: 65px;
 
     object-fit: cover;
 
     border-radius: 8px;
-
-    background: #eef4f7;
-
-    flex-shrink: 0;
+    background: var(--admin-panel-light);
+    border: 1px solid var(--admin-border);
 }
 
+.product-information {
+    min-width: 0;
+}
 
 .product-name {
-    font-weight: bold;
+    margin-bottom: 4px;
 
-    line-height: 1.4;
+    color: var(--admin-text);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.5;
+
+    overflow-wrap: anywhere;
 }
 
+/* =========================================
+   PAYMENT AMOUNTS AND DATES
+   ========================================= */
 
-.muted {
-    margin-top: 4px;
-
-    color: #666666;
-
+.payment-amount {
+    margin-top: 8px;
+    color: var(--admin-text);
     font-size: 12px;
+    font-weight: 700;
+}
 
+.payment-date {
+    display: block;
+    margin-top: 6px;
+    color: var(--admin-muted);
+    font-size: 10px;
     line-height: 1.5;
 }
 
-
-/* =========================================================
-   STATUS
-========================================================= */
+/* =========================================
+   STATUS BADGES
+   ========================================= */
 
 .status {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 
-    padding:
-        5px 9px;
+    padding: 5px 10px;
 
     border-radius: 20px;
 
-    font-size: 11px;
-
-    font-weight: bold;
-
+    font-size: 10px;
+    font-weight: 800;
     white-space: nowrap;
 }
 
-
-.paid {
-    background: #d9f7df;
-
-    color: #1f5d2c;
+.status.paid,
+.status.completed {
+    color: #75dda7;
+    background: rgba(25, 135, 84, 0.16);
 }
 
-
-.unpaid {
-    background: #ffe5c2;
-
-    color: #8a4b00;
+.status.unpaid {
+    color: #ffd66b;
+    background: rgba(255, 193, 7, 0.13);
 }
 
-
-.pending {
-    background: #e8edf2;
-
-    color: #364552;
+.status.pending {
+    color: var(--admin-blue);
+    background: rgba(22, 191, 244, 0.12);
 }
 
-
-.completed {
-    background: #d9f7df;
-
-    color: #1f5d2c;
+.status.cancelled {
+    color: #ff8888;
+    background: rgba(220, 53, 69, 0.13);
 }
 
-
-.cancelled {
-    background: #ffdede;
-
-    color: #8a1f1f;
+.status.release-status {
+    color: #c7c2c8;
+    background: rgba(108, 117, 125, 0.18);
 }
 
-
-/* =========================================================
-   PAYMENT / STATUS / RELEASE
-========================================================= */
+/* =========================================
+   PAYMENT, STATUS AND RELEASE FORMS
+   ========================================= */
 
 .payment-box,
 .release-box,
 .status-box {
-    margin-top: 8px;
+    margin-top: 9px;
 }
-
 
 .payment-box form,
 .release-box form,
 .status-box form {
     display: flex;
-
-    gap: 6px;
-
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 7px;
 }
 
+/* PAYMENT INPUT */
 
-.payment-box input {
-    width: 95px;
+.payment-box .form-control {
+    width: 120px;
+    min-height: 36px;
+}
 
-    padding: 8px;
+/* COMMON FORM INPUTS */
 
-    border:
-        1px solid #cccccc;
+.payment-box .form-control,
+.release-box .form-control,
+.release-box .form-select,
+.status-box .form-select {
+    padding: 8px 10px;
 
+    color: var(--admin-text);
+    background-color: #242124;
+
+    border: 1px solid var(--admin-border);
     border-radius: 6px;
 
-    font-family: Arial, sans-serif;
-
-    box-sizing: border-box;
-}
-
-
-.release-box input[type="date"] {
-    width: 145px;
-
-    padding: 8px;
-
-    border:
-        1px solid #cccccc;
-
-    border-radius: 6px;
-
-    font-family: Arial, sans-serif;
-
-    box-sizing: border-box;
-}
-
-
-.payment-box button,
-.release-box button,
-.status-box button {
-    background: #182637;
-
-    color: #ffffff;
-
-    border: none;
-
-    padding:
-        8px 12px;
-
-    border-radius: 6px;
-
-    cursor: pointer;
-
-    font-weight: 600;
-}
-
-
-.payment-box button:hover,
-.release-box button:hover,
-.status-box button:hover {
-    opacity: .85;
-}
-
-
-.status-box select,
-.release-box select {
-    padding: 8px;
-
-    border:
-        1px solid #cccccc;
-
-    border-radius: 6px;
-
-    background: #ffffff;
-
-    color: #182637;
-
-    width: 180px;
-
-    font-family: Arial, sans-serif;
-}
-
-
-.release-box select {
-    width: 210px;
-}
-
-
-.payment-date {
-    display: block;
-
-    margin-top: 5px;
-
+    font-family: 'Inter', Arial, sans-serif;
     font-size: 11px;
 
-    color: #666666;
+    box-shadow: none;
 }
 
+.payment-box .form-control:focus,
+.release-box .form-control:focus,
+.release-box .form-select:focus,
+.status-box .form-select:focus {
+    color: var(--admin-text);
+    background-color: #242124;
+
+    border-color: var(--admin-blue);
+    box-shadow: 0 0 0 0.15rem rgba(22, 191, 244, 0.13);
+}
+
+.release-box .form-select option,
+.status-box .form-select option {
+    color: var(--admin-text);
+    background: var(--admin-panel);
+}
+
+/* STATUS SELECT */
+
+.status-box .form-select {
+    width: 165px;
+    max-width: 100%;
+}
+
+/* RELEASE SELECT */
+
+.release-box .form-select {
+    width: 195px;
+    max-width: 100%;
+}
+
+/* RELEASE DATE */
+
+.release-box input[type="date"] {
+    width: 165px;
+    max-width: 100%;
+}
+
+/* =========================================
+   FORM BUTTONS
+   ========================================= */
+
+.payment-button,
+.status-button,
+.release-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 34px;
+    padding: 7px 12px;
+
+    color: #17191b;
+    background: var(--admin-blue);
+
+    border: 1px solid var(--admin-blue);
+    border-radius: 6px;
+
+    font-size: 10px;
+    font-weight: 800;
+    white-space: nowrap;
+
+    transition: 0.2s ease;
+}
+
+.payment-button:hover,
+.status-button:hover,
+.release-button:hover {
+    color: var(--admin-blue);
+    background: transparent;
+    border-color: var(--admin-blue);
+}
+
+/* =========================================
+   RELEASE INFORMATION
+   ========================================= */
 
 .release-current {
-    margin-bottom: 8px;
+    margin-bottom: 9px;
 }
 
+/* =========================================
+   EMPTY STATE
+   ========================================= */
 
-/* =========================================================
-   BACK LINK
-========================================================= */
+.preorders-table .empty {
+    padding: 40px 20px;
+    color: var(--admin-muted);
+    background: var(--admin-panel);
+    font-size: 13px;
+    text-align: center;
+}
 
-.back-link {
-    display: inline-block;
+/* =========================================
+   BACK TO DASHBOARD
+   ========================================= */
+
+.preorders-back {
+    display: inline-flex;
+    align-items: center;
 
     margin-top: 20px;
+    padding: 9px 0;
 
-    color: #9ADCF7;
-
+    color: var(--admin-blue);
+    font-size: 12px;
+    font-weight: 700;
     text-decoration: none;
 
-    font-size: 13px;
+    transition: color 0.2s ease;
 }
 
-
-.back-link:hover {
-    text-decoration: underline;
+.preorders-back:hover {
+    color: #80ddff;
 }
 
+/* =========================================
+   TABLET
+   ========================================= */
 
-/* =========================================================
-   RESPONSIVE
-========================================================= */
+@media (max-width: 991.98px) {
 
-@media (max-width: 1100px) {
-
-    .admin-header {
-        grid-template-columns: 1fr;
+    .preorders-page-header h1 {
+        font-size: 26px;
     }
 
-    .admin-nav {
-        justify-content: flex-start;
-
-        flex-wrap: wrap;
+    .preorders-table {
+        min-width: 1600px;
     }
-
 }
 
+/* =========================================
+   SMALL PHONES
+   ========================================= */
 
-@media (max-width: 700px) {
+@media (max-width: 575.98px) {
 
-    .admin-container {
-        width:
-            calc(100% - 30px);
-
-        padding:
-            20px 0 60px;
+    .preorders-page-header {
+        margin-bottom: 22px;
     }
 
-
-    .admin-nav {
-        gap: 7px;
+    .preorders-page-header h1 {
+        font-size: 24px;
     }
 
+    .preorders-page-header p {
+        font-size: 12px;
+    }
 
-    .admin-nav a {
-        min-height: 36px;
+    .preorders-table-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
 
-        padding:
-            9px 12px;
+    .preorders-table {
+        min-width: 1550px;
+    }
 
+    .preorders-back {
         font-size: 11px;
     }
+}
 
 
-    .product-cell {
-        align-items: flex-start;
-    }
+/* =========================================
+   PRE-ORDER PRODUCT ALIGNMENT
+   Image LEFT, details RIGHT, TOP ALIGNED
+   ========================================= */
 
+.preorders-table tbody td {
+    vertical-align: top !important;
+}
+
+.preorders-table .product-cell {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 12px;
+    min-width: 260px;
+}
+
+.preorders-table .product-cell img {
+    display: block;
+    flex: 0 0 75px;
+    width: 75px;
+    height: 75px;
+    margin: 0;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.preorders-table .product-information {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    text-align: left;
+}
+
+.preorders-table .product-information .product-name {
+    margin: 0 0 5px;
+    text-align: left;
+}
+
+.preorders-table .product-information .muted {
+    margin: 4px 0 0;
+    text-align: left;
 }

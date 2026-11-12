@@ -106,7 +106,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const availability = checkedValues('.availability-filter');
 
         filteredCards = collectionCards.filter((card) => {
-            const matchesSearch = !search || card.dataset.name.toLowerCase().includes(search) || card.dataset.series.toLowerCase().includes(search);
+           
+const searchableText = [
+    card.dataset.name,
+    card.dataset.series,
+    card.dataset.category,
+    card.dataset.condition,
+    card.dataset.availability
+].join(' ').toLowerCase();
+
+const matchesSearch = !search || searchableText.includes(search);
+
             const matchesCategory = categories.length === 0 || categories.includes(card.dataset.category);
             const matchesFranchise = franchises.length === 0 || franchises.includes(card.dataset.series);
             const matchesCondition = conditions.length === 0 || conditions.includes(card.dataset.condition);

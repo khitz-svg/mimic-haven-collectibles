@@ -4848,3 +4848,1395 @@ footer {
 .header-search-input:focus {
     box-shadow: 0 0 0 1px rgba(63,169,245,0.25);
 }
+
+
+/* BOOTSTRAP FAQ ACCORDION */
+#faq .faq-list.accordion {
+    display: block;
+    border-top: 1px solid var(--line);
+    --bs-accordion-bg: transparent;
+    --bs-accordion-color: #fff;
+    --bs-accordion-border-color: var(--line);
+    --bs-accordion-border-width: 0;
+    --bs-accordion-border-radius: 0;
+    --bs-accordion-btn-bg: transparent;
+    --bs-accordion-btn-color: #fff;
+    --bs-accordion-active-bg: transparent;
+    --bs-accordion-active-color: #fff;
+    --bs-accordion-btn-focus-box-shadow: none;
+}
+
+#faq .accordion-item {
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+}
+
+#faq .accordion-button,
+#faq .accordion-button:not(.collapsed) {
+    min-height: 64px;
+    padding: 18px 4px;
+    gap: 20px;
+    background: transparent;
+    color: #fff;
+    font-family: Montserrat, sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    box-shadow: none;
+}
+
+#faq .accordion-button:focus {
+    box-shadow: none;
+}
+
+#faq .accordion-button::after {
+    filter: invert(61%) sepia(78%) saturate(1250%)
+        hue-rotate(178deg) brightness(101%) contrast(92%);
+}
+
+#faq .accordion-body {
+    padding: 0 35px 18px 4px;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.75;
+}
+
+#faq .accordion-body p {
+    margin: 0;
+}
+
+
+/* FIX: MIMIC HAVEN DARK BOOTSTRAP FAQ */
+
+#faq .faq-list.accordion .accordion-item {
+    background: #101318 !important;
+    border: 0 !important;
+    border-bottom: 1px solid #252b33 !important;
+}
+
+#faq .faq-list.accordion .accordion-button,
+#faq .faq-list.accordion .accordion-button:not(.collapsed) {
+    background: #07090c !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+    font-family: Montserrat, sans-serif;
+    font-size: 11px;
+}
+
+#faq .faq-list.accordion .accordion-button:focus {
+    box-shadow: none !important;
+    border-color: transparent !important;
+}
+
+#faq .faq-list.accordion .accordion-button::after {
+    filter: invert(61%) sepia(78%) saturate(1250%)
+        hue-rotate(178deg) brightness(101%) contrast(92%);
+}
+
+#faq .faq-list.accordion .accordion-body {
+    background: #07090c !important;
+    color: #aeb5bd !important;
+}
+
+
+
+/* =====================================================
+   MIMIC HAVEN - COLLECTION PAGE DESIGN IMPROVEMENTS
+===================================================== */
+
+.collection-page-hero {
+    border-color: rgba(63,169,245,.20);
+    box-shadow: 0 18px 45px rgba(0,0,0,.25);
+}
+
+.collection-page-hero-inner {
+    padding: 55px;
+}
+
+.collection-page-copy p {
+    font-size: 13px;
+    line-height: 1.8;
+}
+
+.collection-catalog-inner {
+    gap: 28px;
+}
+
+.collection-sidebar {
+    padding: 24px;
+    border-color: rgba(255,255,255,.09);
+    background: linear-gradient(145deg, #141a22, #101318);
+    box-shadow: 0 15px 35px rgba(0,0,0,.18);
+}
+
+.filter-heading h2 {
+    font-size: 16px;
+}
+
+.filter-group h3 {
+    color: var(--blue);
+    font-size: 10px;
+}
+
+.filter-option {
+    color: #c5cbd2;
+    font-size: 11px;
+    transition: color .2s ease;
+}
+
+.filter-option:hover {
+    color: #fff;
+}
+
+.filter-option input {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--blue);
+}
+
+.clear-filters {
+    min-height: 40px;
+    border-radius: 8px;
+    transition: .2s ease;
+}
+
+.clear-filters:hover {
+    background: rgba(63,169,245,.08);
+}
+
+/* TOOLBAR */
+
+.collection-toolbar {
+    padding: 13px 15px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: rgba(16,19,24,.85);
+}
+
+.collection-results-count {
+    font-size: 11px;
+}
+
+.collection-results-count strong {
+    color: #fff;
+}
+
+.collection-sort {
+    min-height: 38px;
+    background: #0b0e12;
+    color: #fff;
+    font-size: 10px;
+}
+
+.collection-view-button {
+    width: 38px;
+    height: 38px;
+    transition: .2s ease;
+}
+
+/* SEARCH */
+
+.collection-search input {
+    min-height: 46px;
+    padding: 0 16px;
+    background: #101318;
+    font-size: 12px;
+    border-radius: 10px;
+}
+
+.collection-search input:focus {
+    box-shadow: 0 0 0 3px rgba(63,169,245,.08);
+}
+
+/* PRODUCT CARDS */
+
+.collection-product-grid {
+    gap: 20px;
+}
+
+.collection-product-card {
+    border-color: rgba(255,255,255,.09);
+    border-radius: 16px;
+    background: linear-gradient(145deg, #151a21, #101318);
+    box-shadow: 0 10px 25px rgba(0,0,0,.15);
+}
+
+.collection-product-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(63,169,245,.55);
+    box-shadow: 0 15px 35px rgba(0,0,0,.3);
+}
+
+.collection-product-image {
+    background: radial-gradient(circle, #18212b, #0b0e12 75%);
+}
+
+.collection-condition {
+    padding: 6px 9px;
+    font-size: 8px;
+    border-color: rgba(63,169,245,.25);
+    background: rgba(7,9,12,.92);
+}
+
+.collection-favorite {
+    width: 34px;
+    height: 34px;
+    background: rgba(7,9,12,.92);
+    transition: .2s ease;
+}
+
+.collection-favorite:hover {
+    transform: scale(1.08);
+}
+
+.collection-product-info {
+    padding: 18px;
+}
+
+.collection-product-series {
+    font-size: 8px;
+    letter-spacing: .1em;
+}
+
+.collection-product-name {
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.collection-product-price {
+    font-size: 16px;
+}
+
+.collection-product-status {
+    font-size: 8px;
+}
+
+/* PAGINATION */
+
+.collection-page-button {
+    width: 38px;
+    height: 38px;
+    border-radius: 9px;
+    transition: .2s ease;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 700px) {
+    .collection-page-hero-inner {
+        padding: 30px;
+    }
+
+    .collection-product-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .collection-product-info {
+        padding: 13px;
+    }
+
+    .collection-product-name {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .collection-product-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .collection-page-hero-inner {
+        padding: 24px;
+    }
+}
+
+
+/* =====================================================
+   MIMIC HAVEN - PREMIUM PRODUCT DETAILS DESIGN
+===================================================== */
+
+.product-page {
+    padding-top: 10px;
+}
+
+/* PRODUCT BREADCRUMB */
+
+.product-breadcrumb {
+    font-size: 10px;
+    padding: 30px 0;
+}
+
+.product-breadcrumb a {
+    transition: color .2s ease;
+}
+
+.product-breadcrumb a:hover {
+    color: var(--blue);
+}
+
+/* PRODUCT IMAGE GALLERY */
+
+.product-main-image {
+    min-height: 610px;
+    border: 1px solid rgba(255,255,255,.08);
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(63,169,245,.12),
+            transparent 58%
+        ),
+        linear-gradient(145deg,#141b24,#090c10);
+    box-shadow: 0 25px 60px rgba(0,0,0,.28);
+}
+
+.product-main-image > img {
+    transition: transform .4s ease;
+}
+
+.product-main-image:hover > img {
+    transform: scale(1.035);
+}
+
+.product-condition-badge {
+    padding: 9px 13px;
+    border-radius: 7px;
+    font-size: 9px;
+    background: rgba(7,9,12,.92);
+}
+
+/* PRODUCT INFORMATION */
+
+.product-detail-info {
+    padding-top: 10px;
+}
+
+.product-detail-series {
+    color: var(--blue);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .13em;
+}
+
+.product-detail-info h1 {
+    margin-top: 16px;
+    font-size: clamp(32px,4vw,48px);
+    line-height: 1.13;
+}
+
+.product-detail-price {
+    margin-top: 24px;
+    font-size: 32px;
+    letter-spacing: -.03em;
+}
+
+/* AVAILABILITY BADGES */
+
+.product-detail-status {
+    margin-top: 15px;
+}
+
+.product-detail-status span {
+    padding: 7px 12px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    font-size: 9px;
+    letter-spacing: .06em;
+}
+
+.product-detail-status .instock {
+    border-color: rgba(99,199,123,.22);
+    background: rgba(99,199,123,.09);
+}
+
+.product-detail-status .preorder {
+    border-color: rgba(63,169,245,.25);
+    background: rgba(63,169,245,.09);
+}
+
+.product-detail-status .out-of-stock {
+    border-color: rgba(255,100,110,.25);
+    background: rgba(255,100,110,.08);
+    color: #ff9fa9;
+}
+
+/* PRODUCT DESCRIPTION */
+
+.product-description {
+    font-size: 12px;
+    line-height: 1.9;
+    color: #b8c0c9;
+}
+
+/* PRODUCT SPECIFICATIONS */
+
+.product-specs {
+    margin-top: 32px;
+    border-color: rgba(255,255,255,.09);
+}
+
+.product-spec {
+    padding: 18px 14px;
+}
+
+.product-spec span {
+    font-size: 8px;
+    letter-spacing: .1em;
+}
+
+.product-spec strong {
+    font-size: 10px;
+}
+
+/* QUANTITY CONTROL */
+
+.quantity-control {
+    height: 48px;
+    border-radius: 9px;
+    border-color: rgba(255,255,255,.12);
+    background: #141a21;
+}
+
+.quantity-control button {
+    width: 42px;
+    font-size: 17px;
+    transition: color .2s ease, background .2s ease;
+}
+
+.quantity-control button:hover:not(:disabled) {
+    color: var(--blue);
+    background: rgba(63,169,245,.06);
+}
+
+.quantity-control input {
+    font-size: 12px;
+}
+
+/* ADD TO CART */
+
+.product-purchase-row {
+    gap: 12px;
+    margin-top: 32px;
+}
+
+.product-add-cart {
+    min-height: 48px;
+    border-radius: 9px;
+    background: var(--blue);
+    font-size: 11px;
+    letter-spacing: .02em;
+    transition: transform .2s ease, filter .2s ease;
+}
+
+.product-add-cart:hover:not(:disabled) {
+    transform: translateY(-2px);
+    filter: brightness(1.12);
+}
+
+.product-preorder-button {
+    min-height: 48px;
+    margin-top: 14px;
+    border-radius: 9px;
+    background: rgba(63,169,245,.06);
+    transition: background .2s ease;
+}
+
+.product-preorder-button:hover {
+    background: rgba(63,169,245,.13);
+}
+
+/* TRUST CARDS */
+
+.product-trust {
+    gap: 12px;
+    margin-top: 35px;
+}
+
+.product-trust > div {
+    border-color: rgba(255,255,255,.08);
+    background: linear-gradient(145deg,#141a21,#101318);
+    transition: border-color .2s ease, transform .2s ease;
+}
+
+.product-trust > div:hover {
+    transform: translateY(-3px);
+    border-color: rgba(63,169,245,.35);
+}
+
+.product-trust strong {
+    font-size: 9px;
+}
+
+.product-trust span {
+    font-size: 8px;
+}
+
+/* PRODUCT INFORMATION TABS */
+
+.product-information {
+    margin-top: 100px;
+    border-top-color: rgba(255,255,255,.09);
+}
+
+.product-information-tabs {
+    gap: 32px;
+    border-bottom-color: rgba(255,255,255,.09);
+}
+
+.product-tab {
+    min-height: 60px;
+    font-size: 10px;
+    transition: color .2s ease;
+}
+
+.product-tab:hover {
+    color: #fff;
+}
+
+.product-tab.active {
+    color: var(--blue);
+}
+
+.product-tab.active::after {
+    height: 3px;
+    border-radius: 3px;
+}
+
+.product-information-content {
+    padding-top: 40px;
+}
+
+.product-info-block h2 {
+    font-size: 19px;
+}
+
+.product-info-block p {
+    font-size: 11px;
+    line-height: 1.9;
+}
+
+.product-detail-list {
+    border-top-color: rgba(255,255,255,.09);
+}
+
+.product-detail-list > div {
+    border-bottom-color: rgba(255,255,255,.09);
+}
+
+/* CONDITION GUIDE */
+
+.product-condition-list > div {
+    border-color: rgba(255,255,255,.08);
+    background: linear-gradient(145deg,#141a21,#101318);
+    transition: border-color .2s ease;
+}
+
+.product-condition-list > div:hover {
+    border-color: rgba(63,169,245,.4);
+}
+
+/* BACK BUTTON */
+
+.back-to-collection {
+    margin-top: 55px;
+}
+
+.back-to-collection .btn {
+    min-height: 44px;
+    font-size: 10px;
+}
+
+/* MOBILE */
+
+@media (max-width: 700px) {
+    .product-main-image {
+        height: 430px;
+        min-height: 0;
+    }
+
+    .product-detail-info h1 {
+        font-size: 30px;
+    }
+
+    .product-detail-price {
+        font-size: 27px;
+    }
+
+    .product-information {
+        margin-top: 65px;
+    }
+
+    .product-information-tabs {
+        gap: 20px;
+    }
+
+    .product-tab {
+        font-size: 9px;
+    }
+
+    .product-condition-list {
+        grid-template-columns: repeat(2,1fr);
+    }
+}
+
+@media (max-width: 500px) {
+    .product-main-image {
+        height: 350px;
+    }
+
+    .product-trust {
+        grid-template-columns: 1fr;
+    }
+
+    .product-information-tabs {
+        gap: 18px;
+    }
+}
+
+
+/* =====================================================
+   MIMIC HAVEN - BOOTSTRAP PRODUCT HEADER
+===================================================== */
+
+.product-navbar {
+    padding: 0;
+}
+
+.product-header-inner {
+    width: min(var(--max), calc(100% - 48px));
+    min-height: 86px;
+    margin: auto;
+    padding: 0;
+}
+
+.product-navbar .navbar-brand {
+    margin: 0;
+    padding: 0;
+}
+
+.product-navbar .navbar-nav {
+    gap: 5px;
+}
+
+.product-navbar .nav-link {
+    position: relative;
+    padding: 10px 8px;
+    color: #dce3ea;
+    font-size: 12px;
+    font-weight: 600;
+    transition: color .2s ease;
+}
+
+.product-navbar .nav-link:hover {
+    color: var(--blue);
+}
+
+.product-navbar .navbar-toggler {
+    border-color: rgba(255,255,255,.18);
+    box-shadow: none;
+}
+
+.product-navbar .navbar-toggler:focus {
+    box-shadow: 0 0 0 3px rgba(63,169,245,.12);
+}
+
+/* SEARCH BAR */
+
+.product-header-search {
+    width: 235px;
+}
+
+.product-header-search .form-control {
+    min-height: 38px;
+    border: 1px solid var(--line);
+    border-right: 0;
+    background: #101318;
+    color: #fff;
+    font-size: 11px;
+    box-shadow: none;
+}
+
+.product-header-search .form-control::placeholder {
+    color: #77818c;
+}
+
+.product-header-search .form-control:focus {
+    border-color: var(--blue);
+}
+
+.product-header-search .btn {
+    min-width: 42px;
+    border-color: var(--blue);
+    background: var(--blue);
+}
+
+.product-header-search .btn img {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    filter: brightness(0);
+}
+
+/* BROWSE BUTTON */
+
+.product-browse-btn {
+    padding: 9px 15px;
+    border-color: var(--blue);
+    border-radius: 8px;
+    color: var(--blue);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.product-browse-btn:hover {
+    border-color: var(--blue);
+    background: var(--blue);
+    color: #071018;
+}
+
+/* PRODUCT BUTTONS */
+
+.product-add-cart.btn {
+    min-height: 48px;
+    border: 0;
+    border-radius: 9px;
+    background: var(--blue);
+    color: #071018;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.quantity-control .btn {
+    border-radius: 0;
+    border-color: var(--line);
+    color: #fff;
+    font-size: 16px;
+}
+
+.quantity-control .btn:hover {
+    border-color: var(--blue);
+    background: rgba(63,169,245,.08);
+    color: var(--blue);
+}
+
+/* INFORMATION TABS */
+
+.product-tab.btn {
+    min-height: 55px;
+    padding: 12px 5px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #858e98;
+    font-family: Montserrat, sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.product-tab.btn.active {
+    border-bottom: 3px solid var(--blue);
+    color: var(--blue);
+    box-shadow: none;
+}
+
+/* MOBILE NAVIGATION */
+
+@media (max-width: 1199px) {
+    .product-navbar .navbar-collapse {
+        padding: 12px 0 20px;
+        border-top: 1px solid var(--line);
+    }
+
+    .product-navbar .navbar-nav {
+        align-items: stretch !important;
+        gap: 5px;
+    }
+
+    .product-header-search {
+        width: min(100%, 360px);
+        margin: 8px 0;
+    }
+
+    .product-navbar .nav-icon {
+        margin: 8px 0;
+    }
+
+    .product-browse-btn {
+        display: inline-block;
+        width: fit-content;
+        margin-top: 8px;
+    }
+}
+
+@media (max-width: 700px) {
+    .product-header-inner {
+        width: calc(100% - 30px);
+        min-height: 70px;
+    }
+}
+
+/* FIX BOOTSTRAP PRODUCT TABS */
+.product-information-tabs .product-tab.btn,
+.product-information-tabs .product-tab.btn:hover,
+.product-information-tabs .product-tab.btn:focus,
+.product-information-tabs .product-tab.btn:active {
+    background: transparent !important;
+    color: #87919c !important;
+    border: 0;
+    box-shadow: none !important;
+}
+
+.product-information-tabs .product-tab.btn.active {
+    background: transparent !important;
+    color: var(--blue) !important;
+    border-bottom: 3px solid var(--blue) !important;
+}
+
+
+
+/* =====================================================
+   MIMIC HAVEN ADMIN - BOOTSTRAP SIDEBAR DASHBOARD
+===================================================== */
+
+body.admin-dashboard-page {
+    min-height: 100vh;
+    margin: 0;
+    background: #080c12;
+    color: #eaf2f8;
+    font-family: Inter, Arial, sans-serif;
+}
+
+.admin-dashboard-page * {
+    box-sizing: border-box;
+}
+
+.admin-dashboard-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* LEFT SIDEBAR */
+
+.admin-sidebar {
+    --bs-offcanvas-width: 270px;
+    width: 270px;
+    background: linear-gradient(180deg, #111d2b, #0b121c);
+    border-right: 1px solid rgba(255,255,255,.07);
+}
+
+@media (min-width: 992px) {
+    .admin-sidebar {
+        position: sticky;
+        top: 0;
+        flex: 0 0 270px;
+        width: 270px;
+        height: 100vh;
+        min-height: 100vh;
+        overflow-y: auto;
+        transform: none !important;
+        visibility: visible !important;
+    }
+}
+
+.admin-sidebar-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    padding: 28px 18px 22px;
+}
+
+.admin-sidebar-brand {
+    display: flex;
+    align-items: center;
+    min-height: 65px;
+    margin-bottom: 35px;
+}
+
+.admin-sidebar-brand img {
+    width: 155px;
+    height: auto;
+    object-fit: contain;
+}
+
+.admin-sidebar-mobile-header {
+    border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.admin-sidebar-mobile-header .admin-sidebar-brand {
+    margin-bottom: 0;
+}
+
+.admin-sidebar-label {
+    margin: 0 0 13px 12px;
+    color: #77899b;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .16em;
+}
+
+.admin-sidebar-nav {
+    gap: 7px;
+}
+
+.admin-sidebar-nav .nav-link,
+.admin-sidebar-logout {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    min-height: 47px;
+    padding: 11px 13px;
+    border-radius: 9px;
+    color: #aebdcb;
+    font-size: 12px;
+    font-weight: 600;
+    transition: background .2s ease, color .2s ease;
+}
+
+.admin-sidebar-nav .nav-link:hover,
+.admin-sidebar-logout:hover {
+    background: rgba(63,169,245,.09);
+    color: #fff;
+}
+
+.admin-sidebar-nav .nav-link.active {
+    background: rgba(63,169,245,.15);
+    color: #50baff;
+    box-shadow: inset 3px 0 0 #3fa9f5;
+}
+
+.admin-sidebar-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 23px;
+    height: 23px;
+    color: #60bcf3;
+    font-size: 17px;
+}
+
+.admin-sidebar-bottom {
+    margin-top: auto;
+    padding-top: 25px;
+    border-top: 1px solid rgba(255,255,255,.08);
+}
+
+.admin-sidebar-user {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-bottom: 15px;
+    padding: 10px 6px;
+}
+
+.admin-avatar {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    border: 1px solid rgba(63,169,245,.3);
+    border-radius: 50%;
+    background: rgba(63,169,245,.12);
+    color: #55bdff;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.admin-sidebar-user strong,
+.admin-sidebar-user small {
+    display: block;
+}
+
+.admin-sidebar-user strong {
+    color: #fff;
+    font-size: 11px;
+}
+
+.admin-sidebar-user small {
+    margin-top: 3px;
+    color: #81909e;
+    font-size: 9px;
+}
+
+.admin-sidebar-logout {
+    color: #e5a7a7;
+}
+
+.admin-sidebar-logout .admin-sidebar-icon {
+    color: #e5a7a7;
+}
+
+/* MAIN CONTENT */
+
+.admin-main-column {
+    flex: 1;
+    min-width: 0;
+}
+
+.admin-main {
+    width: 100%;
+    max-width: 1700px;
+    margin: auto;
+    padding: 40px clamp(22px, 3vw, 48px) 55px;
+}
+
+.admin-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.admin-page-eyebrow,
+.admin-section-heading > div > span,
+.admin-recent-panel-header > div > span {
+    display: block;
+    margin-bottom: 9px;
+    color: #49b7fa;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .15em;
+}
+
+.admin-page-header h1 {
+    margin: 0;
+    color: #fff;
+    font-size: clamp(25px, 3vw, 34px);
+    font-weight: 800;
+    letter-spacing: -.04em;
+}
+
+.admin-page-header p {
+    margin: 9px 0 0;
+    color: #91a0ae;
+    font-size: 12px;
+}
+
+/* STATISTIC CARDS */
+
+.admin-stat-grid {
+    margin-bottom: 38px;
+}
+
+.admin-stat-card {
+    overflow: hidden;
+    border: 1px solid #263444;
+    border-radius: 13px;
+    background: linear-gradient(145deg, #151f2c, #101720);
+    box-shadow: 0 12px 30px rgba(0,0,0,.12);
+    transition: transform .2s ease, border-color .2s ease;
+}
+
+.admin-stat-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(63,169,245,.4);
+}
+
+.admin-stat-card .card-body {
+    padding: 22px;
+}
+
+.admin-stat-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 19px;
+}
+
+.admin-stat-label {
+    color: #9aa9b8;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.admin-stat-icon {
+    display: grid;
+    place-items: center;
+    width: 35px;
+    height: 35px;
+    border: 1px solid rgba(63,169,245,.18);
+    border-radius: 9px;
+    background: rgba(63,169,245,.09);
+    color: #50baff;
+    font-size: 17px;
+}
+
+.admin-stat-number {
+    display: block;
+    color: #fff;
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.admin-stat-description {
+    display: block;
+    margin-top: 10px;
+    color: #8291a0;
+    font-size: 10px;
+}
+
+/* MANAGEMENT CARDS */
+
+.admin-management-section {
+    margin-bottom: 38px;
+}
+
+.admin-section-heading {
+    margin-bottom: 19px;
+}
+
+.admin-section-heading h2,
+.admin-recent-panel-header h2 {
+    margin: 0;
+    color: #fff;
+    font-size: 19px;
+    font-weight: 700;
+}
+
+.admin-action-card {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #273646;
+    border-radius: 13px;
+    background: #111b26;
+    text-decoration: none;
+    transition: transform .2s ease, border-color .2s ease, background .2s ease;
+}
+
+.admin-action-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(63,169,245,.55);
+    background: #162535;
+}
+
+.admin-action-card .card-body {
+    padding: 21px;
+}
+
+.admin-action-icon {
+    display: grid;
+    place-items: center;
+    width: 43px;
+    height: 43px;
+    margin-bottom: 18px;
+    border: 1px solid rgba(63,169,245,.2);
+    border-radius: 11px;
+    background: rgba(63,169,245,.10);
+    color: #53baff;
+    font-size: 20px;
+}
+
+.admin-action-card h3 {
+    margin: 0 0 8px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.admin-action-card p {
+    min-height: 35px;
+    margin: 0;
+    color: #91a0ae;
+    font-size: 10px;
+    line-height: 1.65;
+}
+
+.admin-action-arrow {
+    display: inline-block;
+    margin-top: 17px;
+    color: #50baff;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+/* RECENT ORDERS */
+
+.admin-recent-panel {
+    overflow: hidden;
+    border: 1px solid #263444;
+    border-radius: 14px;
+    background: #111922;
+    color: #fff;
+}
+
+.admin-recent-panel .card-body {
+    padding: 25px;
+}
+
+.admin-recent-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 19px;
+}
+
+.admin-view-all-button {
+    border: 1px solid rgba(63,169,245,.4);
+    border-radius: 7px;
+    color: #5bbdff;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.admin-view-all-button:hover {
+    border-color: #3fa9f5;
+    background: #3fa9f5;
+    color: #071018;
+}
+
+.admin-recent-list {
+    border-top: 1px solid #293746;
+}
+
+.admin-recent-order.list-group-item {
+    padding: 17px 2px;
+    border: 0;
+    border-bottom: 1px solid #263340;
+    background: transparent;
+    color: #fff;
+}
+
+.admin-recent-order:last-child {
+    border-bottom: 0;
+}
+
+.admin-order-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+.admin-order-main > strong {
+    color: #f2f6fa;
+    font-size: 11px;
+}
+
+.admin-recent-status {
+    padding: 6px 10px;
+    border: 1px solid rgba(63,169,245,.18);
+    background: rgba(63,169,245,.10);
+    color: #72c8ff;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.admin-order-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 22px;
+    margin-top: 8px;
+    color: #93a1af;
+    font-size: 10px;
+}
+
+.admin-empty {
+    padding: 45px 15px;
+    text-align: center;
+}
+
+.admin-empty > span {
+    color: #50baff;
+    font-size: 30px;
+}
+
+.admin-empty h3 {
+    margin: 12px 0 6px;
+    color: #fff;
+    font-size: 14px;
+}
+
+.admin-empty p {
+    margin: 0;
+    color: #91a0ae;
+    font-size: 11px;
+}
+
+/* MOBILE TOPBAR */
+
+.admin-mobile-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 65px;
+    padding: 0 18px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    background: #101b28;
+}
+
+.admin-mobile-menu-button {
+    border: 1px solid #34475a;
+    color: #fff;
+    font-size: 12px;
+}
+
+.admin-mobile-menu-button:hover {
+    border-color: #3fa9f5;
+    color: #50baff;
+}
+
+.admin-mobile-menu-button span {
+    margin-right: 7px;
+    color: #50baff;
+}
+
+.admin-mobile-title {
+    color: #55baff;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .12em;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 991.98px) {
+    .admin-sidebar {
+        position: fixed;
+        height: 100vh;
+        min-height: 100vh;
+        z-index: 1045;
+        overflow-y: auto;
+    }
+
+    .admin-sidebar-body {
+        min-height: calc(100vh - 75px);
+    }
+
+    .admin-main {
+        padding: 30px 22px 45px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .admin-main {
+        padding: 25px 15px 35px;
+    }
+
+    .admin-page-header {
+        margin-bottom: 25px;
+    }
+
+    .admin-page-header p {
+        font-size: 11px;
+    }
+
+    .admin-stat-card .card-body {
+        padding: 18px;
+    }
+
+    .admin-recent-panel .card-body {
+        padding: 18px 15px;
+    }
+
+    .admin-recent-panel-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .admin-order-meta {
+        gap: 6px 12px;
+    }
+}

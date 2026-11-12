@@ -1,0 +1,79 @@
+
+{# =========================================
+   MIMIC HAVEN - SHARED ADMIN SIDEBAR
+   Used by all admin pages
+   ========================================= #}
+
+<aside class="admin-sidebar">
+
+    <div class="sidebar-inner">
+
+        <!-- ADMIN DASHBOARD TITLE -->
+        <div class="sidebar-brand">
+            <div class="sidebar-title">
+                Admin Dashboard
+            </div>
+        </div>
+
+        <!-- MENU LABEL -->
+        <div class="sidebar-section-label">
+            MENU
+        </div>
+
+        <!-- NAVIGATION LINKS -->
+        <nav class="admin-nav nav" aria-label="Admin navigation">
+
+            <a
+                href="/admin"
+                class="nav-link {% if activePage|default('') == 'dashboard' %}active{% endif %}"
+                {% if activePage|default('') == 'dashboard' %}aria-current="page"{% endif %}
+            >
+                Dashboard
+            </a>
+
+            <a
+                href="/admin/orders"
+                class="nav-link {% if activePage|default('') == 'orders' %}active{% endif %}"
+                {% if activePage|default('') == 'orders' %}aria-current="page"{% endif %}
+            >
+                Orders
+            </a>
+
+            <a
+                href="/admin/preorders"
+                class="nav-link {% if activePage|default('') == 'preorders' %}active{% endif %}"
+                {% if activePage|default('') == 'preorders' %}aria-current="page"{% endif %}
+            >
+                Pre-Orders
+            </a>
+
+            <a
+                href="/admin/customers"
+                class="nav-link {% if activePage|default('') == 'customers' %}active{% endif %}"
+                {% if activePage|default('') == 'customers' %}aria-current="page"{% endif %}
+            >
+                Customers
+            </a>
+
+            <a
+                href="/admin/products"
+                class="nav-link {% if activePage|default('') == 'products' %}active{% endif %}"
+                {% if activePage|default('') == 'products' %}aria-current="page"{% endif %}
+            >
+                Products
+            </a>
+
+        </nav>
+
+        <!-- LOGOUT -->
+        <div class="sidebar-bottom">
+
+            <a href="{{ path('app_logout') }}" class="logout-link">
+                Logout
+            </a>
+
+        </div>
+
+    </div>
+
+</aside>

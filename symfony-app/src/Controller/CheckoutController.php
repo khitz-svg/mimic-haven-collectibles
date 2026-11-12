@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\User;
 use Doctrine\DBAL\Connection;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -16,30 +17,30 @@ class CheckoutController extends AbstractController
 {
     #[Route('/checkout', name: 'app_checkout', methods: ['GET'])]
     public function index(
-        Request $request,
         Connection $connection,
         CsrfTokenManagerInterface $csrfTokenManager
     ): Response {
-        $userId = $request->getSession()->get('user_id');
+        // Get the authenticated Symfony customer.
+        $user = $this->getUser();
 
-        // The original checkout requires an authenticated customer.
-        if (!is_numeric($userId) || (int) $userId < 1) {
-            return $this->redirect('/login');
+        if (!$user instanceof User || $user->getId() === null || (int) $user->getId() < 1) {
+            return $this->redirectToRoute('app_login');
         }
+
+        $userId = (int) $user->getId();
 
         $customer = $connection->fetchAssociative(
             'SELECT first_name, last_name, email FROM users WHERE id = ?',
-            [(int) $userId]
+            [$userId]
         );
 
         if (!$customer) {
-            $request->getSession()->remove('user_id');
-            return $this->redirect('/login');
+            throw $this->createNotFoundException('Customer record not found.');
         }
 
         return $this->render('checkout/index.html.twig', [
             'customer' => $customer,
-            'cartStorageKey' => 'mimicHavenCart_' . (int) $userId,
+            'cartStorageKey' => 'mimicHavenCart_' . $userId,
             'checkoutCsrfToken' => $csrfTokenManager->getToken('checkout')->getValue(),
         ]);
     }
@@ -51,16 +52,20 @@ class CheckoutController extends AbstractController
         CsrfTokenManagerInterface $csrfTokenManager,
         LoggerInterface $logger
     ): JsonResponse {
-        $userId = $request->getSession()->get('user_id');
+        // Use the authenticated Symfony user instead of session user_id.
+        $user = $this->getUser();
 
-        if (!is_numeric($userId) || (int) $userId < 1) {
+        if (!$user instanceof User || $user->getId() === null || (int) $user->getId() < 1) {
             return new JsonResponse([
                 'success' => false,
                 'message' => 'You must be logged in to place an order.',
             ], Response::HTTP_UNAUTHORIZED);
         }
 
+        $userId = (int) $user->getId();
+
         $input = json_decode($request->getContent(), true);
+
         if (!is_array($input)) {
             return new JsonResponse([
                 'success' => false,
@@ -69,7 +74,11 @@ class CheckoutController extends AbstractController
         }
 
         $csrfToken = $input['csrf_token'] ?? '';
-        if (!is_string($csrfToken) || !$csrfTokenManager->isTokenValid(new CsrfToken('checkout', $csrfToken))) {
+
+        if (
+            !is_string($csrfToken) ||
+            !$csrfTokenManager->isTokenValid(new CsrfToken('checkout', $csrfToken))
+        ) {
             return new JsonResponse([
                 'success' => false,
                 'message' => 'Security validation failed.',
@@ -85,6 +94,7 @@ class CheckoutController extends AbstractController
             if ($firstName === '' || $lastName === '' || $email === '' || $phone === '') {
                 throw new \InvalidArgumentException('Please complete all customer information.');
             }
+
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 throw new \InvalidArgumentException('Please enter a valid email address.');
             }
@@ -102,39 +112,48 @@ class CheckoutController extends AbstractController
             $deliveryAddress = $address . ', ' . $city . ', ' . $province . ' ' . $postalCode . ', ' . $country;
 
             $payment = strtolower(trim((string) ($input['payment'] ?? '')));
+
             $allowedPayments = [
                 'gcash' => 'GCash',
                 'bank' => 'Bank Transfer',
                 'cod' => 'Cash on Delivery',
             ];
+
             if (!isset($allowedPayments[$payment])) {
                 throw new \InvalidArgumentException('Invalid payment method.');
             }
+
             $paymentMethod = $allowedPayments[$payment];
 
             $notes = trim((string) ($input['notes'] ?? ''));
+
             if (strlen($notes) > 2000) {
                 throw new \InvalidArgumentException('Order notes are too long.');
             }
 
             $cart = $input['cart'] ?? null;
+
             if (!is_array($cart) || $cart === []) {
                 throw new \InvalidArgumentException('Your cart is empty.');
             }
 
-            // Combine repeated product IDs before checking stock so quantities
-            // cannot bypass the stock check by appearing as duplicate cart rows.
+            // Combine repeated product IDs before checking stock.
             $quantities = [];
+
             foreach ($cart as $item) {
                 if (!is_array($item)) {
                     throw new \InvalidArgumentException('Invalid cart item.');
                 }
+
                 $productId = isset($item['id']) ? (int) $item['id'] : 0;
                 $quantity = isset($item['quantity']) ? (int) $item['quantity'] : 1;
+
                 if ($productId < 1 || $quantity < 1 || $quantity > 20) {
                     throw new \InvalidArgumentException('Invalid cart item.');
                 }
+
                 $quantities[$productId] = ($quantities[$productId] ?? 0) + $quantity;
+
                 if ($quantities[$productId] > 20) {
                     throw new \InvalidArgumentException('Invalid cart item.');
                 }
@@ -159,20 +178,23 @@ class CheckoutController extends AbstractController
                     if (!$product) {
                         throw new \InvalidArgumentException('One of the products in your cart no longer exists.');
                     }
+
                     if ($product['availability'] !== 'In Stock') {
                         throw new \InvalidArgumentException($product['name'] . ' is not currently available for normal checkout.');
                     }
 
                     $stock = (int) ($product['stock'] ?? 0);
+
                     if ($quantity > $stock) {
                         throw new \InvalidArgumentException(
                             'Not enough stock available for ' . $product['name'] . '. Only ' . $stock . ' item(s) remain.'
                         );
                     }
 
-                    // Read price only from the database; never trust localStorage prices.
+                    // Read the price from the database, not localStorage.
                     $price = number_format((float) $product['price'], 2, '.', '');
                     $priceCents = (int) round(((float) $price) * 100);
+
                     $totalCents += $priceCents * $quantity;
 
                     $validatedItems[] = [
@@ -191,8 +213,9 @@ class CheckoutController extends AbstractController
                 $db->executeStatement(
                     "INSERT INTO orders (user_id, total_amount, payment_method, status, delivery_address, order_notes)
                      VALUES (?, ?, ?, 'Pending', ?, ?)",
-                    [(int) $userId, $totalAmount, $paymentMethod, $deliveryAddress, $notes]
+                    [$userId, $totalAmount, $paymentMethod, $deliveryAddress, $notes]
                 );
+
                 $newOrderId = (int) $db->lastInsertId();
 
                 foreach ($validatedItems as $item) {
@@ -205,8 +228,11 @@ class CheckoutController extends AbstractController
                         'UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?',
                         [$item['quantity'], $item['product_id'], $item['quantity']]
                     );
+
                     if ($affected !== 1) {
-                        throw new \InvalidArgumentException('Unable to update product stock. Please review your cart and try again.');
+                        throw new \InvalidArgumentException(
+                            'Unable to update product stock. Please review your cart and try again.'
+                        );
                     }
                 }
 
@@ -220,13 +246,18 @@ class CheckoutController extends AbstractController
                 'order_id' => $orderId,
                 'message' => 'Your order has been placed successfully!',
             ]);
+
         } catch (\InvalidArgumentException $error) {
             return new JsonResponse([
                 'success' => false,
                 'message' => $error->getMessage(),
             ], Response::HTTP_BAD_REQUEST);
+
         } catch (\Throwable $error) {
-            $logger->error('Checkout error', ['exception' => $error]);
+            $logger->error('Checkout error', [
+                'exception' => $error,
+            ]);
+
             return new JsonResponse([
                 'success' => false,
                 'message' => 'Unable to place your order right now. Please try again.',

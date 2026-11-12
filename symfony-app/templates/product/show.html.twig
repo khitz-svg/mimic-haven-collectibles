@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ product.name }} | Mimic Haven Collectibles</title>
@@ -106,13 +107,13 @@
             {% if isInStock %}
                 <div class="product-purchase-row">
                     <div class="quantity-control">
-                        <button type="button" id="quantityMinus" aria-label="Decrease quantity">−</button>
+                        <button type="button" class="btn btn-outline-secondary" id="quantityMinus" aria-label="Decrease quantity">−</button>
                         <input type="number" id="productQuantity" value="1" min="1" max="{{ maxQuantity }}" inputmode="numeric">
-                        <button type="button" id="quantityPlus" aria-label="Increase quantity">+</button>
+                        <button type="button" class="btn btn-outline-secondary" id="quantityPlus" aria-label="Increase quantity">+</button>
                     </div>
                     <button
                         type="button"
-                        class="product-add-cart"
+                        class="btn btn-primary product-add-cart"
                         id="addToCart"
                         data-product-id="{{ product.id }}"
                         data-product-name="{{ product.name }}"
@@ -161,11 +162,21 @@
     </section>
 
     <section class="product-information">
-        <div class="product-information-tabs" role="tablist" aria-label="Product information">
-            <button class="product-tab active" type="button" role="tab" aria-selected="true">Product Details</button>
-            <button class="product-tab" type="button" role="tab" aria-selected="false">Condition Guide</button>
-            <button class="product-tab" type="button" role="tab" aria-selected="false">Ordering Information</button>
-        </div>
+        
+<div class="product-information-tabs" role="tablist" aria-label="Product information">
+    <button class="product-tab active" type="button" role="tab" aria-selected="true">
+        Product Details
+    </button>
+
+    <button class="product-tab" type="button" role="tab" aria-selected="false">
+        Condition Guide
+    </button>
+
+    <button class="product-tab" type="button" role="tab" aria-selected="false">
+        Ordering Information
+    </button>
+</div>
+
 
         <div class="product-information-content">
             <div class="product-info-block active">
@@ -251,5 +262,6 @@
 </script>
 <script src="{{ asset('script.js') }}"></script>
 <script src="{{ asset('product.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 </body>
 </html>
