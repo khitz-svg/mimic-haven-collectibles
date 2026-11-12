@@ -1,8 +1,8 @@
 
-/* =========================================================
-   MIMIC HAVEN - CART PAGE
-   Account-specific cart, quantity, removal and checkout
-========================================================= */
+// =========================================================
+// MIMIC HAVEN - CART PAGE
+// Account-specific cart, quantity, removal and checkout
+// =========================================================
 
 (() => {
     'use strict';
@@ -24,25 +24,73 @@
         return;
     }
 
-    /* =====================================================
-       CART STORAGE KEY
-    ===================================================== */
+    // =====================================================
+    // USE THE SERVER-PROVIDED CART KEY
+    // Keep the same key throughout this page session.
+    // =====================================================
 
-    function getStorageKey() {
+    function isValidCartKey(key) {
+        return (
+            key === 'mimicHavenGuestCart' ||
+            (typeof key === 'string' &&
+                /^mimicHavenCart_\d+$/.test(key))
+        );
+    }
+
+    function getInitialCartKey() {
+        // The key passed directly by CartController through Twig.
+        if (isValidCartKey(window.MIMIC_HAVEN_CART_KEY)) {
+            return window.MIMIC_HAVEN_CART_KEY;
+        }
+
+        // Fallback to the existing global cart-key function.
         if (typeof window.getCartStorageKey === 'function') {
-            return window.getCartStorageKey();
+            const key = window.getCartStorageKey();
+
+            if (isValidCartKey(key)) {
+                return key;
+            }
+        }
+
+        // Last fallback: read the cookie.
+        try {
+            const cookie = document.cookie
+                .split(';')
+                .map(item => item.trim())
+                .find(item =>
+                    item.startsWith('mimicHavenCartStorageKey=')
+                );
+
+            if (cookie) {
+                const key = decodeURIComponent(
+                    cookie.substring(
+                        'mimicHavenCartStorageKey='.length
+                    )
+                );
+
+                if (isValidCartKey(key)) {
+                    return key;
+                }
+            }
+        } catch (error) {
+            console.error('Unable to read cart key:', error);
         }
 
         return 'mimicHavenGuestCart';
     }
 
-    /* =====================================================
-       GET CART
-    ===================================================== */
+    // Resolve ONCE instead of switching keys during clicks.
+    const CART_STORAGE_KEY = getInitialCartKey();
+
+    console.log('Active cart storage:', CART_STORAGE_KEY);
+
+    // =====================================================
+    // GET CART
+    // =====================================================
 
     function getCart() {
         try {
-            const saved = localStorage.getItem(getStorageKey());
+            const saved = localStorage.getItem(CART_STORAGE_KEY);
             const cart = JSON.parse(saved || '[]');
 
             return Array.isArray(cart) ? cart : [];
@@ -52,14 +100,14 @@
         }
     }
 
-    /* =====================================================
-       SAVE CART
-    ===================================================== */
+    // =====================================================
+    // SAVE CART
+    // =====================================================
 
     function saveCart(cart) {
         try {
             localStorage.setItem(
-                getStorageKey(),
+                CART_STORAGE_KEY,
                 JSON.stringify(cart)
             );
 
@@ -70,9 +118,9 @@
         }
     }
 
-    /* =====================================================
-       FORMAT PRICE
-    ===================================================== */
+    // =====================================================
+    // FORMAT PRICE
+    // =====================================================
 
     function formatPeso(value) {
         return '₱' + Number(value || 0).toLocaleString('en-PH', {
@@ -81,9 +129,9 @@
         });
     }
 
-    /* =====================================================
-       ESCAPE HTML
-    ===================================================== */
+    // =====================================================
+    // ESCAPE HTML
+    // =====================================================
 
     function escapeHtml(value) {
         return String(value ?? '').replace(/[&<>"']/g, character => ({
@@ -95,9 +143,9 @@
         })[character]);
     }
 
-    /* =====================================================
-       PRODUCT IMAGE
-    ===================================================== */
+    // =====================================================
+    // PRODUCT IMAGE
+    // =====================================================
 
     function getProductImage(image) {
         if (!image) return '';
@@ -117,9 +165,9 @@
         return '/assets/collections/' + encodeURIComponent(file);
     }
 
-    /* =====================================================
-       UPDATE CART COUNT
-    ===================================================== */
+    // =====================================================
+    // UPDATE CART COUNT
+    // =====================================================
 
     function updateCartCount(cart) {
         const totalItems = cart.reduce(
@@ -135,9 +183,9 @@
         }
     }
 
-    /* =====================================================
-       SHOW MESSAGE
-    ===================================================== */
+    // =====================================================
+    // SHOW MESSAGE
+    // =====================================================
 
     function notify(message) {
         if (typeof window.showToast === 'function') {
@@ -154,12 +202,14 @@
             window.setTimeout(() => {
                 toast.classList.remove('show');
             }, 2200);
+        } else {
+            window.alert(message);
         }
     }
 
-    /* =====================================================
-       RENDER CART
-    ===================================================== */
+    // =====================================================
+    // RENDER CART
+    // =====================================================
 
     function renderCart() {
         const cart = getCart();
@@ -264,20 +314,17 @@
         cartTotal.textContent = formatPeso(subtotal);
     }
 
-    /* =====================================================
-       PROCESS CART BUTTONS
-       CAPTURE PHASE TO PREVENT EVENT CONFLICTS
-    ===================================================== */
+    // =====================================================
+    // PROCESS CART BUTTONS
+    // =====================================================
 
     document.addEventListener('click', event => {
         if (!(event.target instanceof Element)) return;
 
-        // REMOVE AND QUANTITY BUTTONS
         const cartButton = event.target.closest(
             '#cartItemsContainer button[data-action]'
         );
 
-        // PROCEED TO CHECKOUT BUTTON
         const isCheckout = event.target.closest(
             '#checkoutButton'
         );
@@ -289,9 +336,7 @@
 
         // CHECKOUT
         if (isCheckout) {
-            const cart = getCart();
-
-            if (cart.length === 0) {
+            if (getCart().length === 0) {
                 renderCart();
                 notify('Your cart is empty.');
                 return;
@@ -350,22 +395,22 @@
 
     }, true);
 
-    /* =====================================================
-       UPDATE WHEN CART CHANGES
-    ===================================================== */
+    // =====================================================
+    // UPDATE WHEN CART CHANGES
+    // =====================================================
 
     window.addEventListener('storage', event => {
         if (
-            event.key === getStorageKey() ||
+            event.key === CART_STORAGE_KEY ||
             event.key === null
         ) {
             renderCart();
         }
     });
 
-    /* =====================================================
-       INITIALIZE
-    ===================================================== */
+    // =====================================================
+    // INITIALIZE
+    // =====================================================
 
     renderCart();
 
