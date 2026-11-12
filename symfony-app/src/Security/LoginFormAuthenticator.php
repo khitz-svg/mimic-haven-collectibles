@@ -28,24 +28,41 @@ class LoginFormAuthenticator extends AbstractLoginFormAuthenticator
         $csrfToken = $request->request->get('_csrf_token', '');
 
         if (is_string($email) && $request->hasSession()) {
-            $request->getSession()->set(SecurityRequestAttributes::LAST_USERNAME, trim($email));
+            $request->getSession()->set(
+                SecurityRequestAttributes::LAST_USERNAME,
+                trim($email)
+            );
         }
 
         return new Passport(
             new UserBadge(is_string($email) ? trim($email) : ''),
             new PasswordCredentials(is_string($password) ? $password : ''),
-            [new CsrfTokenBadge('authenticate', is_string($csrfToken) ? $csrfToken : '')]
+            [
+                new CsrfTokenBadge(
+                    'authenticate',
+                    is_string($csrfToken) ? $csrfToken : ''
+                )
+            ]
         );
     }
 
-    public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response
-    {
+    public function onAuthenticationSuccess(
+        Request $request,
+        TokenInterface $token,
+        string $firewallName
+    ): ?Response {
         $user = $token->getUser();
-        $target = $user instanceof User && $user->getRole() === 'admin'
-            ? '/admin'
-            : $this->urlGenerator->generate('app_home');
 
-        return new RedirectResponse($target);
+        if (
+            $user instanceof User &&
+            in_array($user->getRole(), ['admin', 'staff'], true)
+        ) {
+            return new RedirectResponse('/admin');
+        }
+
+        return new RedirectResponse(
+            $this->urlGenerator->generate('app_home')
+        );
     }
 
     protected function getLoginUrl(Request $request): string

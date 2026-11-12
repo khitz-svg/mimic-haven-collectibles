@@ -8,8 +8,9 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\ExpressionLanguage\Expression;
 
-#[IsGranted('ROLE_ADMIN')]
+#[IsGranted(new Expression('is_granted("ROLE_ADMIN") or is_granted("ROLE_STAFF")'))]
 final class AdminOrdersController extends AbstractController
 {
     private const ALLOWED_STATUSES = [
@@ -49,7 +50,11 @@ final class AdminOrdersController extends AbstractController
                         ['status' => $newStatus],
                         ['id' => $orderId]
                     );
-                    $this->addFlash('success', sprintf('Order #%d updated to %s.', $orderId, $newStatus));
+
+                    $this->addFlash(
+                        'success',
+                        sprintf('Order #%d updated to %s.', $orderId, $newStatus)
+                    );
                 }
             }
 

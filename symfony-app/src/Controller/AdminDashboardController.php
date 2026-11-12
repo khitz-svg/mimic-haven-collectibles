@@ -8,10 +8,11 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Bundle\SecurityBundle\Security;
 
 #[Route('/admin', name: 'app_admin_dashboard', methods: ['GET'])]
-#[IsGranted('ROLE_ADMIN')]
+#[IsGranted(new Expression('is_granted("ROLE_ADMIN") or is_granted("ROLE_STAFF")'))]
 class AdminDashboardController extends AbstractController
 {
     public function __invoke(Connection $connection, Security $security): Response
@@ -47,6 +48,7 @@ class AdminDashboardController extends AbstractController
         );
 
         $currentUser = $security->getUser();
+
         $firstName = $currentUser instanceof User
             ? $currentUser->getFirstName()
             : 'Admin';

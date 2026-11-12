@@ -1,17 +1,20 @@
-
 {# =========================================
    MIMIC HAVEN - SHARED ADMIN SIDEBAR
-   Used by all admin pages
+   Used by ADMIN and STAFF
    ========================================= #}
 
 <aside class="admin-sidebar">
 
     <div class="sidebar-inner">
 
-        <!-- ADMIN DASHBOARD TITLE -->
+        <!-- DASHBOARD TITLE -->
         <div class="sidebar-brand">
             <div class="sidebar-title">
-                Admin Dashboard
+                {% if is_granted('ROLE_ADMIN') %}
+                    Admin Dashboard
+                {% else %}
+                    Staff Dashboard
+                {% endif %}
             </div>
         </div>
 
@@ -47,31 +50,33 @@
                 Pre-Orders
             </a>
 
-            <a
-                href="/admin/customers"
-                class="nav-link {% if activePage|default('') == 'customers' %}active{% endif %}"
-                {% if activePage|default('') == 'customers' %}aria-current="page"{% endif %}
-            >
-                Customers
-            </a>
+            {% if is_granted('ROLE_ADMIN') %}
 
-            <a
-                href="/admin/products"
-                class="nav-link {% if activePage|default('') == 'products' %}active{% endif %}"
-                {% if activePage|default('') == 'products' %}aria-current="page"{% endif %}
-            >
-                Products
-            </a>
+                <a
+                    href="/admin/customers"
+                    class="nav-link {% if activePage|default('') == 'customers' %}active{% endif %}"
+                    {% if activePage|default('') == 'customers' %}aria-current="page"{% endif %}
+                >
+                    Customers
+                </a>
+
+                <a
+                    href="/admin/products"
+                    class="nav-link {% if activePage|default('') == 'products' %}active{% endif %}"
+                    {% if activePage|default('') == 'products' %}aria-current="page"{% endif %}
+                >
+                    Products
+                </a>
+
+            {% endif %}
 
         </nav>
 
         <!-- LOGOUT -->
         <div class="sidebar-bottom">
-
             <a href="{{ path('app_logout') }}" class="logout-link">
                 Logout
             </a>
-
         </div>
 
     </div>

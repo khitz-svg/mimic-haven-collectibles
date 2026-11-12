@@ -30,7 +30,12 @@ final class AdminPreordersController extends AbstractController
     #[Route('/admin/preorders', name: 'app_admin_preorders', methods: ['GET', 'POST'])]
     public function index(Request $request, Connection $connection): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+    if (
+        !$this->isGranted('ROLE_ADMIN') &&
+        !$this->isGranted('ROLE_STAFF')
+    ) {
+        throw $this->createAccessDeniedException();
+    }
 
         if ($request->isMethod('POST')) {
             $this->handlePost($request, $connection);

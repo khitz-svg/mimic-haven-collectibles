@@ -28,7 +28,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(
         type: Types::ENUM,
         options: [
-            'values' => ['customer', 'admin'],
+            'values' => ['customer', 'admin', 'staff'],
             'default' => 'customer'
         ]
     )]
